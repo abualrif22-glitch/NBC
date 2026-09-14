@@ -1,0 +1,321 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>Computing Games Hub</title>
+<style>
+  :root{
+    --dark:#1A1A2E;
+    --light:#F7F9FC;
+    --y2:#FF5C8A;
+    --y2-2:#3DDC97;
+    --y3:#3A0CA3;
+    --y3-2:#4CC9F0;
+    --y4:#2A2A72;
+    --y4-2:#00C9A7;
+  }
+  *{box-sizing:border-box;}
+  html,body{ margin:0; }
+  body{
+    font-family:'Segoe UI', Calibri, Arial, sans-serif;
+    background:linear-gradient(160deg,#1A1A2E 0%, #3A0CA3 50%, #2A2A72 100%);
+    min-height:100vh;
+    padding:30px 20px 60px;
+  }
+  .page{
+    max-width:1080px;
+    margin:0 auto;
+  }
+  header{
+    text-align:center;
+    color:white;
+    margin-bottom:36px;
+  }
+  header h1{
+    font-size:clamp(32px,5vw,48px);
+    margin:0 0 8px;
+    text-shadow:0 4px 12px rgba(0,0,0,0.3);
+  }
+  header p{
+    font-size:clamp(15px,2vw,18px);
+    color:#D6D0F5;
+    margin:0;
+  }
+
+  .search-row{
+    display:flex;
+    justify-content:center;
+    margin-bottom:36px;
+  }
+  .search-row input{
+    width:100%;
+    max-width:420px;
+    padding:14px 20px;
+    border-radius:30px;
+    border:none;
+    font-size:16px;
+    text-align:center;
+    box-shadow:0 8px 24px rgba(0,0,0,0.25);
+  }
+  .search-row input:focus{ outline:3px solid #FFD23F; }
+
+  .year-section{
+    margin-bottom:44px;
+  }
+  .year-badge{
+    display:inline-flex;
+    align-items:center;
+    gap:10px;
+    padding:8px 22px;
+    border-radius:30px;
+    font-weight:bold;
+    font-size:18px;
+    color:white;
+    margin-bottom:18px;
+    box-shadow:0 6px 16px rgba(0,0,0,0.2);
+  }
+  .year-badge.y2{ background:linear-gradient(135deg,var(--y2),var(--y2-2)); }
+  .year-badge.y3{ background:linear-gradient(135deg,var(--y3),var(--y3-2)); }
+  .year-badge.y4{ background:linear-gradient(135deg,var(--y4),var(--y4-2)); }
+
+  .card-grid{
+    display:grid;
+    grid-template-columns:repeat(auto-fit, minmax(260px, 1fr));
+    gap:20px;
+  }
+  .game-card{
+    background:white;
+    border-radius:22px;
+    padding:24px 22px 22px;
+    box-shadow:0 10px 30px rgba(0,0,0,0.25);
+    display:flex;
+    flex-direction:column;
+    transition:transform .18s ease, box-shadow .18s ease;
+    text-decoration:none;
+    color:inherit;
+    position:relative;
+    overflow:hidden;
+  }
+  .game-card:hover{
+    transform:translateY(-6px);
+    box-shadow:0 16px 40px rgba(0,0,0,0.35);
+  }
+  .game-card .stripe{
+    position:absolute; top:0; left:0; right:0; height:8px;
+  }
+  .game-card.y2 .stripe{ background:linear-gradient(90deg,var(--y2),var(--y2-2)); }
+  .game-card.y3 .stripe{ background:linear-gradient(90deg,var(--y3),var(--y3-2)); }
+  .game-card.y4 .stripe{ background:linear-gradient(90deg,var(--y4),var(--y4-2)); }
+
+  .game-emoji{
+    font-size:48px;
+    margin-bottom:10px;
+  }
+  .game-title{
+    font-size:20px;
+    font-weight:bold;
+    color:var(--dark);
+    margin:0 0 6px;
+  }
+  .game-lesson{
+    font-size:12.5px;
+    font-weight:bold;
+    text-transform:uppercase;
+    letter-spacing:0.5px;
+    color:#888;
+    margin-bottom:10px;
+  }
+  .game-desc{
+    font-size:14.5px;
+    color:#444;
+    line-height:1.45;
+    flex-grow:1;
+    margin-bottom:16px;
+  }
+  .play-btn{
+    display:inline-flex;
+    align-items:center;
+    justify-content:center;
+    gap:8px;
+    padding:12px 0;
+    border-radius:14px;
+    font-weight:bold;
+    font-size:15px;
+    color:white;
+  }
+  .game-card.y2 .play-btn{ background:var(--y2); }
+  .game-card.y3 .play-btn{ background:var(--y3); }
+  .game-card.y4 .play-btn{ background:var(--y4); }
+
+  .no-results{
+    text-align:center;
+    color:#D6D0F5;
+    font-size:16px;
+    margin-top:20px;
+    display:none;
+  }
+
+  footer{
+    text-align:center;
+    color:#B8B0E0;
+    font-size:13px;
+    margin-top:50px;
+  }
+  footer a{ color:#FFD23F; }
+</style>
+</head>
+<body>
+<div class="page">
+  <header>
+    <h1>🎮 Computing Games Hub</h1>
+    <p>Pick a game below to practice what you've been learning!</p>
+  </header>
+
+  <div class="search-row">
+    <input type="text" id="searchBox" placeholder="🔍 Search for a game or a topic...">
+  </div>
+
+  <div id="hubContent">
+    <div class="year-section" data-year="2">
+      <div class="year-badge y2">🟣 Year 2</div>
+      <div class="card-grid">
+
+        <a class="game-card y2" href="IT Detective - fun tablet activity (Y2).html" data-keywords="IT detective digital technology sort tablet lesson 1">
+          <div class="stripe"></div>
+          <div class="game-emoji">🕵️</div>
+          <div class="game-lesson">Lesson 1 · Information Technology Around Us</div>
+          <div class="game-title">IT Detective!</div>
+          <div class="game-desc">Tap objects to decide: is it information technology, or not? Great for practising what counts as IT.</div>
+          <span class="play-btn">▶ Play Now</span>
+        </a>
+
+        <a class="game-card y2" href="Sort the School IT - fun computer activity (Y2).html" data-keywords="sort school IT work talk play lesson 2">
+          <div class="stripe"></div>
+          <div class="game-emoji">🗂️</div>
+          <div class="game-lesson">Lesson 2 · Information Technology Around Us</div>
+          <div class="game-title">Sort the School IT!</div>
+          <div class="game-desc">Decide whether each device helps us work, talk, or play — some belong in more than one group!</div>
+          <span class="play-btn">▶ Play Now</span>
+        </a>
+
+      </div>
+    </div>
+
+    <div class="year-section" data-year="3">
+      <div class="year-badge y3">🔵 Year 3</div>
+      <div class="card-grid">
+
+        <a class="game-card y3" href="Machine Mania - fun computer activity (Y3).html" data-keywords="machine mania input process output guess design lesson 1">
+          <div class="stripe"></div>
+          <div class="game-emoji">⚙️</div>
+          <div class="game-lesson">Lesson 1 · How Does a Digital Device Work?</div>
+          <div class="game-title">Machine Mania!</div>
+          <div class="game-desc">Guess a mystery machine's secret process, then design and test your own input-process-output machine.</div>
+          <span class="play-btn">▶ Play Now</span>
+        </a>
+
+        <a class="game-card y3" href="Input or Output - fun computer activity (Y3).html" data-keywords="input output both devices lesson 2">
+          <div class="stripe"></div>
+          <div class="game-emoji">⌨️</div>
+          <div class="game-lesson">Lesson 2 · What Parts Make Up a Digital Device?</div>
+          <div class="game-title">Input or Output?</div>
+          <div class="game-desc">Sort devices into Input, Output, or Both — and find out why some clever devices do two jobs at once.</div>
+          <span class="play-btn">▶ Play Now</span>
+        </a>
+
+        <a class="game-card y3" href="Digital or Not - fun computer activity (Y3).html" data-keywords="digital or not device electrical tricky bonus">
+          <div class="stripe"></div>
+          <div class="game-emoji">🔎</div>
+          <div class="game-lesson">Bonus · Digital Devices</div>
+          <div class="game-title">Digital or Not?</div>
+          <div class="game-desc">Spot the tricky ones! Some things use electricity but aren't actually digital devices — can you tell which?</div>
+          <span class="play-btn">▶ Play Now</span>
+        </a>
+
+      </div>
+    </div>
+
+    <div class="year-section" data-year="4">
+      <div class="year-badge y4">🟠 Year 4</div>
+      <div class="card-grid">
+
+        <a class="game-card y4" href="Route the Packet - fun computer activity.html" data-keywords="route packet network switch router internet lesson 1">
+          <div class="stripe"></div>
+          <div class="game-emoji">📨</div>
+          <div class="game-lesson">Lesson 1 · The Internet</div>
+          <div class="game-title">Route the Packet!</div>
+          <div class="game-desc">Guide a message across a network of switches and routers to its destination — watch out for dead ends!</div>
+          <span class="play-btn">▶ Play Now</span>
+        </a>
+
+        <a class="game-card y4" href="Find the Route - fun computer activity (Y4).html" data-keywords="find route stepping stones grid blocked path lesson 2">
+          <div class="stripe"></div>
+          <div class="game-emoji">🗺️</div>
+          <div class="game-lesson">Lesson 2 · What Is the Internet Made Of?</div>
+          <div class="game-title">Find the Route!</div>
+          <div class="game-desc">Hop across stepping stones from start to finish — a different stone is blocked each round, so find another way!</div>
+          <span class="play-btn">▶ Play Now</span>
+        </a>
+
+      </div>
+    </div>
+  </div>
+
+  <p class="no-results" id="noResults">No games match your search. Try a different word!</p>
+
+  <div class="year-section">
+    <div class="year-badge" style="background:linear-gradient(135deg,#1A1A2E,#4B4B78);">🧑‍🏫 For Teachers</div>
+    <div class="card-grid">
+      <a class="game-card" style="text-decoration:none;" href="Live Results Dashboard.html" data-keywords="live results dashboard teacher analysis data cloud firestore">
+        <div class="stripe" style="background:linear-gradient(90deg,#06D6A0,#4CC9F0);"></div>
+        <div class="game-emoji">📡</div>
+        <div class="game-lesson">Teacher Tool · Updates automatically</div>
+        <div class="game-title">Live Results Dashboard</div>
+        <div class="game-desc">Updates the instant a student finishes any game — no importing, no saving. Requires an internet connection.</div>
+        <span class="play-btn" style="background:#06D6A0;">▶ Open Live Dashboard</span>
+      </a>
+      <a class="game-card" style="text-decoration:none;" href="Results Dashboard.html" data-keywords="results dashboard teacher analysis data offline import csv">
+        <div class="stripe" style="background:linear-gradient(90deg,#1A1A2E,#4B4B78);"></div>
+        <div class="game-emoji">📊</div>
+        <div class="game-lesson">Teacher Tool · Offline backup</div>
+        <div class="game-title">Offline Results Dashboard</div>
+        <div class="game-desc">No internet? Bring in the results files students save with "Save My Results" instead, and see the same tables and charts.</div>
+        <span class="play-btn" style="background:#1A1A2E;">▶ Open Offline Dashboard</span>
+      </a>
+    </div>
+  </div>
+
+  <footer>
+    Open this page any time to find your game — no internet connection needed.<br>
+    Ask your teacher if you're not sure which game to play.
+  </footer>
+</div>
+
+<script>
+const searchBox = document.getElementById('searchBox');
+const yearSections = document.querySelectorAll('.year-section');
+const noResults = document.getElementById('noResults');
+
+searchBox.addEventListener('input', () => {
+  const q = searchBox.value.trim().toLowerCase();
+  let anyVisible = false;
+
+  yearSections.forEach(section => {
+    const cards = section.querySelectorAll('.game-card');
+    let sectionHasMatch = false;
+    cards.forEach(card => {
+      const haystack = (card.dataset.keywords + ' ' + card.textContent).toLowerCase();
+      const match = q === '' || haystack.includes(q);
+      card.style.display = match ? '' : 'none';
+      if (match) sectionHasMatch = true;
+    });
+    section.style.display = sectionHasMatch ? '' : 'none';
+    if (sectionHasMatch) anyVisible = true;
+  });
+
+  noResults.style.display = anyVisible ? 'none' : 'block';
+});
+</script>
+</body>
+</html>

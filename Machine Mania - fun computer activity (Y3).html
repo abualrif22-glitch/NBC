@@ -1,0 +1,833 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<title>Machine Mania! - Year 3 Computing Game</title>
+<style>
+  :root{
+    --primary:#3A0CA3;
+    --secondary:#4CC9F0;
+    --accent:#F72585;
+    --light:#F7F7FC;
+    --dark:#1A1A2E;
+    --green:#06D6A0;
+  }
+  *{box-sizing:border-box;}
+  body{
+    margin:0;
+    font-family:'Segoe UI', Calibri, Arial, sans-serif;
+    background:linear-gradient(135deg,#3A0CA3 0%,#4CC9F0 100%);
+    min-height:100vh;
+    display:flex;
+    align-items:center;
+    justify-content:center;
+    padding:24px;
+  }
+  .wrap{
+    background:var(--light);
+    border-radius:24px;
+    max-width:900px;
+    width:100%;
+    padding:28px 32px 36px;
+    box-shadow:0 20px 50px rgba(0,0,0,0.35);
+    position:relative;
+    overflow:hidden;
+  }
+  h1{
+    color:var(--primary);
+    text-align:center;
+    margin:0 0 4px;
+    font-size:32px;
+  }
+  .sub{
+    text-align:center;
+    color:#555;
+    margin:0 0 18px;
+    font-size:15px;
+  }
+  .tabs{
+    display:flex;
+    justify-content:center;
+    gap:10px;
+    margin-bottom:18px;
+  }
+  .tab{
+    padding:10px 22px;
+    border-radius:12px;
+    font-weight:bold;
+    font-size:14.5px;
+    cursor:pointer;
+    background:white;
+    color:var(--primary);
+    border:2px solid var(--primary);
+  }
+  .tab.active{
+    background:var(--primary);
+    color:white;
+  }
+  .hud{
+    display:flex;
+    justify-content:space-between;
+    align-items:center;
+    background:white;
+    border-radius:14px;
+    padding:12px 18px;
+    margin-bottom:16px;
+    box-shadow:0 2px 8px rgba(0,0,0,0.08);
+    font-weight:bold;
+    color:var(--primary);
+    flex-wrap:wrap;
+    gap:8px;
+  }
+  .hud span.big{ color:var(--accent); font-size:20px; }
+
+  /* ---------- Guess mode ---------- */
+  #guessPanel{ display:block; }
+  #designPanel{ display:none; }
+
+  .machine-stage{
+    background:#eef3fb;
+    border-radius:16px;
+    padding:26px;
+    min-height:280px;
+    border:3px dashed #c9d6ea;
+  }
+  .example-row{
+    display:flex;
+    align-items:center;
+    justify-content:center;
+    gap:18px;
+    margin-bottom:22px;
+    flex-wrap:wrap;
+  }
+  .bubble{
+    background:white;
+    border-radius:14px;
+    padding:14px 20px;
+    font-size:26px;
+    font-weight:bold;
+    color:var(--dark);
+    min-width:64px;
+    text-align:center;
+    box-shadow:0 4px 10px rgba(0,0,0,0.1);
+  }
+  .machine-box{
+    background:var(--accent);
+    color:white;
+    border-radius:16px;
+    padding:16px 20px;
+    font-weight:bold;
+    font-size:14px;
+    text-align:center;
+    min-width:120px;
+    box-shadow:0 6px 14px rgba(0,0,0,0.18);
+  }
+  .machine-box .gear{ font-size:26px; display:block; margin-bottom:4px; }
+  .arrow{ font-size:26px; color:var(--primary); }
+
+  .mystery-row{
+    display:flex;
+    align-items:center;
+    justify-content:center;
+    gap:18px;
+    margin:26px 0 10px;
+  }
+  .mystery-machine{
+    background:var(--primary);
+    color:white;
+    border-radius:16px;
+    padding:20px 26px;
+    font-weight:bold;
+    font-size:15px;
+    text-align:center;
+    min-width:140px;
+    box-shadow:0 6px 14px rgba(0,0,0,0.2);
+  }
+  .mystery-machine .qmark{ font-size:30px; display:block; }
+
+  .choices{
+    display:flex;
+    justify-content:center;
+    gap:12px;
+    flex-wrap:wrap;
+    margin-top:20px;
+  }
+  .choice-btn{
+    background:white;
+    border:2.5px solid var(--secondary);
+    color:var(--dark);
+    border-radius:12px;
+    padding:12px 20px;
+    font-size:15px;
+    font-weight:bold;
+    cursor:pointer;
+    transition: transform .12s ease;
+  }
+  .choice-btn:hover{ transform:scale(1.05); }
+  .choice-btn.correct{ background:var(--green); border-color:var(--green); color:white; animation:pulseGreen .6s ease; }
+  .choice-btn.wrong{ background:#ffb3b3; border-color:#e74c3c; animation:shakeRed .5s ease; }
+  @keyframes pulseGreen{ 0%{box-shadow:0 0 0 0 rgba(6,214,160,0.7);} 100%{box-shadow:0 0 0 22px rgba(6,214,160,0);} }
+  @keyframes shakeRed{
+    0%,100%{ transform:translateX(0); }
+    20%{ transform:translateX(-8px); }
+    40%{ transform:translateX(8px); }
+    60%{ transform:translateX(-6px); }
+    80%{ transform:translateX(6px); }
+  }
+
+  .msg{
+    text-align:center;
+    margin-top:16px;
+    min-height:32px;
+    font-size:17px;
+    font-weight:bold;
+    color:var(--primary);
+  }
+  .msg.happy{ color:#1a9e6b; }
+  .msg.oops{ color:#e74c3c; }
+
+  .controls{
+    display:flex;
+    justify-content:center;
+    gap:14px;
+    margin-top:14px;
+  }
+  button.ctrl{
+    background:var(--primary);
+    color:white;
+    border:none;
+    padding:10px 22px;
+    border-radius:10px;
+    font-size:15px;
+    font-weight:bold;
+    cursor:pointer;
+  }
+  button.ctrl.secondary{ background:white; color:var(--primary); border:2px solid var(--primary); }
+  button.ctrl:hover{ opacity:.9; }
+
+  /* ---------- Design mode ---------- */
+  .design-section{
+    background:#eef3fb;
+    border-radius:16px;
+    padding:26px;
+    border:3px dashed #c9d6ea;
+  }
+  .design-row{
+    display:flex;
+    gap:14px;
+    justify-content:center;
+    flex-wrap:wrap;
+    margin-bottom:18px;
+  }
+  .opt-btn{
+    background:white;
+    border:2.5px solid var(--secondary);
+    border-radius:12px;
+    padding:12px 18px;
+    font-size:14px;
+    font-weight:bold;
+    cursor:pointer;
+    color:var(--dark);
+  }
+  .opt-btn.selected{
+    background:var(--secondary);
+    color:white;
+  }
+  .design-label{
+    text-align:center;
+    font-weight:bold;
+    color:var(--primary);
+    margin:14px 0 6px;
+    font-size:14px;
+    text-transform:uppercase;
+    letter-spacing:0.5px;
+  }
+  .test-area{
+    background:white;
+    border-radius:14px;
+    padding:20px;
+    margin-top:18px;
+    text-align:center;
+  }
+  .test-row{
+    display:flex;
+    align-items:center;
+    justify-content:center;
+    gap:16px;
+    margin-top:14px;
+    flex-wrap:wrap;
+  }
+  input#testInput{
+    font-size:20px;
+    padding:8px 14px;
+    border-radius:10px;
+    border:2px solid var(--secondary);
+    width:90px;
+    text-align:center;
+    font-weight:bold;
+  }
+  .output-display{
+    font-size:26px;
+    font-weight:bold;
+    color:var(--accent);
+    min-width:70px;
+  }
+
+  .confetti-piece{
+    position:absolute;
+    top:-20px;
+    width:10px;
+    height:14px;
+    z-index:20;
+    pointer-events:none;
+    animation: fall linear forwards;
+  }
+  @keyframes fall{
+    to{ transform: translateY(500px) rotate(540deg); opacity:0.2; }
+  }
+  .celebrate-banner{
+    position:absolute;
+    left:50%; top:45%;
+    transform:translate(-50%,-50%) scale(0.5);
+    background:white;
+    border-radius:20px;
+    padding:22px 34px;
+    box-shadow:0 12px 40px rgba(0,0,0,0.35);
+    text-align:center;
+    z-index:30;
+    opacity:0;
+    pointer-events:none;
+  }
+  .celebrate-banner.show{
+    animation: bannerPop .6s cubic-bezier(.34,1.56,.64,1) forwards;
+  }
+  @keyframes bannerPop{
+    0%{ opacity:0; transform:translate(-50%,-50%) scale(0.4) rotate(-6deg); }
+    60%{ opacity:1; transform:translate(-50%,-50%) scale(1.08) rotate(2deg); }
+    100%{ opacity:1; transform:translate(-50%,-50%) scale(1) rotate(0); }
+  }
+  .celebrate-banner .big{ font-size:26px; font-weight:bold; color:var(--primary); margin-bottom:4px; }
+  .celebrate-banner .small{ font-size:14px; color:#555; }
+
+  /* ---------- Name gate ---------- */
+  .gate-overlay{ position:fixed; inset:0; background:rgba(26,26,46,0.72); display:flex; align-items:center; justify-content:center; z-index:100; padding:20px; }
+  .gate-card{ background:white; border-radius:20px; padding:34px 36px; max-width:420px; width:100%; text-align:center; box-shadow:0 20px 50px rgba(0,0,0,0.4); }
+  .gate-card h2{ color:var(--primary); margin:0 0 8px; font-size:24px; }
+  .gate-card p{ color:#555; margin:0 0 18px; font-size:14.5px; }
+  .gate-card input{ width:100%; font-size:18px; padding:12px 14px; border-radius:10px; border:2px solid var(--secondary);
+    text-align:center; font-weight:bold; color:var(--dark); margin-bottom:14px; box-sizing:border-box; }
+  .gate-card input:focus{ outline:none; border-color:var(--primary); }
+  .gate-card button{ width:100%; padding:13px; font-size:16px; border:none; border-radius:10px; background:var(--primary); color:white; font-weight:bold; cursor:pointer; }
+  .gate-error{ color:var(--accent); font-size:13px; min-height:18px; margin-bottom:6px; font-weight:bold; }
+
+  /* ---------- Results panel ---------- */
+  #resultsPanel{ display:none; background:white; border-radius:14px; padding:18px 20px; margin-top:16px; box-shadow:0 2px 8px rgba(0,0,0,0.08); text-align:center; }
+  #resultsPanel h3{ margin:0 0 4px; color:var(--primary); font-size:18px; }
+  #resultsPanel .save-row{ display:flex; gap:12px; justify-content:center; flex-wrap:wrap; margin-top:12px; }
+  #resultsPanel .saved-note{ font-size:13px; color:#0e9e6f; font-weight:bold; min-height:18px; margin-top:8px; }
+  #savedTableWrap{ margin-top:14px; max-height:220px; overflow:auto; display:none; }
+  #savedTableWrap table{ width:100%; border-collapse:collapse; font-size:13px; }
+  #savedTableWrap th, #savedTableWrap td{ padding:6px 8px; border-bottom:1px solid #e3e6f0; text-align:left; }
+  #savedTableWrap th{ color:var(--primary); }
+</style>
+</head>
+<body>
+
+<div class="gate-overlay" id="gateOverlay">
+  <div class="gate-card">
+    <h2>⚙️ Machine Mania!</h2>
+    <p>Type your name to start the challenge.</p>
+    <input type="text" id="nameInput" placeholder="Your name" maxlength="24" autocomplete="off">
+    <div class="gate-error" id="nameError"></div>
+    <button id="startBtn">Start ▶</button>
+  </div>
+</div>
+
+<div class="wrap" id="wrap">
+  <h1>⚙️ Machine Mania!</h1>
+  <p class="sub" id="subline">Be the machine detective — work out each machine's secret process, then design your own.</p>
+
+  <div class="tabs">
+    <div class="tab active" id="tabGuess">🔍 Guess the Machine</div>
+    <div class="tab" id="tabDesign">🎨 Design Mode</div>
+  </div>
+
+  <!-- GUESS THE MACHINE MODE -->
+  <div id="guessPanel">
+    <div class="hud">
+      <div>Player: <span class="big" id="playerName">—</span></div>
+      <div>Round: <span class="big" id="roundNum">1</span> / <span id="roundTotal">6</span></div>
+      <div>Score: <span class="big" id="score">0</span></div>
+      <div>Streak: <span class="big" id="streak">0</span> 🔥</div>
+    </div>
+
+    <div class="machine-stage">
+      <p style="text-align:center;font-weight:bold;color:#50597A;margin:0 0 14px;">Watch the examples go through the machine:</p>
+      <div class="example-row" id="exampleRow"></div>
+
+      <p style="text-align:center;font-weight:bold;color:#50597A;margin:18px 0 4px;">Now guess this machine's secret process:</p>
+      <div class="mystery-row" id="mysteryRow"></div>
+
+      <div class="choices" id="choices"></div>
+    </div>
+
+    <p class="msg" id="msg">Look at the examples carefully, then pick the process you think is right!</p>
+
+    <div class="controls">
+      <button class="ctrl secondary" id="resetBtn">Restart Round</button>
+      <button class="ctrl" id="nextBtn">Skip to Next ▶</button>
+    </div>
+
+    <div id="resultsPanel">
+      <h3>🏁 Well done!</h3>
+      <div id="resultsSummary" style="font-size:14.5px;color:#444;"></div>
+      <div class="saved-note" id="cloudSyncNote" style="color:#3A0CA3;">☁️ Sending your result to your teacher...</div>
+      <div class="save-row">
+        <button class="ctrl" id="saveResultBtn">💾 Save My Results</button>
+        <button class="ctrl secondary" id="downloadAllBtn">📋 Download Class Results</button>
+        <button class="ctrl secondary" id="toggleSavedBtn">👀 View Saved Results</button>
+      </div>
+      <div class="saved-note" id="savedNote"></div>
+      <div id="savedTableWrap">
+        <table>
+          <thead><tr><th>Name</th><th>Score</th><th>Rounds</th><th>Machines Published</th><th>Date</th></tr></thead>
+          <tbody id="savedTableBody"></tbody>
+        </table>
+      </div>
+    </div>
+  </div>
+
+  <!-- DESIGN MODE -->
+  <div id="designPanel">
+    <div class="design-section">
+      <div class="design-label">1. Pick an input</div>
+      <div class="design-row" id="inputOpts"></div>
+
+      <div class="design-label">2. Choose a process</div>
+      <div class="design-row" id="processOpts"></div>
+
+      <div class="test-area">
+        <div style="font-weight:bold;color:var(--primary);">Test your machine!</div>
+        <div class="test-row">
+          <input type="number" id="testInput" value="2">
+          <span class="arrow">→</span>
+          <div class="machine-box" id="myMachineLabel"><span class="gear">⚙️</span>my machine</div>
+          <span class="arrow">→</span>
+          <div class="output-display" id="testOutput">?</div>
+        </div>
+        <div class="controls">
+          <button class="ctrl" id="testBtn">Run Machine ▶</button>
+          <button class="ctrl secondary" id="publishBtn">Publish My Machine 🎉</button>
+        </div>
+      </div>
+    </div>
+    <p class="msg" id="designMsg">Pick an input and a process, then test it with a few numbers!</p>
+  </div>
+</div>
+
+<script>
+/* ================= GUESS THE MACHINE ================= */
+const PROCESSES = {
+  add1: {label:"add 1", fn:x=>x+1},
+  add2: {label:"add 2", fn:x=>x+2},
+  add3: {label:"add 3", fn:x=>x+3},
+  double: {label:"double it", fn:x=>x*2},
+  half: {label:"halve it", fn:x=>x/2},
+  sub2: {label:"subtract 2", fn:x=>x-2},
+};
+
+const levels = [
+  {ex:[[1,2],[3,4]], mystery:5, correct:"add1", choices:["add1","add2","double"]},
+  {ex:[[2,4],[5,7]], mystery:8, correct:"add2", choices:["add2","add3","double"]},
+  {ex:[[1,2],[4,8]], mystery:6, correct:"double", choices:["add1","double","add2"]},
+  {ex:[[10,5],[8,4]], mystery:6, correct:"half", choices:["half","sub2","add3"]},
+  {ex:[[5,3],[9,7]], mystery:12, correct:"sub2", choices:["sub2","half","add2"]},
+  {ex:[[3,6],[6,9]], mystery:9, correct:"add3", choices:["add3","double","add1"]},
+];
+
+const PRAISE = ["Brilliant! \uD83C\uDF89","Machine cracked! \uD83E\uDD16","Genius detective! \u2B50","Spot on! \uD83C\uDFC6","You figured it out! \uD83C\uDF1F"];
+
+let levelIdx=0, score=0, streak=0, answered=false;
+let studentName = "";
+let publishedCount = 0;
+const STORAGE_KEY = "machineManiaResults";
+const roundTotalEl = document.getElementById('roundTotal');
+roundTotalEl.textContent = levels.length;
+
+function buildRound(i){
+  answered=false;
+  const lvl = levels[i];
+  document.getElementById('roundNum').textContent = i+1;
+  document.getElementById('msg').className='msg';
+  document.getElementById('msg').textContent = "Look at the examples carefully, then pick the process you think is right!";
+
+  const exRow = document.getElementById('exampleRow');
+  exRow.innerHTML='';
+  lvl.ex.forEach(([a,b])=>{
+    exRow.innerHTML += `<div class="bubble">${a}</div><span class="arrow">\u2192</span><div class="machine-box"><span class="gear">\u2699\uFE0F</span>?</div><span class="arrow">\u2192</span><div class="bubble">${b}</div>`;
+  });
+
+  const mysRow = document.getElementById('mysteryRow');
+  mysRow.innerHTML = `<div class="bubble">${lvl.mystery}</div><span class="arrow">\u2192</span><div class="mystery-machine"><span class="qmark">\u2753</span>secret process</div><span class="arrow">\u2192</span><div class="bubble" id="mysteryOut">?</div>`;
+
+  const choicesEl = document.getElementById('choices');
+  choicesEl.innerHTML='';
+  const shuffled = [...lvl.choices].sort(()=>Math.random()-0.5);
+  shuffled.forEach(key=>{
+    const btn = document.createElement('button');
+    btn.className='choice-btn';
+    btn.textContent = PROCESSES[key].label;
+    btn.addEventListener('click', ()=>handleChoice(key, btn, lvl));
+    choicesEl.appendChild(btn);
+  });
+}
+
+function spawnConfetti(){
+  const colors = ['#F72585','#4CC9F0','#3A0CA3','#06D6A0','#FFB627','#FFFFFF'];
+  const wrap = document.getElementById('wrap');
+  for(let i=0;i<50;i++){
+    const p = document.createElement('div');
+    p.className = 'confetti-piece';
+    p.style.left = Math.random()*100 + '%';
+    p.style.background = colors[Math.floor(Math.random()*colors.length)];
+    p.style.animationDuration = (1.2 + Math.random()*1.1) + 's';
+    p.style.transform = `rotate(${Math.random()*360}deg)`;
+    wrap.appendChild(p);
+    setTimeout(()=>p.remove(), 2500);
+  }
+}
+function showCelebrateBanner(text, sub){
+  const wrap = document.getElementById('wrap');
+  const b = document.createElement('div');
+  b.className = 'celebrate-banner';
+  b.innerHTML = `<div class="big">${text}</div><div class="small">${sub}</div>`;
+  wrap.appendChild(b);
+  requestAnimationFrame(()=> b.classList.add('show'));
+  setTimeout(()=>{ b.style.transition='opacity .3s'; b.style.opacity='0'; setTimeout(()=>b.remove(),320); }, 1300);
+}
+
+function handleChoice(key, btn, lvl){
+  if(answered) return;
+  if(key === lvl.correct){
+    answered = true;
+    btn.classList.add('correct');
+    document.getElementById('mysteryOut').textContent = PROCESSES[key].fn(lvl.mystery);
+    streak++; score += 15 + streak*2;
+    document.getElementById('score').textContent = score;
+    document.getElementById('streak').textContent = streak;
+    document.getElementById('msg').className='msg happy';
+    document.getElementById('msg').textContent = "\u2705 Correct! The machine's secret was \u2018" + PROCESSES[key].label + "\u2019.";
+    spawnConfetti();
+    showCelebrateBanner(PRAISE[Math.floor(Math.random()*PRAISE.length)], `+${15+streak*2} points`);
+    setTimeout(()=>{
+      levelIdx++;
+      if(levelIdx < levels.length){ buildRound(levelIdx); }
+      else {
+        spawnConfetti();
+        document.getElementById('msg').className='msg happy';
+        document.getElementById('msg').textContent = `\uD83C\uDFC6 All machines solved! Final score: ${score}. Try Design Mode next!`;
+        document.getElementById('choices').innerHTML='';
+        showResultsPanel();
+      }
+    },1500);
+  } else {
+    btn.classList.add('wrong');
+    setTimeout(()=>btn.classList.remove('wrong'),500);
+    streak = 0;
+    document.getElementById('streak').textContent = streak;
+    document.getElementById('msg').className='msg oops';
+    document.getElementById('msg').textContent = "\u274C Not quite — look again at how each input became its output.";
+  }
+}
+
+document.getElementById('resetBtn').addEventListener('click', ()=>buildRound(levelIdx));
+document.getElementById('nextBtn').addEventListener('click', ()=>{
+  levelIdx = (levelIdx+1) % levels.length;
+  buildRound(levelIdx);
+});
+
+/* ================= DESIGN MODE ================= */
+const INPUT_OPTS = [
+  {key:'num', label:'\uD83D\uDD22 A number'},
+  {key:'shape', label:'\u26BD A shape'},
+];
+const PROCESS_OPTS = [
+  {key:'add2', label:'\u2795 Add 2'},
+  {key:'double', label:'\u2716\uFE0F Double it'},
+  {key:'half', label:'\u2797 Halve it'},
+  {key:'grow', label:'\uD83D\uDD3C Make it bigger'},
+  {key:'shrink', label:'\uD83D\uDD3D Make it smaller'},
+];
+
+let chosenInput = null, chosenProcess = null;
+
+function renderDesignOptions(){
+  const inpEl = document.getElementById('inputOpts');
+  inpEl.innerHTML='';
+  INPUT_OPTS.forEach(o=>{
+    const b = document.createElement('button');
+    b.className='opt-btn'+(chosenInput===o.key?' selected':'');
+    b.textContent=o.label;
+    b.addEventListener('click', ()=>{ chosenInput=o.key; renderDesignOptions(); });
+    inpEl.appendChild(b);
+  });
+  const procEl = document.getElementById('processOpts');
+  procEl.innerHTML='';
+  PROCESS_OPTS.forEach(o=>{
+    // hide numeric processes if shape chosen, and shape processes if number chosen
+    const isNumProc = ['add2','double','half'].includes(o.key);
+    if(chosenInput==='shape' && isNumProc) return;
+    if(chosenInput==='num' && !isNumProc) return;
+    const b = document.createElement('button');
+    b.className='opt-btn'+(chosenProcess===o.key?' selected':'');
+    b.textContent=o.label;
+    b.addEventListener('click', ()=>{ chosenProcess=o.key; renderDesignOptions(); updateMachineLabel(); });
+    procEl.appendChild(b);
+  });
+  updateMachineLabel();
+}
+function updateMachineLabel(){
+  const label = document.getElementById('myMachineLabel');
+  const procLabel = PROCESS_OPTS.find(p=>p.key===chosenProcess);
+  label.innerHTML = `<span class="gear">\u2699\uFE0F</span>${procLabel ? procLabel.label : 'my machine'}`;
+  document.getElementById('testInput').type = chosenInput==='shape' ? 'text' : 'number';
+  if(chosenInput==='shape') document.getElementById('testInput').value = '\u26BD';
+  else document.getElementById('testInput').value = 2;
+  const out = document.getElementById('testOutput');
+  out.textContent = '?';
+  out.style.fontSize = '';
+}
+
+function runMachine(){
+  const val = document.getElementById('testInput').value;
+  const out = document.getElementById('testOutput');
+  const dmsg = document.getElementById('designMsg');
+  if(!chosenInput || !chosenProcess){
+    dmsg.className='msg oops';
+    dmsg.textContent = "Pick an input AND a process first!";
+    return;
+  }
+  if(chosenInput==='num'){
+    const n = parseFloat(val);
+    if(isNaN(n)){ dmsg.className='msg oops'; dmsg.textContent="Type a number to test!"; return; }
+    let result;
+    if(chosenProcess==='add2') result = n+2;
+    else if(chosenProcess==='double') result = n*2;
+    else if(chosenProcess==='half') result = n/2;
+    else if(chosenProcess==='grow') result = n+' (bigger!)';
+    else if(chosenProcess==='shrink') result = n+' (smaller!)';
+    out.style.fontSize = '';
+    out.textContent = result;
+  } else {
+    // Shapes actually change SIZE (not quantity) — grow/shrink resize the same
+    // shape using font-size, rather than repeating or duplicating it.
+    out.textContent = val || '\u26BD';
+    if(chosenProcess==='grow') out.style.fontSize = '64px';
+    else if(chosenProcess==='shrink') out.style.fontSize = '14px';
+    else out.style.fontSize = '26px';
+  }
+  dmsg.className='msg happy';
+  dmsg.textContent = "\u2728 Your machine works! Try a different input to test it again.";
+}
+
+document.getElementById('testBtn').addEventListener('click', runMachine);
+document.getElementById('publishBtn').addEventListener('click', ()=>{
+  if(!chosenInput || !chosenProcess){
+    const dmsg = document.getElementById('designMsg');
+    dmsg.className='msg oops';
+    dmsg.textContent = "Pick an input AND a process before publishing!";
+    return;
+  }
+  publishedCount++;
+  spawnConfetti();
+  showCelebrateBanner("Machine Published! \uD83C\uDF89", "Great inventing — show a friend how it works!");
+});
+
+/* ================= TAB SWITCHING ================= */
+document.getElementById('tabGuess').addEventListener('click', ()=>{
+  document.getElementById('tabGuess').classList.add('active');
+  document.getElementById('tabDesign').classList.remove('active');
+  document.getElementById('guessPanel').style.display='block';
+  document.getElementById('designPanel').style.display='none';
+});
+document.getElementById('tabDesign').addEventListener('click', ()=>{
+  document.getElementById('tabDesign').classList.add('active');
+  document.getElementById('tabGuess').classList.remove('active');
+  document.getElementById('designPanel').style.display='block';
+  document.getElementById('guessPanel').style.display='none';
+});
+
+/* ================= RESULTS PANEL ================= */
+function showResultsPanel(){
+  const panel = document.getElementById('resultsPanel');
+  panel.style.display = 'block';
+  document.getElementById('resultsSummary').textContent =
+    `${studentName} solved all ${levels.length} machines with a final score of ${score}.`;
+  document.getElementById('savedNote').textContent = '';
+  panel.scrollIntoView({ behavior:'smooth', block:'nearest' });
+
+  const cloudNote = document.getElementById('cloudSyncNote');
+  if(window.__submitResultToCloud){
+    window.__submitResultToCloud({
+      name: studentName,
+      game: "Machine Mania! (Y3)",
+      score: score,
+      total: null,
+      rounds: levels.length,
+      published: publishedCount,
+      date: new Date().toLocaleDateString() + ' ' + new Date().toLocaleTimeString([], {hour:'2-digit', minute:'2-digit'})
+    }).then(ok => {
+      if(cloudNote) cloudNote.textContent = ok
+        ? '☁️ Sent to your teacher automatically!'
+        : '⚠️ Could not connect to sync automatically — use "Save My Results" below as a backup.';
+    });
+  } else if(cloudNote){
+    cloudNote.textContent = '⚠️ Cloud sync unavailable — use "Save My Results" below as a backup.';
+  }
+}
+function readSavedResults(){
+  try{ return JSON.parse(localStorage.getItem(STORAGE_KEY) || "[]"); }catch(e){ return []; }
+}
+function writeSavedResults(list){
+  try{ localStorage.setItem(STORAGE_KEY, JSON.stringify(list)); }catch(e){ /* storage unavailable */ }
+}
+function csvEscape(v){
+  const s = String(v);
+  return /[",\n]/.test(s) ? '"' + s.replace(/"/g,'""') + '"' : s;
+}
+function downloadCSV(filename, rows){
+  const csv = rows.map(r=>r.map(csvEscape).join(",")).join("\r\n");
+  const blob = new Blob([csv], {type:"text/csv;charset=utf-8;"});
+  const url = URL.createObjectURL(blob);
+  const a = document.createElement('a');
+  a.href = url;
+  a.download = filename;
+  document.body.appendChild(a);
+  a.click();
+  document.body.removeChild(a);
+  setTimeout(()=>URL.revokeObjectURL(url), 1000);
+}
+// Lets the student choose exactly where the results file is saved, using the
+// native "Save As" dialog where the browser supports it (Chrome, Edge).
+// Falls back to a normal automatic download everywhere else.
+async function saveCSVWithPicker(filename, rows, noteElId, chosenMsg, fallbackMsg, cancelMsg){
+  const csv = rows.map(r=>r.map(csvEscape).join(",")).join("\r\n");
+  if(window.showSaveFilePicker){
+    try{
+      const handle = await window.showSaveFilePicker({
+        suggestedName: filename,
+        types: [{ description: 'CSV file', accept: {'text/csv': ['.csv']} }]
+      });
+      const writable = await handle.createWritable();
+      await writable.write(csv);
+      await writable.close();
+      document.getElementById(noteElId).textContent = chosenMsg;
+      return;
+    }catch(err){
+      if(err && err.name === 'AbortError'){
+        document.getElementById(noteElId).textContent = cancelMsg;
+        return;
+      }
+    }
+  }
+  downloadCSV(filename, rows);
+  document.getElementById(noteElId).textContent = fallbackMsg;
+}
+function renderSavedTable(){
+  const list = readSavedResults();
+  const body = document.getElementById('savedTableBody');
+  body.innerHTML = list.map(r=>`<tr><td>${r.name}</td><td>${r.score}</td><td>${r.rounds}</td><td>${r.published}</td><td>${r.date}</td></tr>`).join('') ||
+    '<tr><td colspan="5" style="color:#999;">No saved results yet on this computer.</td></tr>';
+}
+document.getElementById('saveResultBtn').addEventListener('click', async ()=>{
+  const now = new Date();
+  const record = {
+    name: studentName,
+    score: score,
+    rounds: levels.length,
+    published: publishedCount,
+    date: now.toLocaleDateString() + ' ' + now.toLocaleTimeString([], {hour:'2-digit', minute:'2-digit'})
+  };
+  const list = readSavedResults();
+  list.push(record);
+  writeSavedResults(list);
+  const safeName = (studentName || 'student').replace(/[^a-z0-9]+/gi,'_');
+  const filename = `MachineMania_${safeName}_${now.toISOString().slice(0,10)}.csv`;
+  const rows = [["Name","Score","Rounds Completed","Machines Published","Date"], [record.name, record.score, record.rounds, record.published, record.date]];
+  await saveCSVWithPicker(filename, rows, 'savedNote',
+    '\u2705 Saved! Your results file was saved where you chose, and your score was stored on this computer.',
+    '\u2705 Saved! A results file was downloaded (this browser doesn\u2019t support choosing a save location), and your score was stored on this computer.',
+    'Save cancelled \u2014 your score is still stored on this computer, so you can still download the class results later.');
+  renderSavedTable();
+});
+document.getElementById('downloadAllBtn').addEventListener('click', async ()=>{
+  const list = readSavedResults();
+  if(list.length === 0){
+    document.getElementById('savedNote').textContent = 'No saved results yet on this computer.';
+    return;
+  }
+  const rows = [["Name","Score","Rounds Completed","Machines Published","Date"], ...list.map(r=>[r.name, r.score, r.rounds, r.published, r.date])];
+  const filename = `MachineMania_AllResults_${new Date().toISOString().slice(0,10)}.csv`;
+  await saveCSVWithPicker(filename, rows, 'savedNote',
+    '\u2705 Class results saved where you chose.',
+    '\u2705 Class results file downloaded (this browser doesn\u2019t support choosing a save location).',
+    'Save cancelled.');
+});
+document.getElementById('toggleSavedBtn').addEventListener('click', ()=>{
+  const t = document.getElementById('savedTableWrap');
+  const showing = t.style.display === 'block';
+  t.style.display = showing ? 'none' : 'block';
+  if(!showing) renderSavedTable();
+});
+
+/* ================= NAME GATE ================= */
+const gateOverlay = document.getElementById('gateOverlay');
+const nameInput = document.getElementById('nameInput');
+const nameError = document.getElementById('nameError');
+function startGame(){
+  const val = nameInput.value.trim();
+  if(!val){
+    nameError.textContent = "Please type your name to start.";
+    nameInput.focus();
+    return;
+  }
+  studentName = val.slice(0,24);
+  document.getElementById('playerName').textContent = studentName;
+  document.getElementById('subline').textContent =
+    `Nice to meet you, ${studentName}! Work out each machine's secret process, then design your own.`;
+  gateOverlay.style.display = 'none';
+  buildRound(0);
+  renderDesignOptions();
+}
+document.getElementById('startBtn').addEventListener('click', startGame);
+nameInput.addEventListener('keydown', (e)=>{ if(e.key === 'Enter') startGame(); });
+nameInput.focus();
+</script>
+
+<!-- ===== Cloud sync: sends each result to the shared Firestore database ===== -->
+<script src="https://www.gstatic.com/firebasejs/10.13.0/firebase-app-compat.js"></script>
+<script src="https://www.gstatic.com/firebasejs/10.13.0/firebase-firestore-compat.js"></script>
+<script>
+  const firebaseConfig = {
+    apiKey: "AIzaSyCEJtHd802MyuZUlwt6OfGkl9IitHaSOaA",
+    authDomain: "tasks-results.firebaseapp.com",
+    projectId: "tasks-results",
+    storageBucket: "tasks-results.firebasestorage.app",
+    messagingSenderId: "1014525306500",
+    appId: "1:1014525306500:web:3ffe2e6f5554e9140e04d1"
+  };
+  try{
+    firebase.initializeApp(firebaseConfig);
+    const db = firebase.firestore();
+    window.__submitResultToCloud = function(record){
+      return db.collection("results").add({
+        ...record,
+        createdAt: firebase.firestore.FieldValue.serverTimestamp()
+      }).then(() => true).catch((err) => { console.error("Cloud sync failed:", err); return false; });
+    };
+  }catch(err){
+    console.error("Firebase init failed:", err);
+  }
+</script>
+</body>
+</html>

@@ -1,0 +1,571 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1, user-scalable=no">
+<title>IT Detective! - Year 2 Computing Game</title>
+<style>
+  :root{
+    --bgdark:#2B2250;
+    --primary:#FF5C8A;
+    --secondary:#3DDC97;
+    --accent:#FFD23F;
+    --violet:#6C63FF;
+    --light:#F7F9FC;
+    --dark:#1A1A2E;
+    --red:#E85C4A;
+  }
+  *{box-sizing:border-box; -webkit-tap-highlight-color: transparent;}
+  html, body{
+    margin:0;
+    height:100%;
+    font-family:'Segoe UI', Calibri, Arial, sans-serif;
+    background:linear-gradient(135deg,#2B2250 0%,#6C63FF 100%);
+    touch-action: manipulation;
+    user-select: none;
+  }
+  body{
+    display:flex;
+    align-items:center;
+    justify-content:center;
+    padding:20px;
+  }
+  .wrap{
+    background:var(--light);
+    border-radius:28px;
+    max-width:820px;
+    width:100%;
+    padding:26px 30px 34px;
+    box-shadow:0 20px 50px rgba(0,0,0,0.35);
+    position:relative;
+    overflow:hidden;
+  }
+  h1{
+    color:var(--bgdark);
+    text-align:center;
+    margin:0 0 2px;
+    font-size:clamp(24px, 4vw, 34px);
+  }
+  .sub{
+    text-align:center;
+    color:#555;
+    margin:0 0 16px;
+    font-size:clamp(13px, 2vw, 16px);
+  }
+  .hud{
+    display:flex;
+    justify-content:space-between;
+    align-items:center;
+    background:white;
+    border-radius:16px;
+    padding:14px 20px;
+    margin-bottom:16px;
+    box-shadow:0 2px 8px rgba(0,0,0,0.08);
+    font-weight:bold;
+    color:var(--bgdark);
+    font-size:clamp(14px,2.2vw,18px);
+  }
+  .hud span.big{ color:var(--primary); font-size:1.25em; }
+
+  .stage{
+    background:#eef0fb;
+    border-radius:22px;
+    padding:30px 20px;
+    text-align:center;
+    border:3px dashed #cfd2ef;
+    min-height:340px;
+    display:flex;
+    flex-direction:column;
+    align-items:center;
+    justify-content:center;
+  }
+  .object-card{
+    background:white;
+    border-radius:24px;
+    padding:30px 50px;
+    box-shadow:0 8px 24px rgba(0,0,0,0.15);
+    margin-bottom:26px;
+    transition: transform .2s ease;
+  }
+  .object-card.shake{ animation: shakeRed .5s ease; }
+  .object-card.pop{ animation: popGood .5s ease; }
+  @keyframes shakeRed{
+    0%,100%{ transform:translateX(0) scale(1); }
+    20%{ transform:translateX(-10px) scale(1); }
+    40%{ transform:translateX(10px) scale(1); }
+    60%{ transform:translateX(-8px) scale(1); }
+    80%{ transform:translateX(8px) scale(1); }
+  }
+  @keyframes popGood{
+    0%{ transform:scale(1); }
+    40%{ transform:scale(1.15); }
+    100%{ transform:scale(1); }
+  }
+  .object-emoji{ font-size:clamp(64px, 14vw, 110px); line-height:1; }
+  .object-label{
+    font-size:clamp(18px, 3vw, 26px);
+    font-weight:bold;
+    color:var(--dark);
+    margin-top:8px;
+  }
+
+  .btn-row{
+    display:flex;
+    gap:22px;
+    width:100%;
+    max-width:600px;
+    flex-wrap:wrap;
+    justify-content:center;
+  }
+  .tap-btn{
+    flex:1 1 220px;
+    min-height:90px;
+    border:none;
+    border-radius:20px;
+    font-size:clamp(18px, 3.2vw, 24px);
+    font-weight:bold;
+    color:white;
+    cursor:pointer;
+    display:flex;
+    align-items:center;
+    justify-content:center;
+    gap:10px;
+    box-shadow:0 8px 0 rgba(0,0,0,0.15);
+    transition: transform .08s ease, box-shadow .08s ease;
+  }
+  .tap-btn:active{
+    transform: translateY(6px);
+    box-shadow:0 2px 0 rgba(0,0,0,0.15);
+  }
+  .tap-btn.is-it{ background:var(--secondary); color:var(--dark); }
+  .tap-btn.not-it{ background:var(--red); }
+  .tap-btn:disabled{ opacity:0.5; }
+
+  .msg{
+    text-align:center;
+    margin-top:18px;
+    min-height:34px;
+    font-size:clamp(15px,2.5vw,19px);
+    font-weight:bold;
+    color:var(--bgdark);
+  }
+  .msg.happy{ color:#1a9e6b; }
+  .msg.oops{ color:var(--red); }
+
+  .controls{
+    display:flex;
+    justify-content:center;
+    margin-top:16px;
+  }
+  button.ctrl{
+    background:var(--bgdark);
+    color:white;
+    border:none;
+    padding:14px 30px;
+    border-radius:14px;
+    font-size:17px;
+    font-weight:bold;
+    cursor:pointer;
+  }
+
+  .stars{
+    text-align:center;
+    font-size:44px;
+    margin:6px 0 10px;
+  }
+
+  .confetti-piece{
+    position:absolute;
+    top:-20px;
+    width:12px;
+    height:16px;
+    z-index:20;
+    pointer-events:none;
+    animation: fall linear forwards;
+  }
+  @keyframes fall{
+    to{ transform: translateY(600px) rotate(540deg); opacity:0.2; }
+  }
+  .celebrate-banner{
+    position:absolute;
+    left:50%; top:45%;
+    transform:translate(-50%,-50%) scale(0.5);
+    background:white;
+    border-radius:22px;
+    padding:26px 38px;
+    box-shadow:0 12px 40px rgba(0,0,0,0.35);
+    text-align:center;
+    z-index:30;
+    opacity:0;
+    pointer-events:none;
+  }
+  .celebrate-banner.show{ animation: bannerPop .6s cubic-bezier(.34,1.56,.64,1) forwards; }
+  @keyframes bannerPop{
+    0%{ opacity:0; transform:translate(-50%,-50%) scale(0.4) rotate(-6deg); }
+    60%{ opacity:1; transform:translate(-50%,-50%) scale(1.08) rotate(2deg); }
+    100%{ opacity:1; transform:translate(-50%,-50%) scale(1) rotate(0); }
+  }
+  .celebrate-banner .big{ font-size:28px; font-weight:bold; color:var(--bgdark); margin-bottom:4px; }
+  .celebrate-banner .small{ font-size:15px; color:#555; }
+
+  .final-screen{ text-align:center; }
+  .final-screen .trophy{ font-size:80px; }
+
+  /* ---------- Name gate ---------- */
+  .gate-overlay{ position:fixed; inset:0; background:rgba(26,26,46,0.72); display:flex; align-items:center; justify-content:center; z-index:100; padding:20px; }
+  .gate-card{ background:white; border-radius:20px; padding:34px 36px; max-width:420px; width:100%; text-align:center; box-shadow:0 20px 50px rgba(0,0,0,0.4); }
+  .gate-card h2{ color:var(--bgdark); margin:0 0 8px; font-size:24px; }
+  .gate-card p{ color:#555; margin:0 0 18px; font-size:14.5px; }
+  .gate-card input{ width:100%; font-size:18px; padding:12px 14px; border-radius:10px; border:2px solid var(--secondary);
+    text-align:center; font-weight:bold; color:var(--dark); margin-bottom:14px; box-sizing:border-box; }
+  .gate-card input:focus{ outline:none; border-color:var(--primary); }
+  .gate-card button{ width:100%; padding:13px; font-size:16px; border:none; border-radius:10px; background:var(--primary); color:white; font-weight:bold; cursor:pointer; }
+  .gate-error{ color:var(--red); font-size:13px; min-height:18px; margin-bottom:6px; font-weight:bold; }
+
+  /* ---------- Results panel ---------- */
+  #resultsPanel{ display:none; background:white; border-radius:14px; padding:18px 20px; margin-top:16px; box-shadow:0 2px 8px rgba(0,0,0,0.08); text-align:center; }
+  #resultsPanel h3{ margin:0 0 4px; color:var(--bgdark); font-size:18px; }
+  #resultsPanel .save-row{ display:flex; gap:12px; justify-content:center; flex-wrap:wrap; margin-top:12px; }
+  #resultsPanel .saved-note{ font-size:13px; color:#0e9e6f; font-weight:bold; min-height:18px; margin-top:8px; }
+  #savedTableWrap{ margin-top:14px; max-height:220px; overflow:auto; display:none; }
+  #savedTableWrap table{ width:100%; border-collapse:collapse; font-size:13px; }
+  #savedTableWrap th, #savedTableWrap td{ padding:6px 8px; border-bottom:1px solid #e3e6f0; text-align:left; }
+  #savedTableWrap th{ color:var(--bgdark); }
+  button.ctrl.secondary{ background:white; color:var(--bgdark); border:2px solid var(--bgdark); }
+</style>
+</head>
+<body>
+
+<div class="gate-overlay" id="gateOverlay">
+  <div class="gate-card">
+    <h2>🕵️ IT Detective!</h2>
+    <p>Type your name to start the challenge.</p>
+    <input type="text" id="nameInput" placeholder="Your name" maxlength="24" autocomplete="off">
+    <div class="gate-error" id="nameError"></div>
+    <button id="startBtn">Start ▶</button>
+  </div>
+</div>
+
+<div class="wrap" id="wrap">
+  <h1>🕵️ IT Detective!</h1>
+  <p class="sub" id="subline">Tap the object, then decide: is it IT, or not IT?</p>
+
+  <div class="hud">
+    <div>Player: <span class="big" id="playerName">—</span></div>
+    <div>Object <span class="big" id="roundNum">1</span> / <span id="roundTotal">10</span></div>
+    <div>Score: <span class="big" id="score">0</span> ⭐</div>
+  </div>
+
+  <div class="stage" id="stage">
+    <!-- filled by JS -->
+  </div>
+
+  <p class="msg" id="msg">Look carefully, then tap a button below!</p>
+</div>
+
+<script>
+const OBJECTS = [
+  {emoji:"\uD83D\uDDA5\uFE0F", label:"Desktop computer", isIT:true},
+  {emoji:"\uD83D\uDCBB", label:"Laptop", isIT:true},
+  {emoji:"\uD83D\uDCF1", label:"Tablet", isIT:true},
+  {emoji:"\uD83D\uDD0A", label:"Smart speaker", isIT:true},
+  {emoji:"\uD83D\uDDA8\uFE0F", label:"Printer", isIT:true},
+  {emoji:"\uD83D\uDCF7", label:"Camera", isIT:true},
+  {emoji:"\uD83C\uDFAE", label:"Games console", isIT:true},
+  {emoji:"\uD83D\uDCBE", label:"USB drive", isIT:true},
+  {emoji:"\uD83D\uDD8C\uFE0F", label:"Paintbrush", isIT:false},
+  {emoji:"\uD83C\uDF72", label:"Saucepan", isIT:false},
+  {emoji:"\uD83D\uDC5F", label:"Shoe", isIT:false},
+  {emoji:"\u23F0", label:"Clock", isIT:false},
+  {emoji:"\uD83E\uDDF8", label:"Teddy bear", isIT:false},
+  {emoji:"\uD83D\uDEB2", label:"Bicycle", isIT:false},
+];
+
+function shuffle(arr){
+  const a = [...arr];
+  for(let i=a.length-1;i>0;i--){
+    const j = Math.floor(Math.random()*(i+1));
+    [a[i],a[j]] = [a[j],a[i]];
+  }
+  return a;
+}
+
+let sequence = shuffle(OBJECTS).slice(0,10);
+let idx = 0;
+let score = 0;
+let answered = false;
+
+document.getElementById('roundTotal').textContent = sequence.length;
+
+const stage = document.getElementById('stage');
+const msg = document.getElementById('msg');
+const wrap = document.getElementById('wrap');
+
+function renderRound(){
+  answered = false;
+  document.getElementById('roundNum').textContent = idx+1;
+  msg.className = 'msg';
+  msg.textContent = "Look carefully, then tap a button below!";
+
+  const obj = sequence[idx];
+  stage.innerHTML = `
+    <div class="object-card" id="objCard">
+      <div class="object-emoji">${obj.emoji}</div>
+      <div class="object-label">${obj.label}</div>
+    </div>
+    <div class="btn-row">
+      <button class="tap-btn is-it" id="btnIT">\uD83D\uDCBB It's IT!</button>
+      <button class="tap-btn not-it" id="btnNotIT">\uD83D\uDEAB Not IT</button>
+    </div>
+  `;
+  document.getElementById('btnIT').addEventListener('click', ()=>handleAnswer(true));
+  document.getElementById('btnNotIT').addEventListener('click', ()=>handleAnswer(false));
+}
+
+function spawnConfetti(n){
+  const colors = ['#FF5C8A','#3DDC97','#FFD23F','#6C63FF','#2B2250','#FFFFFF'];
+  for(let i=0;i<n;i++){
+    const p = document.createElement('div');
+    p.className = 'confetti-piece';
+    p.style.left = Math.random()*100 + '%';
+    p.style.background = colors[Math.floor(Math.random()*colors.length)];
+    p.style.animationDuration = (1.2 + Math.random()*1.1) + 's';
+    p.style.transform = `rotate(${Math.random()*360}deg)`;
+    wrap.appendChild(p);
+    setTimeout(()=>p.remove(), 2500);
+  }
+}
+function showCelebrateBanner(text, sub){
+  const b = document.createElement('div');
+  b.className = 'celebrate-banner';
+  b.innerHTML = `<div class="big">${text}</div><div class="small">${sub}</div>`;
+  wrap.appendChild(b);
+  requestAnimationFrame(()=> b.classList.add('show'));
+  setTimeout(()=>{ b.style.transition='opacity .3s'; b.style.opacity='0'; setTimeout(()=>b.remove(),320); }, 1200);
+}
+
+const PRAISE = ["Great detective work! \uD83D\uDD0D","You spotted it! \u2B50","Brilliant! \uD83C\uDF89","Correct! \uD83C\uDFC6","Nice one! \uD83D\uDC4D"];
+
+function handleAnswer(saidIT){
+  if(answered) return;
+  answered = true;
+  const obj = sequence[idx];
+  const card = document.getElementById('objCard');
+  const correct = (saidIT === obj.isIT);
+  document.getElementById('btnIT').disabled = true;
+  document.getElementById('btnNotIT').disabled = true;
+
+  if(correct){
+    card.classList.add('pop');
+    score += 10;
+    document.getElementById('score').textContent = score;
+    msg.className = 'msg happy';
+    msg.textContent = "\u2705 " + (obj.isIT ? (obj.label + " is information technology!") : (obj.label + " is NOT information technology!"));
+    spawnConfetti(24);
+    showCelebrateBanner(PRAISE[Math.floor(Math.random()*PRAISE.length)], "+10 points");
+  } else {
+    card.classList.add('shake');
+    msg.className = 'msg oops';
+    msg.textContent = obj.isIT
+      ? ("\u274C Actually, " + obj.label + " IS information technology \u2014 it's a computer, or works with one!")
+      : ("\u274C Actually, " + obj.label + " is NOT information technology \u2014 it doesn't work with a computer.");
+  }
+
+  setTimeout(()=>{
+    idx++;
+    if(idx < sequence.length){
+      renderRound();
+    } else {
+      showFinal();
+    }
+  }, 1600);
+}
+
+function showFinal(){
+  const total = sequence.length*10;
+  const pct = score/total;
+  let stars = "\u2B50";
+  if(pct>=0.9) stars="\u2B50\u2B50\u2B50";
+  else if(pct>=0.6) stars="\u2B50\u2B50";
+
+  stage.innerHTML = `
+    <div class="final-screen">
+      <div class="trophy">\uD83C\uDFC6</div>
+      <div class="stars">${stars}</div>
+      <div style="font-size:22px;font-weight:bold;color:var(--bgdark);margin-bottom:8px;">You're an IT Detective!</div>
+      <div style="font-size:17px;color:#555;margin-bottom:18px;">Final score: ${score} / ${total}</div>
+      <div class="controls">
+        <button class="ctrl" id="playAgainBtn">Play Again \uD83D\uDD04</button>
+      </div>
+    </div>
+  `;
+  msg.textContent = "";
+  spawnConfetti(50);
+  document.getElementById('playAgainBtn').addEventListener('click', ()=>{
+    sequence = shuffle(OBJECTS).slice(0,10);
+    idx = 0; score = 0;
+    document.getElementById('score').textContent = score;
+    renderRound();
+  });
+  showResultsPanel();
+}
+
+/* ================= RESULTS PANEL ================= */
+let studentName = "";
+const STORAGE_KEY = "itDetectiveResults";
+function showResultsPanel(){
+  let panel = document.getElementById('resultsPanel');
+  if(!panel){
+    panel = document.createElement('div'); panel.id='resultsPanel';
+    panel.innerHTML = `
+      <h3>🏁 Well done!</h3>
+      <div id="resultsSummary" style="font-size:14.5px;color:#444;"></div>
+      <div class="saved-note" id="cloudSyncNote" style="color:#FF5C8A;">☁️ Sending your result to your teacher...</div>
+      <div class="save-row">
+        <button class="ctrl" id="saveResultBtn">💾 Save My Results</button>
+        <button class="ctrl secondary" id="downloadAllBtn">📋 Download Class Results</button>
+        <button class="ctrl secondary" id="toggleSavedBtn">👀 View Saved Results</button>
+      </div>
+      <div class="saved-note" id="savedNote"></div>
+      <div id="savedTableWrap"><table><thead><tr><th>Name</th><th>Score</th><th>Total</th><th>Date</th></tr></thead><tbody id="savedTableBody"></tbody></table></div>`;
+    wrap.appendChild(panel);
+    document.getElementById('saveResultBtn').addEventListener('click', onSaveResult);
+    document.getElementById('downloadAllBtn').addEventListener('click', onDownloadAll);
+    document.getElementById('toggleSavedBtn').addEventListener('click', onToggleSaved);
+  }
+  panel.style.display='block';
+  document.getElementById('resultsSummary').textContent = `${studentName} scored ${score} out of ${sequence.length*10}.`;
+  document.getElementById('savedNote').textContent = '';
+  panel.scrollIntoView({behavior:'smooth', block:'nearest'});
+
+  const cloudNote = document.getElementById('cloudSyncNote');
+  if(window.__submitResultToCloud){
+    window.__submitResultToCloud({
+      name: studentName,
+      game: "IT Detective! (Y2)",
+      score: score,
+      total: sequence.length*10,
+      date: new Date().toLocaleDateString() + ' ' + new Date().toLocaleTimeString([], {hour:'2-digit', minute:'2-digit'})
+    }).then(ok => {
+      if(cloudNote) cloudNote.textContent = ok
+        ? '☁️ Sent to your teacher automatically!'
+        : '⚠️ Could not connect to sync automatically — use "Save My Results" below as a backup.';
+    });
+  } else if(cloudNote){
+    cloudNote.textContent = '⚠️ Cloud sync unavailable — use "Save My Results" below as a backup.';
+  }
+}
+function readSavedResults(){ try{ return JSON.parse(localStorage.getItem(STORAGE_KEY)||"[]"); }catch(e){ return []; } }
+function writeSavedResults(list){ try{ localStorage.setItem(STORAGE_KEY, JSON.stringify(list)); }catch(e){} }
+function csvEscape(v){ const s=String(v); return /[",\n]/.test(s) ? '"'+s.replace(/"/g,'""')+'"' : s; }
+function downloadCSV(filename, rows){
+  const csv = rows.map(r=>r.map(csvEscape).join(",")).join("\r\n");
+  const blob = new Blob([csv], {type:"text/csv;charset=utf-8;"});
+  const url = URL.createObjectURL(blob);
+  const a=document.createElement('a'); a.href=url; a.download=filename;
+  document.body.appendChild(a); a.click(); document.body.removeChild(a);
+  setTimeout(()=>URL.revokeObjectURL(url),1000);
+}
+async function saveCSVWithPicker(filename, rows, noteElId, chosenMsg, fallbackMsg, cancelMsg){
+  const csv = rows.map(r=>r.map(csvEscape).join(",")).join("\r\n");
+  if(window.showSaveFilePicker){
+    try{
+      const handle = await window.showSaveFilePicker({
+        suggestedName: filename,
+        types: [{ description: 'CSV file', accept: {'text/csv': ['.csv']} }]
+      });
+      const writable = await handle.createWritable();
+      await writable.write(csv);
+      await writable.close();
+      document.getElementById(noteElId).textContent = chosenMsg;
+      return;
+    }catch(err){
+      if(err && err.name === 'AbortError'){
+        document.getElementById(noteElId).textContent = cancelMsg;
+        return;
+      }
+    }
+  }
+  downloadCSV(filename, rows);
+  document.getElementById(noteElId).textContent = fallbackMsg;
+}
+function renderSavedTable(){
+  const list = readSavedResults();
+  document.getElementById('savedTableBody').innerHTML = list.map(r=>`<tr><td>${r.name}</td><td>${r.score}</td><td>${r.total}</td><td>${r.date}</td></tr>`).join('') ||
+    '<tr><td colspan="4" style="color:#999;">No saved results yet on this computer.</td></tr>';
+}
+async function onSaveResult(){
+  const now = new Date();
+  const record = { name:studentName, score:score, total:sequence.length*10, date: now.toLocaleDateString()+' '+now.toLocaleTimeString([], {hour:'2-digit',minute:'2-digit'}) };
+  const list = readSavedResults(); list.push(record); writeSavedResults(list);
+  const safeName = (studentName||'student').replace(/[^a-z0-9]+/gi,'_');
+  const filename = `ITDetective_${safeName}_${now.toISOString().slice(0,10)}.csv`;
+  const rows = [["Name","Score","Total","Date"],[record.name,record.score,record.total,record.date]];
+  await saveCSVWithPicker(filename, rows, 'savedNote',
+    '✅ Saved! Your results file was saved where you chose, and your score was stored on this computer.',
+    '✅ Saved! A results file was downloaded (this browser doesn\u2019t support choosing a save location), and your score was stored on this computer.',
+    'Save cancelled — your score is still stored on this computer, so you can still download the class results later.');
+  renderSavedTable();
+}
+async function onDownloadAll(){
+  const list = readSavedResults();
+  if(list.length===0){ document.getElementById('savedNote').textContent='No saved results yet on this computer.'; return; }
+  const rows=[["Name","Score","Total","Date"], ...list.map(r=>[r.name,r.score,r.total,r.date])];
+  const filename = `ITDetective_AllResults_${new Date().toISOString().slice(0,10)}.csv`;
+  await saveCSVWithPicker(filename, rows, 'savedNote',
+    '✅ Class results saved where you chose.',
+    '✅ Class results file downloaded (this browser doesn\u2019t support choosing a save location).',
+    'Save cancelled.');
+}
+function onToggleSaved(){
+  const t=document.getElementById('savedTableWrap');
+  const showing = t.style.display==='block';
+  t.style.display = showing?'none':'block';
+  if(!showing) renderSavedTable();
+}
+
+/* ================= NAME GATE ================= */
+const gateOverlay=document.getElementById('gateOverlay');
+const nameInput=document.getElementById('nameInput');
+const nameError=document.getElementById('nameError');
+function startGame(){
+  const val = nameInput.value.trim();
+  if(!val){ nameError.textContent="Please type your name to start."; nameInput.focus(); return; }
+  studentName = val.slice(0,24);
+  document.getElementById('playerName').textContent = studentName;
+  document.getElementById('subline').textContent = `Nice to meet you, ${studentName}! Tap the object, then decide: is it IT, or not IT?`;
+  gateOverlay.style.display='none';
+  renderRound();
+}
+document.getElementById('startBtn').addEventListener('click', startGame);
+nameInput.addEventListener('keydown', e=>{ if(e.key==='Enter') startGame(); });
+nameInput.focus();
+</script>
+
+<!-- ===== Cloud sync: sends each result to the shared Firestore database ===== -->
+<script src="https://www.gstatic.com/firebasejs/10.13.0/firebase-app-compat.js"></script>
+<script src="https://www.gstatic.com/firebasejs/10.13.0/firebase-firestore-compat.js"></script>
+<script>
+  const firebaseConfig = {
+    apiKey: "AIzaSyCEJtHd802MyuZUlwt6OfGkl9IitHaSOaA",
+    authDomain: "tasks-results.firebaseapp.com",
+    projectId: "tasks-results",
+    storageBucket: "tasks-results.firebasestorage.app",
+    messagingSenderId: "1014525306500",
+    appId: "1:1014525306500:web:3ffe2e6f5554e9140e04d1"
+  };
+  try{
+    firebase.initializeApp(firebaseConfig);
+    const db = firebase.firestore();
+    window.__submitResultToCloud = function(record){
+      return db.collection("results").add({
+        ...record,
+        createdAt: firebase.firestore.FieldValue.serverTimestamp()
+      }).then(() => true).catch((err) => { console.error("Cloud sync failed:", err); return false; });
+    };
+  }catch(err){
+    console.error("Firebase init failed:", err);
+  }
+</script>
+</body>
+</html>

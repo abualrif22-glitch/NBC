@@ -1,0 +1,470 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>Results Dashboard</title>
+<style>
+  :root{
+    --dark:#1A1A2E;
+    --light:#F7F9FC;
+    --primary:#3A0CA3;
+    --accent:#FFD23F;
+    --green:#06D6A0;
+    --red:#E74C3C;
+    --blue:#4CC9F0;
+  }
+  *{box-sizing:border-box;}
+  html,body{ margin:0; }
+  body{
+    font-family:'Segoe UI', Calibri, Arial, sans-serif;
+    background:linear-gradient(160deg,#1A1A2E 0%, #3A0CA3 50%, #2A2A72 100%);
+    min-height:100vh;
+    padding:30px 20px 60px;
+    color:var(--dark);
+  }
+  .page{ max-width:1180px; margin:0 auto; }
+  header{ text-align:center; color:white; margin-bottom:28px; }
+  header h1{ font-size:clamp(28px,4.5vw,42px); margin:0 0 6px; text-shadow:0 4px 12px rgba(0,0,0,0.3); }
+  header p{ font-size:clamp(14px,2vw,16px); color:#D6D0F5; margin:0; }
+
+  .panel{
+    background:white;
+    border-radius:22px;
+    padding:26px 28px;
+    box-shadow:0 12px 36px rgba(0,0,0,0.3);
+    margin-bottom:26px;
+  }
+
+  .dropzone{
+    border:3px dashed #c9bef0;
+    border-radius:18px;
+    padding:34px 20px;
+    text-align:center;
+    background:#faf8ff;
+    cursor:pointer;
+    transition:background .15s ease, border-color .15s ease;
+  }
+  .dropzone.dragover{ background:#f0eaff; border-color:var(--primary); }
+  .dropzone .big-icon{ font-size:44px; margin-bottom:8px; }
+  .dropzone h3{ margin:0 0 6px; color:var(--primary); }
+  .dropzone p{ margin:0 0 16px; color:#666; font-size:14px; }
+  .file-btns{ display:flex; gap:12px; justify-content:center; flex-wrap:wrap; }
+  .file-btns button{
+    background:var(--primary); color:white; border:none; padding:11px 22px;
+    border-radius:10px; font-weight:bold; font-size:14.5px; cursor:pointer;
+  }
+  .file-btns button.secondary{ background:white; color:var(--primary); border:2px solid var(--primary); }
+  input[type=file]{ display:none; }
+
+  .file-list{ margin-top:14px; font-size:13px; color:#555; text-align:left; }
+  .file-list div{ padding:4px 0; border-bottom:1px solid #eee; display:flex; justify-content:space-between; }
+
+  .summary-grid{
+    display:grid;
+    grid-template-columns:repeat(auto-fit, minmax(180px,1fr));
+    gap:16px;
+    margin-bottom:8px;
+  }
+  .summary-card{
+    background:linear-gradient(135deg,var(--primary),var(--blue));
+    color:white;
+    border-radius:16px;
+    padding:18px 20px;
+    text-align:center;
+  }
+  .summary-card .num{ font-size:32px; font-weight:bold; }
+  .summary-card .label{ font-size:13px; opacity:0.9; margin-top:4px; }
+
+  h2.section-title{ font-size:19px; color:var(--primary); margin:0 0 14px; }
+
+  .chart-wrap{ overflow-x:auto; }
+  .bar-row{ display:flex; align-items:center; gap:10px; margin-bottom:10px; }
+  .bar-label{ width:210px; font-size:13.5px; font-weight:bold; color:#333; flex-shrink:0; }
+  .bar-track{ flex-grow:1; background:#eee; border-radius:8px; height:22px; position:relative; overflow:hidden; }
+  .bar-fill{ height:100%; border-radius:8px; background:linear-gradient(90deg,var(--primary),var(--blue)); display:flex; align-items:center; justify-content:flex-end; padding-right:8px; color:white; font-size:12px; font-weight:bold; white-space:nowrap; }
+
+  .controls-row{ display:flex; gap:12px; flex-wrap:wrap; margin-bottom:16px; align-items:center; }
+  .controls-row input, .controls-row select{
+    padding:9px 14px; border-radius:10px; border:1.5px solid #ddd; font-size:14px;
+  }
+  .controls-row input{ flex:1; min-width:180px; }
+
+  table{ width:100%; border-collapse:collapse; font-size:14px; }
+  th, td{ padding:10px 12px; text-align:left; border-bottom:1px solid #eee; }
+  th{ color:var(--primary); cursor:pointer; user-select:none; position:sticky; top:0; background:white; }
+  th:hover{ background:#f5f2ff; }
+  tr:hover td{ background:#faf8ff; }
+  .table-wrap{ max-height:420px; overflow:auto; border-radius:12px; border:1px solid #eee; }
+  .pct-good{ color:#0e9e6f; font-weight:bold; }
+  .pct-mid{ color:#c98a00; font-weight:bold; }
+  .pct-low{ color:var(--red); font-weight:bold; }
+
+  .empty-state{ text-align:center; color:#888; padding:30px; font-size:15px; }
+
+  .export-row{ text-align:right; margin-top:14px; }
+  .export-row button{
+    background:var(--green); color:white; border:none; padding:10px 20px;
+    border-radius:10px; font-weight:bold; cursor:pointer; font-size:14px;
+  }
+
+  footer{ text-align:center; color:#B8B0E0; font-size:13px; margin-top:20px; }
+</style>
+</head>
+<body>
+<div class="page">
+  <header>
+    <h1>📊 Results Dashboard</h1>
+    <p>Bring in the result files your students save, and see it all in one place.</p>
+  </header>
+
+  <div class="panel">
+    <div class="dropzone" id="dropzone">
+      <div class="big-icon">📥</div>
+      <h3>Add result files</h3>
+      <p>Drag and drop CSV files here, or use a button below. Works with files saved by any of the games.</p>
+      <div class="file-btns">
+        <button id="pickFilesBtn">📄 Choose Files</button>
+        <button class="secondary" id="pickFolderBtn">📁 Choose a Whole Folder</button>
+        <button class="secondary" id="clearBtn">🗑️ Clear All</button>
+      </div>
+      <input type="file" id="fileInput" accept=".csv" multiple>
+      <input type="file" id="folderInput" webkitdirectory directory multiple>
+      <div class="file-list" id="fileList"></div>
+    </div>
+  </div>
+
+  <div id="dashboardContent" style="display:none;">
+
+    <div class="panel">
+      <div class="summary-grid" id="summaryGrid"></div>
+    </div>
+
+    <div class="panel">
+      <h2 class="section-title">🎮 Average score by game</h2>
+      <div class="chart-wrap" id="chartArea"></div>
+    </div>
+
+    <div class="panel">
+      <h2 class="section-title">📋 All results</h2>
+      <div class="controls-row">
+        <input type="text" id="searchInput" placeholder="🔍 Search by student name...">
+        <select id="gameFilter"><option value="">All games</option></select>
+      </div>
+      <div class="table-wrap">
+        <table id="resultsTable">
+          <thead>
+            <tr>
+              <th data-key="name">Name ⇅</th>
+              <th data-key="game">Game ⇅</th>
+              <th data-key="score">Score ⇅</th>
+              <th data-key="pct">% (where known) ⇅</th>
+              <th data-key="date">Date ⇅</th>
+              <th data-key="source">Source file</th>
+            </tr>
+          </thead>
+          <tbody id="resultsBody"></tbody>
+        </table>
+      </div>
+      <div class="export-row">
+        <button id="exportBtn">💾 Export merged results as CSV</button>
+      </div>
+    </div>
+
+    <div class="panel">
+      <h2 class="section-title">🏆 Top scorers per game</h2>
+      <div id="leaderboards"></div>
+    </div>
+
+  </div>
+
+  <div class="panel" id="emptyPanel">
+    <div class="empty-state">No files added yet. Drop in some result CSVs above to see the dashboard!</div>
+  </div>
+
+  <footer>Everything here runs on this computer only — nothing is uploaded anywhere.</footer>
+</div>
+
+<script>
+// Maps the filename prefix each game uses when saving results to a friendly game name,
+// and whether that game has a fixed maximum score (so we can show a percentage).
+const GAME_PREFIXES = [
+  { prefix: "ITDetective",     name: "IT Detective! (Y2)",        maxScore: null },
+  { prefix: "SortSchoolIT",    name: "Sort the School IT! (Y2)",  maxScore: null },
+  { prefix: "MachineMania",    name: "Machine Mania! (Y3)",       maxScore: null },
+  { prefix: "InputOrOutput",   name: "Input or Output? (Y3)",     maxScore: null },
+  { prefix: "DigitalOrNot",    name: "Digital or Not? (Y3)",      maxScore: null },
+  { prefix: "RouteThePacket",  name: "Route the Packet! (Y4)",    maxScore: null },
+  { prefix: "FindTheRoute",    name: "Find the Route! (Y4)",      maxScore: null },
+];
+
+function inferGame(filename){
+  const base = filename.replace(/\.csv$/i, '');
+  for(const g of GAME_PREFIXES){
+    if(base.startsWith(g.prefix)) return g.name;
+  }
+  return "Unknown game (" + filename + ")";
+}
+
+// Minimal CSV line parser that handles quoted fields containing commas/quotes.
+function parseCSV(text){
+  const rows = [];
+  let row = [], field = '', inQuotes = false;
+  for(let i=0;i<text.length;i++){
+    const c = text[i];
+    if(inQuotes){
+      if(c === '"'){
+        if(text[i+1] === '"'){ field += '"'; i++; }
+        else{ inQuotes = false; }
+      } else { field += c; }
+    } else {
+      if(c === '"'){ inQuotes = true; }
+      else if(c === ','){ row.push(field); field=''; }
+      else if(c === '\r'){ /* skip */ }
+      else if(c === '\n'){ row.push(field); rows.push(row); row=[]; field=''; }
+      else { field += c; }
+    }
+  }
+  if(field.length || row.length){ row.push(field); rows.push(row); }
+  return rows.filter(r => r.length && !(r.length===1 && r[0]===''));
+}
+
+let allRecords = [];
+let loadedFiles = [];
+
+function addFileRecords(filename, text){
+  const rows = parseCSV(text);
+  if(rows.length < 2) return 0;
+  const headers = rows[0].map(h => h.trim().toLowerCase());
+  const game = inferGame(filename);
+  let added = 0;
+  for(let i=1;i<rows.length;i++){
+    const r = rows[i];
+    const rec = { source: filename, game: game };
+    headers.forEach((h, idx) => { rec[h] = r[idx] !== undefined ? r[idx] : ''; });
+    rec.name = rec.name || '(no name)';
+    rec.score = parseFloat(rec.score) || 0;
+    rec.total = rec.total ? parseFloat(rec.total) : null;
+    rec.date = rec.date || '';
+    allRecords.push(rec);
+    added++;
+  }
+  return added;
+}
+
+function dedupeRecords(){
+  const seen = new Set();
+  allRecords = allRecords.filter(r => {
+    const key = [r.game, r.name, r.score, r.total, r.date].join('|');
+    if(seen.has(key)) return false;
+    seen.add(key);
+    return true;
+  });
+}
+
+function renderFileList(){
+  const el = document.getElementById('fileList');
+  el.innerHTML = loadedFiles.map(f => `<div><span>📄 ${f.name}</span><span>${f.count} row${f.count===1?'':'s'}</span></div>`).join('');
+}
+
+function renderAll(){
+  dedupeRecords();
+  const hasData = allRecords.length > 0;
+  document.getElementById('dashboardContent').style.display = hasData ? 'block' : 'none';
+  document.getElementById('emptyPanel').style.display = hasData ? 'none' : 'block';
+  if(!hasData) return;
+
+  renderSummary();
+  renderChart();
+  renderGameFilterOptions();
+  renderTable();
+  renderLeaderboards();
+}
+
+function renderSummary(){
+  const students = new Set(allRecords.map(r => r.name.trim().toLowerCase()));
+  const games = new Set(allRecords.map(r => r.game));
+  const withPct = allRecords.filter(r => r.total && r.total > 0);
+  const avgPct = withPct.length
+    ? Math.round(withPct.reduce((s,r)=> s + (r.score/r.total*100), 0) / withPct.length)
+    : null;
+
+  const cards = [
+    { num: allRecords.length, label: "Total submissions" },
+    { num: students.size, label: "Unique students" },
+    { num: games.size, label: "Games played" },
+    { num: avgPct !== null ? avgPct + "%" : "—", label: "Average score (where % applies)" },
+  ];
+  document.getElementById('summaryGrid').innerHTML = cards.map(c =>
+    `<div class="summary-card"><div class="num">${c.num}</div><div class="label">${c.label}</div></div>`
+  ).join('');
+}
+
+function renderChart(){
+  const byGame = {};
+  allRecords.forEach(r => {
+    if(!byGame[r.game]) byGame[r.game] = { totalScore:0, count:0, totalPct:0, pctCount:0 };
+    byGame[r.game].totalScore += r.score;
+    byGame[r.game].count++;
+    if(r.total && r.total > 0){
+      byGame[r.game].totalPct += (r.score/r.total*100);
+      byGame[r.game].pctCount++;
+    }
+  });
+  const entries = Object.entries(byGame);
+  const maxAvg = Math.max(...entries.map(([,v]) => v.pctCount ? v.totalPct/v.pctCount : v.totalScore/v.count), 1);
+
+  document.getElementById('chartArea').innerHTML = entries.map(([game, v]) => {
+    const usesPct = v.pctCount > 0;
+    const avg = usesPct ? (v.totalPct / v.pctCount) : (v.totalScore / v.count);
+    const displayVal = usesPct ? Math.round(avg) + "%" : Math.round(avg) + " pts";
+    const widthPct = Math.max(4, (avg / maxAvg) * 100);
+    return `<div class="bar-row">
+      <div class="bar-label">${game} (${v.count})</div>
+      <div class="bar-track"><div class="bar-fill" style="width:${widthPct}%">${displayVal}</div></div>
+    </div>`;
+  }).join('');
+}
+
+function renderGameFilterOptions(){
+  const sel = document.getElementById('gameFilter');
+  const games = [...new Set(allRecords.map(r => r.game))].sort();
+  sel.innerHTML = '<option value="">All games</option>' + games.map(g => `<option value="${g}">${g}</option>`).join('');
+}
+
+let sortKey = 'date', sortDir = -1;
+
+function pctClass(pct){
+  if(pct === null) return '';
+  if(pct >= 80) return 'pct-good';
+  if(pct >= 50) return 'pct-mid';
+  return 'pct-low';
+}
+
+function renderTable(){
+  const search = document.getElementById('searchInput').value.trim().toLowerCase();
+  const gameFilterVal = document.getElementById('gameFilter').value;
+
+  let rows = allRecords.filter(r => {
+    const matchesSearch = !search || r.name.toLowerCase().includes(search);
+    const matchesGame = !gameFilterVal || r.game === gameFilterVal;
+    return matchesSearch && matchesGame;
+  });
+
+  rows = rows.map(r => ({...r, pct: r.total ? Math.round(r.score/r.total*100) : null}));
+
+  rows.sort((a,b) => {
+    let av = a[sortKey], bv = b[sortKey];
+    if(sortKey === 'score' || sortKey === 'pct'){ av = av ?? -1; bv = bv ?? -1; }
+    if(typeof av === 'string') av = av.toLowerCase();
+    if(typeof bv === 'string') bv = bv.toLowerCase();
+    if(av < bv) return -1*sortDir;
+    if(av > bv) return 1*sortDir;
+    return 0;
+  });
+
+  document.getElementById('resultsBody').innerHTML = rows.map(r => `
+    <tr>
+      <td>${r.name}</td>
+      <td>${r.game}</td>
+      <td>${r.score}${r.total ? ' / ' + r.total : ''}</td>
+      <td class="${pctClass(r.pct)}">${r.pct !== null ? r.pct + '%' : '—'}</td>
+      <td>${r.date}</td>
+      <td style="color:#999;font-size:12px;">${r.source}</td>
+    </tr>
+  `).join('') || '<tr><td colspan="6" style="text-align:center;color:#999;">No matching results.</td></tr>';
+}
+
+function renderLeaderboards(){
+  const byGame = {};
+  allRecords.forEach(r => {
+    if(!byGame[r.game]) byGame[r.game] = [];
+    byGame[r.game].push(r);
+  });
+  const html = Object.entries(byGame).map(([game, recs]) => {
+    const top = [...recs].sort((a,b) => b.score - a.score).slice(0,5);
+    const rowsHtml = top.map((r,i) => `<div class="bar-row">
+        <div class="bar-label">${i+1}. ${r.name}</div>
+        <div class="bar-track"><div class="bar-fill" style="width:${Math.max(10, (r.score / top[0].score) * 100)}%">${r.score}${r.total ? '/'+r.total : ''}</div></div>
+      </div>`).join('');
+    return `<h3 style="color:#333;font-size:15px;margin:16px 0 8px;">${game}</h3>${rowsHtml}`;
+  }).join('');
+  document.getElementById('leaderboards').innerHTML = html;
+}
+
+// ================= FILE HANDLING =================
+function handleFiles(fileListObj){
+  const files = Array.from(fileListObj).filter(f => f.name.toLowerCase().endsWith('.csv'));
+  if(files.length === 0) return;
+  let remaining = files.length;
+  files.forEach(file => {
+    const reader = new FileReader();
+    reader.onload = (e) => {
+      const count = addFileRecords(file.name, e.target.result);
+      loadedFiles.push({ name: file.name, count });
+      remaining--;
+      if(remaining === 0){
+        renderFileList();
+        renderAll();
+      }
+    };
+    reader.readAsText(file);
+  });
+}
+
+const dropzone = document.getElementById('dropzone');
+const fileInput = document.getElementById('fileInput');
+const folderInput = document.getElementById('folderInput');
+
+document.getElementById('pickFilesBtn').addEventListener('click', () => fileInput.click());
+document.getElementById('pickFolderBtn').addEventListener('click', () => folderInput.click());
+document.getElementById('clearBtn').addEventListener('click', () => {
+  allRecords = []; loadedFiles = [];
+  renderFileList();
+  renderAll();
+});
+
+fileInput.addEventListener('change', (e) => handleFiles(e.target.files));
+folderInput.addEventListener('change', (e) => handleFiles(e.target.files));
+
+dropzone.addEventListener('click', (e) => {
+  if(e.target.tagName !== 'BUTTON') fileInput.click();
+});
+dropzone.addEventListener('dragover', (e) => { e.preventDefault(); dropzone.classList.add('dragover'); });
+dropzone.addEventListener('dragleave', () => dropzone.classList.remove('dragover'));
+dropzone.addEventListener('drop', (e) => {
+  e.preventDefault();
+  dropzone.classList.remove('dragover');
+  handleFiles(e.dataTransfer.files);
+});
+
+document.getElementById('searchInput').addEventListener('input', renderTable);
+document.getElementById('gameFilter').addEventListener('change', renderTable);
+document.querySelectorAll('#resultsTable th').forEach(th => {
+  th.addEventListener('click', () => {
+    const key = th.dataset.key;
+    if(sortKey === key){ sortDir *= -1; } else { sortKey = key; sortDir = 1; }
+    renderTable();
+  });
+});
+
+function csvEscape(v){
+  const s = String(v ?? '');
+  return /[",\n]/.test(s) ? '"' + s.replace(/"/g,'""') + '"' : s;
+}
+document.getElementById('exportBtn').addEventListener('click', () => {
+  const rows = [["Name","Game","Score","Total","Date","Source File"],
+    ...allRecords.map(r => [r.name, r.game, r.score, r.total ?? '', r.date, r.source])];
+  const csv = rows.map(r => r.map(csvEscape).join(",")).join("\r\n");
+  const blob = new Blob([csv], {type:"text/csv;charset=utf-8;"});
+  const url = URL.createObjectURL(blob);
+  const a = document.createElement('a');
+  a.href = url; a.download = `Merged_Results_${new Date().toISOString().slice(0,10)}.csv`;
+  document.body.appendChild(a); a.click(); document.body.removeChild(a);
+  setTimeout(()=>URL.revokeObjectURL(url), 1000);
+});
+
+renderAll();
+</script>
+</body>
+</html>

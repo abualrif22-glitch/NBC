@@ -1,0 +1,786 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<title>Route the Packet! - Year 4 Computing Game</title>
+<style>
+  :root{
+    --primary:#2A2A72;
+    --secondary:#00C9A7;
+    --accent:#FFB627;
+    --light:#F7F9FC;
+    --dark:#1A1A2E;
+    --red:#E74C3C;
+  }
+  *{box-sizing:border-box;}
+  body{
+    margin:0;
+    font-family:'Segoe UI', Calibri, Arial, sans-serif;
+    background:linear-gradient(135deg,#2A2A72 0%,#1C7293 100%);
+    min-height:100vh;
+    display:flex;
+    align-items:center;
+    justify-content:center;
+    padding:24px;
+  }
+  .wrap{
+    background:var(--light);
+    border-radius:24px;
+    max-width:1060px;
+    width:100%;
+    padding:28px 32px 36px;
+    box-shadow:0 20px 50px rgba(0,0,0,0.35);
+    position:relative;
+    overflow:hidden;
+  }
+  h1{
+    color:var(--primary);
+    text-align:center;
+    margin:0 0 4px;
+    font-size:32px;
+  }
+  .sub{
+    text-align:center;
+    color:#555;
+    margin:0 0 18px;
+    font-size:15px;
+  }
+  .hud{
+    display:flex;
+    justify-content:space-between;
+    align-items:center;
+    background:white;
+    border-radius:14px;
+    padding:12px 18px;
+    margin-bottom:16px;
+    box-shadow:0 2px 8px rgba(0,0,0,0.08);
+    font-weight:bold;
+    color:var(--primary);
+    flex-wrap:wrap;
+    gap:8px;
+  }
+  .hud span.big{ color:var(--accent); font-size:20px; }
+  #board{
+    position:relative;
+    background:#eef3fb;
+    border-radius:16px;
+    height:460px;
+    overflow:hidden;
+    border:3px dashed #c9d6ea;
+  }
+  svg#lines{ position:absolute; top:0; left:0; width:100%; height:100%; pointer-events:none; z-index:1; }
+  .node{
+    position:absolute;
+    width:92px;
+    height:92px;
+    border-radius:16px;
+    display:flex;
+    flex-direction:column;
+    align-items:center;
+    justify-content:center;
+    color:white;
+    font-weight:bold;
+    font-size:13px;
+    text-align:center;
+    cursor:pointer;
+    box-shadow:0 6px 14px rgba(0,0,0,0.18);
+    transition:transform .15s ease, box-shadow .15s ease;
+    user-select:none;
+    z-index:3;
+  }
+  .node:hover{ transform:scale(1.06); }
+  .node .emoji{ font-size:28px; margin-bottom:2px; }
+  .node.pc{ background:var(--primary); border-radius:14px; }
+  .node.switch{ background:var(--secondary); border-radius:50%; color:#083b34; }
+  .node.router{ background:var(--accent); border-radius:50%; color:#5a3b00; }
+  .node.dead{ background:#94a3b8; color:#1a2233; border-radius:14px; opacity:0.95; }
+  .node.start{ outline:4px solid #2ecc71; }
+  .node.goal{ outline:4px solid #e74c3c; }
+  .node.done{ outline:4px solid white; box-shadow:0 0 0 6px rgba(46,204,113,0.5); }
+  .node.correct-flash{ animation:pulseGreen .6s ease; }
+  .node.wrong-flash{ animation:shakeRed .5s ease; }
+  @keyframes pulseGreen{ 0%{box-shadow:0 0 0 0 rgba(46,204,113,0.7);} 100%{box-shadow:0 0 0 26px rgba(46,204,113,0);} }
+  @keyframes shakeRed{
+    0%,100%{ transform:translateX(0); }
+    20%{ transform:translateX(-8px); }
+    40%{ transform:translateX(8px); }
+    60%{ transform:translateX(-6px); }
+    80%{ transform:translateX(6px); }
+  }
+  .token{
+    position:absolute;
+    width:34px;
+    height:34px;
+    border-radius:9px;
+    background:white;
+    border:3px solid var(--dark);
+    display:flex;
+    align-items:center;
+    justify-content:center;
+    font-size:18px;
+    z-index:5;
+    transition: left .55s cubic-bezier(.4,1.4,.6,1), top .55s cubic-bezier(.4,1.4,.6,1), transform .3s ease;
+    pointer-events:none;
+    box-shadow:0 4px 10px rgba(0,0,0,0.3);
+  }
+  .token.hopping{ transform:scale(1.35) rotate(15deg); }
+  .token.arrived{ animation:tokenPop .4s ease; }
+  @keyframes tokenPop{
+    0%{ transform:scale(1.35); }
+    50%{ transform:scale(0.75); }
+    100%{ transform:scale(1); }
+  }
+  .msg{
+    text-align:center;
+    margin-top:14px;
+    min-height:34px;
+    font-size:17px;
+    font-weight:bold;
+    color:var(--primary);
+    transition: color .2s ease;
+  }
+  .msg.happy{ color:#1a9e6b; }
+  .msg.oops{ color:var(--red); }
+  .controls{
+    display:flex;
+    justify-content:center;
+    gap:14px;
+    margin-top:14px;
+  }
+  button{
+    background:var(--primary);
+    color:white;
+    border:none;
+    padding:10px 22px;
+    border-radius:10px;
+    font-size:15px;
+    font-weight:bold;
+    cursor:pointer;
+  }
+  button.secondary{ background:white; color:var(--primary); border:2px solid var(--primary); }
+  button:hover{ opacity:.9; }
+  .legend{
+    display:flex;
+    gap:18px;
+    justify-content:center;
+    margin-top:14px;
+    font-size:12.5px;
+    color:#444;
+    flex-wrap:wrap;
+  }
+  .legend span{ display:flex; align-items:center; gap:6px; }
+  .dot{ width:14px; height:14px; border-radius:4px; display:inline-block; }
+
+  /* ---------- Name gate ---------- */
+  .gate-overlay{
+    position:fixed; inset:0;
+    background:rgba(26,26,46,0.72);
+    display:flex; align-items:center; justify-content:center;
+    z-index:100;
+    padding:20px;
+  }
+  .gate-card{
+    background:white;
+    border-radius:20px;
+    padding:34px 36px;
+    max-width:420px;
+    width:100%;
+    text-align:center;
+    box-shadow:0 20px 50px rgba(0,0,0,0.4);
+  }
+  .gate-card h2{ color:var(--primary); margin:0 0 8px; font-size:24px; }
+  .gate-card p{ color:#555; margin:0 0 18px; font-size:14.5px; }
+  .gate-card input{
+    width:100%;
+    font-size:18px;
+    padding:12px 14px;
+    border-radius:10px;
+    border:2px solid var(--secondary);
+    text-align:center;
+    font-weight:bold;
+    color:var(--dark);
+    margin-bottom:14px;
+  }
+  .gate-card input:focus{ outline:none; border-color:var(--primary); }
+  .gate-card button{ width:100%; padding:13px; font-size:16px; }
+  .gate-error{ color:var(--red); font-size:13px; min-height:18px; margin-bottom:6px; }
+
+  /* ---------- Results panel ---------- */
+  #resultsPanel{
+    display:none;
+    background:white;
+    border-radius:14px;
+    padding:18px 20px;
+    margin-top:16px;
+    box-shadow:0 2px 8px rgba(0,0,0,0.08);
+    text-align:center;
+  }
+  #resultsPanel h3{ margin:0 0 4px; color:var(--primary); font-size:18px; }
+  #resultsPanel .save-row{ display:flex; gap:12px; justify-content:center; flex-wrap:wrap; margin-top:12px; }
+  #resultsPanel .saved-note{ font-size:13px; color:#1a9e6b; font-weight:bold; min-height:18px; margin-top:8px; }
+  #savedTableWrap{ margin-top:14px; max-height:220px; overflow:auto; display:none; }
+  #savedTableWrap table{ width:100%; border-collapse:collapse; font-size:13px; }
+  #savedTableWrap th, #savedTableWrap td{ padding:6px 8px; border-bottom:1px solid #e3e6f0; text-align:left; }
+  #savedTableWrap th{ color:var(--primary); }
+
+  .confetti-piece{
+    position:absolute;
+    top:-20px;
+    width:10px;
+    height:14px;
+    z-index:20;
+    pointer-events:none;
+    animation: fall linear forwards;
+  }
+  @keyframes fall{
+    to{ transform: translateY(500px) rotate(540deg); opacity:0.2; }
+  }
+
+  .celebrate-banner{
+    position:absolute;
+    left:50%; top:45%;
+    transform:translate(-50%,-50%) scale(0.5);
+    background:white;
+    border-radius:20px;
+    padding:22px 34px;
+    box-shadow:0 12px 40px rgba(0,0,0,0.35);
+    text-align:center;
+    z-index:30;
+    opacity:0;
+    pointer-events:none;
+  }
+  .celebrate-banner.show{
+    animation: bannerPop .6s cubic-bezier(.34,1.56,.64,1) forwards;
+  }
+  @keyframes bannerPop{
+    0%{ opacity:0; transform:translate(-50%,-50%) scale(0.4) rotate(-6deg); }
+    60%{ opacity:1; transform:translate(-50%,-50%) scale(1.08) rotate(2deg); }
+    100%{ opacity:1; transform:translate(-50%,-50%) scale(1) rotate(0); }
+  }
+  .celebrate-banner .big{
+    font-size:26px;
+    font-weight:bold;
+    color:var(--primary);
+    margin-bottom:4px;
+  }
+  .celebrate-banner .small{
+    font-size:14px;
+    color:#555;
+  }
+</style>
+</head>
+<body>
+
+<div class="gate-overlay" id="gateOverlay">
+  <div class="gate-card">
+    <h2>📨 Route the Packet!</h2>
+    <p>Type your name to start the challenge.</p>
+    <input type="text" id="nameInput" placeholder="Your name" maxlength="24" autocomplete="off">
+    <div class="gate-error" id="nameError"></div>
+    <button id="startBtn">Start ▶</button>
+  </div>
+</div>
+
+<div class="wrap" id="wrap">
+  <h1>📨 Route the Packet!</h1>
+  <p class="sub" id="subline">Help each message travel across the network of networks — tap the switches and router in the right order.</p>
+
+  <div class="hud">
+    <div>Player: <span class="big" id="playerName">—</span></div>
+    <div>Round: <span class="big" id="roundNum">1</span> / <span id="roundTotal">5</span></div>
+    <div>Score: <span class="big" id="score">0</span></div>
+    <div>Streak: <span class="big" id="streak">0</span> 🔥</div>
+    <div>Time: <span class="big" id="timer">45</span>s</div>
+  </div>
+
+  <div id="board">
+    <svg id="lines"></svg>
+  </div>
+
+  <p class="msg" id="msg">Tap the green PC to pick up the message, then tap each stop on its path in order!</p>
+
+  <div class="controls">
+    <button id="resetBtn" class="secondary">Restart Round</button>
+    <button id="nextBtn">Skip to Next ▶</button>
+  </div>
+
+  <div class="legend">
+    <span><i class="dot" style="background:#2A2A72"></i> Computer</span>
+    <span><i class="dot" style="background:#00C9A7;border-radius:50%"></i> Switch</span>
+    <span><i class="dot" style="background:#FFB627;border-radius:50%"></i> Router</span>
+    <span><i class="dot" style="background:#94a3b8"></i> Dead end — no way through!</span>
+  </div>
+
+  <div id="resultsPanel">
+    <h3>🏁 Well done!</h3>
+    <div id="resultsSummary" style="font-size:14.5px;color:#444;"></div>
+    <div class="saved-note" id="cloudSyncNote" style="color:#3A0CA3;">☁️ Sending your result to your teacher...</div>
+    <div class="save-row">
+      <button id="saveResultBtn">💾 Save My Results</button>
+      <button id="downloadAllBtn" class="secondary">📋 Download Class Results</button>
+      <button id="toggleSavedBtn" class="secondary">👀 View Saved Results</button>
+    </div>
+    <div class="saved-note" id="savedNote"></div>
+    <div id="savedTableWrap">
+      <table>
+        <thead><tr><th>Name</th><th>Score</th><th>Rounds</th><th>Date</th></tr></thead>
+        <tbody id="savedTableBody"></tbody>
+      </table>
+    </div>
+  </div>
+</div>
+
+<script>
+// ---- Level definitions: nodes + the correct path from start to goal ----
+// Levels 4 and 5 include one dead-end branch (a path that stops and goes nowhere)
+// alongside the correct path, for extra challenge.
+const levels = [
+  {
+    label: "Network A → Network B",
+    nodes: {
+      pc1: {type:'pc', x:40,  y:40,  label:'PC 1 (You)'},
+      pc2: {type:'pc', x:40,  y:300,  label:'PC 2'},
+      swA: {type:'switch', x:200, y:170, label:'Switch A'},
+      router: {type:'router', x:420, y:170, label:'Router'},
+      swB: {type:'switch', x:640, y:170, label:'Switch B'},
+      pc3: {type:'pc', x:800, y:40,  label:'PC 3'},
+      pc4: {type:'pc', x:800, y:300,  label:'PC 4 (Friend)'},
+    },
+    edges: [['pc1','swA'],['pc2','swA'],['swA','router'],['router','swB'],['swB','pc3'],['swB','pc4']],
+    start:'pc1', goal:'pc4',
+    path:['pc1','swA','router','swB','pc4']
+  },
+  {
+    label: "Hospital Network → Shop Network",
+    nodes: {
+      pc1: {type:'pc', x:40,  y:210, label:'Hospital PC'},
+      sw1: {type:'switch', x:220, y:210, label:'Switch 1'},
+      r1: {type:'router', x:400, y:100, label:'Router 1'},
+      r2: {type:'router', x:590, y:100, label:'Router 2'},
+      sw2: {type:'switch', x:640, y:300, label:'Switch 2'},
+      pc2: {type:'pc', x:830, y:300, label:'Shop PC'},
+    },
+    edges: [['pc1','sw1'],['sw1','r1'],['r1','r2'],['r2','sw2'],['sw2','pc2']],
+    start:'pc1', goal:'pc2',
+    path:['pc1','sw1','r1','r2','sw2','pc2']
+  },
+  {
+    label: "Home → School (long way round!)",
+    nodes: {
+      pc1: {type:'pc', x:40,  y:40, label:'Home PC'},
+      sw1: {type:'switch', x:40, y:300, label:'Switch 1'},
+      r1: {type:'router', x:250, y:300, label:'Router 1'},
+      r2: {type:'router', x:460, y:170, label:'Router 2'},
+      r3: {type:'router', x:660, y:300, label:'Router 3'},
+      sw2: {type:'switch', x:840, y:170, label:'Switch 2'},
+      pc2: {type:'pc', x:840, y:40, label:'School PC'},
+    },
+    edges: [['pc1','sw1'],['sw1','r1'],['r1','r2'],['r2','r3'],['r3','sw2'],['sw2','pc2']],
+    start:'pc1', goal:'pc2',
+    path:['pc1','sw1','r1','r2','r3','sw2','pc2']
+  },
+  {
+    label: "TRICKY: Office → Library (one path is a dead end!)",
+    nodes: {
+      pc1:  {type:'pc', x:10,  y:220, label:'Office PC'},
+      sw1:  {type:'switch', x:180, y:220, label:'Switch 1'},
+      r1:   {type:'router', x:360, y:90,  label:'Router 1'},
+      rDead:{type:'dead', x:360, y:350, label:'Dead End'},
+      sw2:  {type:'switch', x:540, y:220, label:'Switch 2'},
+      pc2:  {type:'pc', x:710, y:220, label:'Library PC'},
+    },
+    edges: [['pc1','sw1'],['sw1','r1'],['sw1','rDead'],['r1','sw2'],['sw2','pc2']],
+    start:'pc1', goal:'pc2',
+    path:['pc1','sw1','r1','sw2','pc2']
+  },
+  {
+    label: "EXPERT: Village Satellite Link → City Server (one path is a dead end!)",
+    nodes: {
+      pc1:  {type:'pc', x:10,  y:200, label:'Village PC'},
+      sw1:  {type:'switch', x:170, y:200, label:'Switch 1'},
+      sat:  {type:'router', x:340, y:70,  label:'\uD83D\uDCE1 Satellite'},
+      rDead:{type:'dead', x:340, y:340, label:'Dead End'},
+      r1:   {type:'router', x:510, y:200, label:'Router 1'},
+      sw2:  {type:'switch', x:680, y:200, label:'Switch 2'},
+      pc2:  {type:'pc', x:840, y:200, label:'City Server'},
+    },
+    edges: [['pc1','sw1'],['sw1','sat'],['sw1','rDead'],['sat','r1'],['r1','sw2'],['sw2','pc2']],
+    start:'pc1', goal:'pc2',
+    path:['pc1','sw1','sat','r1','sw2','pc2']
+  }
+];
+
+const PRAISE = [
+  "Delivered! \uD83C\uDF89", "Nailed it! \uD83D\uDE80", "Perfect routing! \u2B50",
+  "Packet arrived safely! \uD83D\uDCE6", "Superstar switcher! \uD83C\uDF1F", "You're a router pro! \uD83C\uDFC6"
+];
+const HOP_PRAISE = ["Nice hop!", "Great choice!", "Keep going!", "On the right track!", "Zooming along!"];
+
+let levelIdx = 0, score = 0, streak = 0, progressIdx = 0, timer = 45, timerHandle = null;
+const board = document.getElementById('board');
+const linesSvg = document.getElementById('lines');
+const msg = document.getElementById('msg');
+const wrap = document.getElementById('wrap');
+let tokenEl = null;
+let studentName = "";
+const STORAGE_KEY = "routeThePacketResults";
+
+document.getElementById('roundTotal').textContent = levels.length;
+
+function centerOf(n){ return { x:n.x+46, y:n.y+46 }; }
+// Badge position: top-right corner of the node, so the flying packet
+// doesn't cover the node's icon or label text.
+function badgeOf(n){ return { x:n.x+92-14, y:n.y-8 }; }
+
+function buildLevel(i){
+  clearInterval(timerHandle);
+  timer = 45;
+  progressIdx = 0;
+  document.getElementById('timer').textContent = timer;
+  document.getElementById('roundNum').textContent = i+1;
+  board.querySelectorAll('.node,.token').forEach(n=>n.remove());
+  linesSvg.innerHTML = '';
+  msg.className = 'msg';
+
+  const lvl = levels[i];
+  const emojiMap = {pc:'\uD83D\uDDA5\uFE0F', switch:'\uD83D\uDD00', router:'\uD83D\uDCE1', dead:'\u26D4'};
+
+  lvl.edges.forEach(([a,b])=>{
+    const na = lvl.nodes[a], nb = lvl.nodes[b];
+    const line = document.createElementNS('http://www.w3.org/2000/svg','line');
+    const ca = centerOf(na), cb = centerOf(nb);
+    line.setAttribute('x1', ca.x); line.setAttribute('y1', ca.y);
+    line.setAttribute('x2', cb.x); line.setAttribute('y2', cb.y);
+    line.setAttribute('stroke', '#b9c6de');
+    line.setAttribute('stroke-width', '4');
+    line.setAttribute('stroke-dasharray', '2,7');
+    line.setAttribute('stroke-linecap','round');
+    linesSvg.appendChild(line);
+  });
+
+  Object.entries(lvl.nodes).forEach(([key,n])=>{
+    const div = document.createElement('div');
+    div.className = 'node ' + n.type;
+    if(key===lvl.start) div.classList.add('start');
+    if(key===lvl.goal) div.classList.add('goal');
+    div.style.left = n.x+'px';
+    div.style.top = n.y+'px';
+    const iconText = n.label.indexOf('\uD83D\uDCE1')===0 ? '' : emojiMap[n.type];
+    div.innerHTML = `<span class="emoji">${iconText}</span><span>${n.label}</span>`;
+    div.dataset.key = key;
+    div.addEventListener('click', ()=>handleClick(key));
+    board.appendChild(div);
+  });
+
+  // create the packet token sitting on the start node
+  tokenEl = document.createElement('div');
+  tokenEl.className = 'token';
+  tokenEl.textContent = '\u2709\uFE0F';
+  const startB = badgeOf(lvl.nodes[lvl.start]);
+  tokenEl.style.left = (startB.x-17)+'px';
+  tokenEl.style.top = (startB.y-17)+'px';
+  board.appendChild(tokenEl);
+
+  msg.textContent = `Round ${i+1}: ${lvl.label}. Tap the green PC first!`;
+  startTimer();
+}
+
+function startTimer(){
+  timerHandle = setInterval(()=>{
+    timer--;
+    document.getElementById('timer').textContent = timer;
+    if(timer<=0){
+      clearInterval(timerHandle);
+      msg.className = 'msg oops';
+      msg.textContent = "\u23F0 Time's up! The packet got lost in the network. Tap Restart Round to try again.";
+      streak = 0;
+      document.getElementById('streak').textContent = streak;
+    }
+  },1000);
+}
+
+function moveTokenTo(nodeEl, cb){
+  const key = nodeEl.dataset.key;
+  const lvl = levels[levelIdx];
+  const c = badgeOf(lvl.nodes[key]);
+  tokenEl.classList.add('hopping');
+  tokenEl.style.left = (c.x-17)+'px';
+  tokenEl.style.top = (c.y-17)+'px';
+  setTimeout(()=>{
+    tokenEl.classList.remove('hopping');
+    tokenEl.classList.add('arrived');
+    setTimeout(()=> tokenEl.classList.remove('arrived'), 400);
+    if(cb) cb();
+  }, 550);
+}
+
+function spawnConfetti(){
+  const colors = ['#FFB627','#00C9A7','#2A2A72','#E74C3C','#6C63FF','#FFFFFF'];
+  for(let i=0;i<50;i++){
+    const p = document.createElement('div');
+    p.className = 'confetti-piece';
+    p.style.left = Math.random()*100 + '%';
+    p.style.background = colors[Math.floor(Math.random()*colors.length)];
+    p.style.animationDuration = (1.2 + Math.random()*1.1) + 's';
+    p.style.transform = `rotate(${Math.random()*360}deg)`;
+    wrap.appendChild(p);
+    setTimeout(()=>p.remove(), 2500);
+  }
+}
+
+function showCelebrateBanner(text, sub){
+  const b = document.createElement('div');
+  b.className = 'celebrate-banner';
+  b.innerHTML = `<div class="big">${text}</div><div class="small">${sub}</div>`;
+  wrap.appendChild(b);
+  requestAnimationFrame(()=> b.classList.add('show'));
+  setTimeout(()=>{ b.style.transition='opacity .3s'; b.style.opacity='0'; setTimeout(()=>b.remove(),320); }, 1300);
+}
+
+function handleClick(key){
+  if(timer<=0) return;
+  const lvl = levels[levelIdx];
+  const expected = lvl.path[progressIdx];
+  const nodeEl = board.querySelector(`.node[data-key="${key}"]`);
+
+  if(key === expected){
+    nodeEl.classList.add('correct-flash');
+    setTimeout(()=>nodeEl.classList.remove('correct-flash'),600);
+    moveTokenTo(nodeEl);
+    nodeEl.classList.add('done');
+    progressIdx++;
+    streak++;
+    document.getElementById('streak').textContent = streak;
+
+    if(progressIdx === lvl.path.length){
+      clearInterval(timerHandle);
+      const bonus = Math.max(10, timer*2) + streak*2;
+      score += bonus;
+      document.getElementById('score').textContent = score;
+      msg.className = 'msg happy';
+      msg.textContent = "\uD83C\uDF89 Delivered! Message arrived safely. Moving to next round...";
+      spawnConfetti();
+      const praise = PRAISE[Math.floor(Math.random()*PRAISE.length)];
+      showCelebrateBanner(praise, `+${bonus} points \u00b7 ${lvl.label}`);
+      setTimeout(()=>{
+        levelIdx++;
+        if(levelIdx < levels.length){ buildLevel(levelIdx); }
+        else {
+          spawnConfetti();
+          msg.className = 'msg happy';
+          msg.textContent = `\uD83C\uDFC6 All messages delivered! Final score: ${score}. You're a networking champion!`;
+          showResultsPanel();
+        }
+      },1500);
+    } else {
+      msg.className = 'msg happy';
+      msg.textContent = "\u2705 " + HOP_PRAISE[Math.floor(Math.random()*HOP_PRAISE.length)] + " Where does it go next?";
+    }
+  } else if(key === lvl.start){
+    // re-tapping the start node is harmless, ignore
+  } else {
+    nodeEl.classList.add('wrong-flash');
+    setTimeout(()=>nodeEl.classList.remove('wrong-flash'),500);
+    streak = 0;
+    document.getElementById('streak').textContent = streak;
+    msg.className = 'msg oops';
+    const isDeadEnd = lvl.nodes[key] && lvl.nodes[key].type === 'dead';
+    msg.textContent = isDeadEnd
+      ? "\u274C That's a dead end! Nothing connects onward from there. Try the other switch or router instead."
+      : "\u274C Not that way — the packet got lost! Think about which switch or router connects next.";
+  }
+}
+
+document.getElementById('resetBtn').addEventListener('click', ()=>buildLevel(levelIdx));
+document.getElementById('nextBtn').addEventListener('click', ()=>{
+  levelIdx = (levelIdx+1) % levels.length;
+  buildLevel(levelIdx);
+});
+
+/* ================= RESULTS PANEL ================= */
+function showResultsPanel(){
+  const panel = document.getElementById('resultsPanel');
+  panel.style.display = 'block';
+  document.getElementById('resultsSummary').textContent =
+    `${studentName} finished all ${levels.length} rounds with a final score of ${score}.`;
+  document.getElementById('savedNote').textContent = '';
+  panel.scrollIntoView({ behavior:'smooth', block:'nearest' });
+
+  // Automatically send the result to the cloud — no button needed.
+  const cloudNote = document.getElementById('cloudSyncNote');
+  if(window.__submitResultToCloud){
+    window.__submitResultToCloud({
+      name: studentName,
+      game: "Route the Packet! (Y4)",
+      score: score,
+      total: null,
+      rounds: levels.length,
+      date: new Date().toLocaleDateString() + ' ' + new Date().toLocaleTimeString([], {hour:'2-digit', minute:'2-digit'})
+    }).then(ok => {
+      if(cloudNote) cloudNote.textContent = ok
+        ? '☁️ Sent to your teacher automatically!'
+        : '⚠️ Could not connect to sync automatically — use "Save My Results" below as a backup.';
+    });
+  } else if(cloudNote){
+    cloudNote.textContent = '⚠️ Cloud sync unavailable — use "Save My Results" below as a backup.';
+  }
+}
+
+function readSavedResults(){
+  try{
+    return JSON.parse(localStorage.getItem(STORAGE_KEY) || "[]");
+  }catch(e){ return []; }
+}
+function writeSavedResults(list){
+  try{ localStorage.setItem(STORAGE_KEY, JSON.stringify(list)); }catch(e){ /* storage unavailable */ }
+}
+function csvEscape(v){
+  const s = String(v);
+  return /[",\n]/.test(s) ? '"' + s.replace(/"/g,'""') + '"' : s;
+}
+function downloadCSV(filename, rows){
+  const csv = rows.map(r=>r.map(csvEscape).join(",")).join("\r\n");
+  const blob = new Blob([csv], {type:"text/csv;charset=utf-8;"});
+  const url = URL.createObjectURL(blob);
+  const a = document.createElement('a');
+  a.href = url;
+  a.download = filename;
+  document.body.appendChild(a);
+  a.click();
+  document.body.removeChild(a);
+  setTimeout(()=>URL.revokeObjectURL(url), 1000);
+}
+function renderSavedTable(){
+  const list = readSavedResults();
+  const body = document.getElementById('savedTableBody');
+  body.innerHTML = list.map(r=>`<tr><td>${r.name}</td><td>${r.score}</td><td>${r.rounds}</td><td>${r.date}</td></tr>`).join('') ||
+    '<tr><td colspan="4" style="color:#999;">No saved results yet on this computer.</td></tr>';
+}
+
+// Lets the student choose exactly where the results file is saved, using the
+// native "Save As" dialog where the browser supports it (Chrome, Edge).
+// Falls back to a normal automatic download everywhere else.
+async function saveCSVWithPicker(filename, rows, noteElId, chosenMsg, fallbackMsg, cancelMsg){
+  const csv = rows.map(r=>r.map(csvEscape).join(",")).join("\r\n");
+  if(window.showSaveFilePicker){
+    try{
+      const handle = await window.showSaveFilePicker({
+        suggestedName: filename,
+        types: [{ description: 'CSV file', accept: {'text/csv': ['.csv']} }]
+      });
+      const writable = await handle.createWritable();
+      await writable.write(csv);
+      await writable.close();
+      document.getElementById(noteElId).textContent = chosenMsg;
+      return;
+    }catch(err){
+      if(err && err.name === 'AbortError'){
+        document.getElementById(noteElId).textContent = cancelMsg;
+        return;
+      }
+      // any other error: fall through to automatic download
+    }
+  }
+  downloadCSV(filename, rows);
+  document.getElementById(noteElId).textContent = fallbackMsg;
+}
+
+document.getElementById('saveResultBtn').addEventListener('click', async ()=>{
+  const now = new Date();
+  const record = {
+    name: studentName,
+    score: score,
+    rounds: levels.length,
+    date: now.toLocaleDateString() + ' ' + now.toLocaleTimeString([], {hour:'2-digit', minute:'2-digit'})
+  };
+  // 1) Keep a running log on this computer (localStorage)
+  const list = readSavedResults();
+  list.push(record);
+  writeSavedResults(list);
+  // 2) Save an actual file, letting the student pick the location if possible
+  const safeName = (studentName || 'student').replace(/[^a-z0-9]+/gi,'_');
+  const filename = `RouteThePacket_${safeName}_${now.toISOString().slice(0,10)}.csv`;
+  const rows = [["Name","Score","Rounds Completed","Date"], [record.name, record.score, record.rounds, record.date]];
+  await saveCSVWithPicker(filename, rows, 'savedNote',
+    '✅ Saved! Your results file was saved where you chose, and your score was stored on this computer.',
+    '✅ Saved! A results file was downloaded (this browser doesn\'t support choosing a save location), and your score was stored on this computer.',
+    'Save cancelled — your score is still stored on this computer, so you can still download the class results later.');
+  renderSavedTable();
+});
+
+document.getElementById('downloadAllBtn').addEventListener('click', async ()=>{
+  const list = readSavedResults();
+  if(list.length === 0){
+    document.getElementById('savedNote').textContent = 'No saved results yet on this computer.';
+    return;
+  }
+  const rows = [["Name","Score","Rounds Completed","Date"], ...list.map(r=>[r.name, r.score, r.rounds, r.date])];
+  const filename = `RouteThePacket_AllResults_${new Date().toISOString().slice(0,10)}.csv`;
+  await saveCSVWithPicker(filename, rows, 'savedNote',
+    '✅ Class results saved where you chose.',
+    '✅ Class results file downloaded (this browser doesn\'t support choosing a save location).',
+    'Save cancelled.');
+});
+
+document.getElementById('toggleSavedBtn').addEventListener('click', ()=>{
+  const t = document.getElementById('savedTableWrap');
+  const showing = t.style.display === 'block';
+  t.style.display = showing ? 'none' : 'block';
+  if(!showing) renderSavedTable();
+});
+
+/* ================= NAME GATE ================= */
+const gateOverlay = document.getElementById('gateOverlay');
+const nameInput = document.getElementById('nameInput');
+const nameError = document.getElementById('nameError');
+
+function startGame(){
+  const val = nameInput.value.trim();
+  if(!val){
+    nameError.textContent = "Please type your name to start.";
+    nameInput.focus();
+    return;
+  }
+  studentName = val.slice(0,24);
+  document.getElementById('playerName').textContent = studentName;
+  document.getElementById('subline').textContent =
+    `Nice to meet you, ${studentName}! Help each message travel across the network of networks — tap the switches and router in the right order.`;
+  gateOverlay.style.display = 'none';
+  buildLevel(0);
+}
+document.getElementById('startBtn').addEventListener('click', startGame);
+nameInput.addEventListener('keydown', (e)=>{ if(e.key === 'Enter') startGame(); });
+nameInput.focus();
+
+// Game no longer auto-starts — it begins once the player enters their name above.
+</script>
+
+<!-- ===== Cloud sync: sends each result to the shared Firestore database ===== -->
+<script src="https://www.gstatic.com/firebasejs/10.13.0/firebase-app-compat.js"></script>
+<script src="https://www.gstatic.com/firebasejs/10.13.0/firebase-firestore-compat.js"></script>
+<script>
+  const firebaseConfig = {
+    apiKey: "AIzaSyCEJtHd802MyuZUlwt6OfGkl9IitHaSOaA",
+    authDomain: "tasks-results.firebaseapp.com",
+    projectId: "tasks-results",
+    storageBucket: "tasks-results.firebasestorage.app",
+    messagingSenderId: "1014525306500",
+    appId: "1:1014525306500:web:3ffe2e6f5554e9140e04d1"
+  };
+
+  try{
+    firebase.initializeApp(firebaseConfig);
+    const db = firebase.firestore();
+
+    window.__submitResultToCloud = function(record){
+      return db.collection("results").add({
+        ...record,
+        createdAt: firebase.firestore.FieldValue.serverTimestamp()
+      }).then(() => true).catch((err) => { console.error("Cloud sync failed:", err); return false; });
+    };
+  }catch(err){
+    console.error("Firebase init failed:", err);
+  }
+</script>
+</body>
+</html>

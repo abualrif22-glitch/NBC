@@ -89,20 +89,23 @@
   .roster-controls button{ padding:11px 22px; border-radius:12px; border:none; background:var(--primary); color:white; font-weight:bold; cursor:pointer; font-size:14.5px; }
   .roster-controls button.secondary{ background:white; color:var(--red); border:2px solid var(--red); }
 
-  .star-grid{ display:grid; grid-template-columns:repeat(auto-fill, minmax(180px,1fr)); gap:16px; }
+  .star-grid{ display:grid; grid-template-columns:repeat(auto-fill, minmax(190px,1fr)); gap:16px; }
   .star-card{
     background:#f7f7ff; border-radius:18px; padding:18px 14px; text-align:center; position:relative;
     box-shadow:0 4px 14px rgba(0,0,0,0.08); border:2px solid transparent; transition:transform .15s ease;
   }
   .star-card.top{ border-color:var(--accent); background:#fffaf0; }
-  .star-card .student-name{ font-weight:bold; font-size:17px; color:var(--dark); margin-bottom:6px; word-break:break-word; }
-  .star-card .star-count{ font-size:26px; font-weight:bold; color:var(--primary); margin-bottom:10px; }
-  .star-card .star-btns{ display:flex; gap:8px; justify-content:center; }
-  .star-card .star-btns button{
-    width:42px; height:42px; border-radius:50%; border:none; font-size:18px; font-weight:bold; cursor:pointer; color:white;
+  .star-card .student-name{ font-weight:bold; font-size:17px; color:var(--dark); margin-bottom:10px; word-break:break-word; }
+  .stat-row{ margin-bottom:10px; }
+  .stat-row .stat-count{ font-size:22px; font-weight:bold; color:var(--primary); display:block; margin-bottom:6px; }
+  .stat-row.reminder-row .stat-count{ color:#6b7280; }
+  .stat-btns{ display:flex; gap:8px; justify-content:center; }
+  .stat-btns button{
+    width:38px; height:38px; border-radius:50%; border:none; font-size:17px; font-weight:bold; cursor:pointer; color:white;
   }
   .btn-plus{ background:var(--accent); color:var(--dark) !important; }
   .btn-minus{ background:#cbd5e1; color:#444 !important; }
+  .btn-plus-reminder{ background:#94a3b8; color:white !important; }
   .remove-x{ position:absolute; top:6px; right:10px; color:#bbb; cursor:pointer; font-size:14px; font-weight:bold; }
   .remove-x:hover{ color:var(--red); }
   .empty-roster{ text-align:center; color:#888; padding:30px; }
@@ -212,8 +215,10 @@
     <div class="roster-controls">
       <input type="text" id="newStudentInput" placeholder="Type a student's name and press Add...">
       <button id="addStudentBtn">➕ Add</button>
-      <button class="secondary" id="resetStarsBtn">Reset All Stars</button>
+      <button class="secondary" id="resetStarsBtn">Reset Stars</button>
+      <button class="secondary" id="resetRemindersBtn">Reset Reminders</button>
     </div>
+    <p style="text-align:center; color:#777; font-size:13.5px; margin:-8px 0 18px;">⭐ Stars for great work &nbsp;•&nbsp; 😢 Gentle reminders for focus</p>
     <div class="star-grid" id="starGrid"></div>
   </div>
 
@@ -342,8 +347,12 @@ document.getElementById('resetTimerBtn').addEventListener('click', ()=> setTimer
 updateTimerDisplay();
 
 /* ================= STAR BOARD ================= */
+function normalizeRoster(roster){
+  // fills in `reminders` for any student saved before this feature existed
+  return roster.map(s => ({ name: s.name, stars: s.stars || 0, reminders: s.reminders || 0 }));
+}
 function renderStarBoard(){
-  const roster = readRoster();
+  const roster = normalizeRoster(readRoster());
   const grid = document.getElementById('starGrid');
   if(roster.length === 0){
     grid.innerHTML = '<div class="empty-roster">No students added yet. Type a name above and click Add!</div>';
@@ -354,18 +363,27 @@ function renderStarBoard(){
     <div class="star-card ${s.stars === maxStars && maxStars > 0 ? 'top' : ''}">
       <span class="remove-x" data-idx="${i}" title="Remove student">✕</span>
       <div class="student-name">${s.name}</div>
-      <div class="star-count">⭐ ${s.stars}</div>
-      <div class="star-btns">
-        <button class="btn-minus" data-idx="${i}" data-action="minus">−</button>
-        <button class="btn-plus" data-idx="${i}" data-action="plus">+</button>
+      <div class="stat-row">
+        <span class="stat-count">⭐ ${s.stars}</span>
+        <div class="stat-btns">
+          <button class="btn-minus" data-idx="${i}" data-action="star-minus">−</button>
+          <button class="btn-plus" data-idx="${i}" data-action="star-plus">+</button>
+        </div>
+      </div>
+      <div class="stat-row reminder-row">
+        <span class="stat-count">😢 ${s.reminders}</span>
+        <div class="stat-btns">
+          <button class="btn-minus" data-idx="${i}" data-action="reminder-minus">−</button>
+          <button class="btn-plus-reminder" data-idx="${i}" data-action="reminder-plus">+</button>
+        </div>
       </div>
     </div>
   `).join('');
 
-  grid.querySelectorAll('[data-action="plus"]').forEach(btn=>{
+  grid.querySelectorAll('[data-action="star-plus"]').forEach(btn=>{
     btn.addEventListener('click', ()=>{
       const idx = parseInt(btn.dataset.idx,10);
-      const roster = readRoster();
+      const roster = normalizeRoster(readRoster());
       roster[idx].stars++;
       writeRoster(roster);
       spawnConfetti(18);
@@ -373,11 +391,29 @@ function renderStarBoard(){
       renderStarBoard();
     });
   });
-  grid.querySelectorAll('[data-action="minus"]').forEach(btn=>{
+  grid.querySelectorAll('[data-action="star-minus"]').forEach(btn=>{
     btn.addEventListener('click', ()=>{
       const idx = parseInt(btn.dataset.idx,10);
-      const roster = readRoster();
+      const roster = normalizeRoster(readRoster());
       roster[idx].stars = Math.max(0, roster[idx].stars - 1);
+      writeRoster(roster);
+      renderStarBoard();
+    });
+  });
+  grid.querySelectorAll('[data-action="reminder-plus"]').forEach(btn=>{
+    btn.addEventListener('click', ()=>{
+      const idx = parseInt(btn.dataset.idx,10);
+      const roster = normalizeRoster(readRoster());
+      roster[idx].reminders++;
+      writeRoster(roster);
+      renderStarBoard();
+    });
+  });
+  grid.querySelectorAll('[data-action="reminder-minus"]').forEach(btn=>{
+    btn.addEventListener('click', ()=>{
+      const idx = parseInt(btn.dataset.idx,10);
+      const roster = normalizeRoster(readRoster());
+      roster[idx].reminders = Math.max(0, roster[idx].reminders - 1);
       writeRoster(roster);
       renderStarBoard();
     });
@@ -385,7 +421,7 @@ function renderStarBoard(){
   grid.querySelectorAll('.remove-x').forEach(el=>{
     el.addEventListener('click', ()=>{
       const idx = parseInt(el.dataset.idx,10);
-      const roster = readRoster();
+      const roster = normalizeRoster(readRoster());
       const name = roster[idx].name;
       if(confirm(`Remove ${name} from the class list?`)){
         roster.splice(idx,1);
@@ -401,15 +437,21 @@ function addStudent(){
   const input = document.getElementById('newStudentInput');
   const name = input.value.trim();
   if(!name) return;
-  const roster = readRoster();
-  roster.push({ name, stars: 0 });
+  const roster = normalizeRoster(readRoster());
+  roster.push({ name, stars: 0, reminders: 0 });
   writeRoster(roster);
   input.value = '';
   renderStarBoard();
 }
 document.getElementById('resetStarsBtn').addEventListener('click', ()=>{
-  if(!confirm("Reset every student's stars back to 0? (Names stay.)")) return;
-  const roster = readRoster().map(s => ({ ...s, stars: 0 }));
+  if(!confirm("Reset every student's stars back to 0? (Names and reminders stay.)")) return;
+  const roster = normalizeRoster(readRoster()).map(s => ({ ...s, stars: 0 }));
+  writeRoster(roster);
+  renderStarBoard();
+});
+document.getElementById('resetRemindersBtn').addEventListener('click', ()=>{
+  if(!confirm("Clear all reminder counts back to 0? (Names and stars stay.)")) return;
+  const roster = normalizeRoster(readRoster()).map(s => ({ ...s, reminders: 0 }));
   writeRoster(roster);
   renderStarBoard();
 });
@@ -469,7 +511,7 @@ document.getElementById('pickBtn').addEventListener('click', ()=>{
 });
 document.getElementById('awardFromPickerBtn').addEventListener('click', ()=>{
   if(!lastPicked) return;
-  const roster = readRoster();
+  const roster = normalizeRoster(readRoster());
   const idx = roster.findIndex(s => s.name === lastPicked);
   if(idx === -1) return;
   roster[idx].stars++;

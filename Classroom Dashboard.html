@@ -41,6 +41,23 @@
   header p{ font-size:clamp(13px,2vw,15px); color:#D6D0F5; margin:0; }
 
   .tabs{ display:flex; justify-content:center; gap:12px; margin-bottom:22px; flex-wrap:wrap; }
+
+  .class-switcher{
+    display:flex; align-items:center; justify-content:center; gap:10px; flex-wrap:wrap;
+    background:rgba(255,255,255,0.12); border:2px solid rgba(255,255,255,0.25); border-radius:20px;
+    padding:12px 18px; margin-bottom:18px;
+  }
+  .class-switcher label{ color:white; font-weight:bold; font-size:14.5px; }
+  .class-switcher select{
+    padding:9px 14px; border-radius:10px; border:none; font-size:14.5px; font-weight:bold;
+    color:var(--primary); background:white; max-width:220px;
+  }
+  .class-switcher button{
+    padding:9px 16px; border-radius:10px; border:none; font-weight:bold; font-size:13.5px; cursor:pointer;
+  }
+  .class-switcher .cs-add{ background:var(--green); color:white; }
+  .class-switcher .cs-rename{ background:white; color:var(--primary); border:2px solid white; }
+  .class-switcher .cs-delete{ background:rgba(231,76,60,0.85); color:white; }
   .tab-btn{
     padding:12px 26px; border-radius:30px; font-weight:bold; font-size:16px; cursor:pointer;
     background:rgba(255,255,255,0.12); color:white; border:2px solid rgba(255,255,255,0.25);
@@ -221,6 +238,14 @@
     <p>Timer, star rewards, and a random picker — project this on the board during class!</p>
   </header>
 
+  <div class="class-switcher">
+    <label>🏫 Class:</label>
+    <select id="classSelect"></select>
+    <button class="cs-add" id="addClassBtn">➕ New Class</button>
+    <button class="cs-rename" id="renameClassBtn">✏️ Rename</button>
+    <button class="cs-delete" id="deleteClassBtn">🗑️ Delete</button>
+  </div>
+
   <div class="tabs">
     <div class="tab-btn active" data-tab="home">🏠 Home</div>
     <div class="tab-btn" data-tab="timer">⏱️ Timer</div>
@@ -233,6 +258,7 @@
     <div class="home-hero">
       <span class="home-emoji">🎉</span>
       <h2 id="homeGreeting">Welcome back!</h2>
+      <p id="homeClassName" style="font-weight:bold; color:var(--primary);"></p>
       <p>Pick a tool below to get your class started.</p>
     </div>
     <div class="home-stats" id="homeStats"></div>
@@ -321,11 +347,119 @@
 </div>
 
 <script>
-const STORAGE_ROSTER = "classroomDashboardRoster"; // [{name, stars}]
-const STORAGE_PICK_POOL = "classroomDashboardPickPool"; // array of names not yet picked
+const STORAGE_ROSTER = "classroomDashboardRoster"; // legacy single-class key, used only for one-time migration
+const STORAGE_CLASSES = "classroomDashboardClasses"; // [{id, name, students:[{name,stars,reminders}]}]
+const STORAGE_ACTIVE_CLASS = "classroomDashboardActiveClassId";
+const PICK_POOL_PREFIX = "classroomDashboardPickPool_"; // + classId
 
-function readRoster(){ try{ return JSON.parse(localStorage.getItem(STORAGE_ROSTER) || "[]"); }catch(e){ return []; } }
-function writeRoster(list){ try{ localStorage.setItem(STORAGE_ROSTER, JSON.stringify(list)); }catch(e){} }
+function uid(){ return 'c_' + Date.now().toString(36) + '_' + Math.random().toString(36).slice(2,8); }
+
+function readClasses(){ try{ return JSON.parse(localStorage.getItem(STORAGE_CLASSES) || "null"); }catch(e){ return null; } }
+function writeClasses(classes){ try{ localStorage.setItem(STORAGE_CLASSES, JSON.stringify(classes)); }catch(e){} }
+function getActiveClassId(){ try{ return localStorage.getItem(STORAGE_ACTIVE_CLASS); }catch(e){ return null; } }
+function setActiveClassId(id){ try{ localStorage.setItem(STORAGE_ACTIVE_CLASS, id); }catch(e){} }
+
+function normalizeStudents(students){
+  return (students||[]).map(s => ({ name: s.name, stars: s.stars || 0, reminders: s.reminders || 0 }));
+}
+
+// One-time setup: migrate any old single-class roster into a real "class", or start with one empty class.
+function ensureClassesInitialized(){
+  let classes = readClasses();
+  if(!classes || classes.length === 0){
+    let oldRoster = [];
+    try{ oldRoster = JSON.parse(localStorage.getItem(STORAGE_ROSTER) || "[]"); }catch(e){}
+    classes = [{
+      id: uid(),
+      name: oldRoster.length ? "My Class" : "Class 1",
+      students: normalizeStudents(oldRoster)
+    }];
+    writeClasses(classes);
+  }
+  let activeId = getActiveClassId();
+  if(!activeId || !classes.some(c => c.id === activeId)){
+    activeId = classes[0].id;
+    setActiveClassId(activeId);
+  }
+  return classes;
+}
+ensureClassesInitialized();
+
+function getActiveClass(){
+  const classes = readClasses() || ensureClassesInitialized();
+  const activeId = getActiveClassId();
+  return classes.find(c => c.id === activeId) || classes[0];
+}
+
+// readRoster/writeRoster now transparently operate on the ACTIVE class's student
+// list — every existing Star Board / Random Picker / Home function that already
+// calls these keeps working unchanged, just scoped to whichever class is selected.
+function readRoster(){
+  const cls = getActiveClass();
+  return cls ? normalizeStudents(cls.students) : [];
+}
+function writeRoster(students){
+  const classes = readClasses();
+  const activeId = getActiveClassId();
+  const idx = classes.findIndex(c => c.id === activeId);
+  if(idx === -1) return;
+  classes[idx].students = students;
+  writeClasses(classes);
+}
+
+/* ================= CLASS SWITCHER ================= */
+function renderClassSelect(){
+  const classes = readClasses();
+  const activeId = getActiveClassId();
+  const sel = document.getElementById('classSelect');
+  sel.innerHTML = classes.map(c => `<option value="${c.id}" ${c.id===activeId?'selected':''}>${c.name} (${c.students.length})</option>`).join('');
+  document.getElementById('deleteClassBtn').style.display = classes.length > 1 ? 'inline-block' : 'none';
+}
+function switchToClass(id){
+  setActiveClassId(id);
+  renderClassSelect();
+  renderHome();
+  renderStarBoard();
+  renderPickerName();
+  document.getElementById('pickerName').textContent = 'Tap "Pick a Student!"';
+  document.getElementById('awardFromPickerBtn').style.display = 'none';
+}
+document.getElementById('classSelect').addEventListener('change', (e)=> switchToClass(e.target.value));
+document.getElementById('addClassBtn').addEventListener('click', ()=>{
+  const name = prompt("Name for the new class (e.g. \"Year 3B\"):");
+  if(!name || !name.trim()) return;
+  const classes = readClasses();
+  const newClass = { id: uid(), name: name.trim(), students: [] };
+  classes.push(newClass);
+  writeClasses(classes);
+  switchToClass(newClass.id);
+});
+document.getElementById('renameClassBtn').addEventListener('click', ()=>{
+  const classes = readClasses();
+  const activeId = getActiveClassId();
+  const cls = classes.find(c=>c.id===activeId);
+  if(!cls) return;
+  const name = prompt("Rename this class:", cls.name);
+  if(!name || !name.trim()) return;
+  cls.name = name.trim();
+  writeClasses(classes);
+  renderClassSelect();
+  renderHome();
+});
+document.getElementById('deleteClassBtn').addEventListener('click', ()=>{
+  const classes = readClasses();
+  if(classes.length <= 1){ alert("You need at least one class."); return; }
+  const activeId = getActiveClassId();
+  const cls = classes.find(c=>c.id===activeId);
+  if(!confirm(`Delete "${cls.name}" and all its students, stars, and reminders? This can't be undone.`)) return;
+  const remaining = classes.filter(c => c.id !== activeId);
+  writeClasses(remaining);
+  try{ localStorage.removeItem(PICK_POOL_PREFIX + activeId); }catch(e){}
+  switchToClass(remaining[0].id);
+});
+renderClassSelect();
+
+const STORAGE_PICK_POOL = "classroomDashboardPickPool"; // kept for reference; actual keys are per-class, see PICK_POOL_PREFIX
 
 /* ================= TABS ================= */
 function switchTab(tabName){
@@ -348,7 +482,9 @@ document.querySelectorAll('.home-card').forEach(card=>{
 function renderHome(){
   const hour = new Date().getHours();
   const timeGreeting = hour < 12 ? "Good morning! ☀️" : hour < 17 ? "Good afternoon! 🌤️" : "Good evening! 🌙";
+  const activeClass = getActiveClass();
   document.getElementById('homeGreeting').textContent = timeGreeting;
+  document.getElementById('homeClassName').textContent = activeClass ? `Managing: ${activeClass.name}` : '';
 
   const roster = normalizeRoster(readRoster());
   const totalStars = roster.reduce((sum,s)=>sum+s.stars, 0);
@@ -459,6 +595,7 @@ function normalizeRoster(roster){
   return roster.map(s => ({ name: s.name, stars: s.stars || 0, reminders: s.reminders || 0 }));
 }
 function renderStarBoard(){
+  renderClassSelect();
   const roster = normalizeRoster(readRoster());
   const grid = document.getElementById('starGrid');
   if(roster.length === 0){
@@ -653,8 +790,8 @@ document.getElementById('resetRemindersBtn').addEventListener('click', ()=>{
 renderStarBoard();
 
 /* ================= RANDOM PICKER ================= */
-function readPickPool(){ try{ return JSON.parse(localStorage.getItem(STORAGE_PICK_POOL) || "null"); }catch(e){ return null; } }
-function writePickPool(list){ try{ localStorage.setItem(STORAGE_PICK_POOL, JSON.stringify(list)); }catch(e){} }
+function readPickPool(){ try{ return JSON.parse(localStorage.getItem(PICK_POOL_PREFIX + getActiveClassId()) || "null"); }catch(e){ return null; } }
+function writePickPool(list){ try{ localStorage.setItem(PICK_POOL_PREFIX + getActiveClassId(), JSON.stringify(list)); }catch(e){} }
 let lastPicked = null;
 
 function renderPickerName(){

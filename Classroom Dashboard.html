@@ -40,7 +40,14 @@
   header h1{ font-size:clamp(28px,4.5vw,42px); margin:0 0 6px; text-shadow:0 4px 12px rgba(0,0,0,0.3); }
   header p{ font-size:clamp(13px,2vw,15px); color:#D6D0F5; margin:0; }
 
-  .tabs{ display:flex; justify-content:center; gap:12px; margin-bottom:22px; flex-wrap:wrap; }
+  .dashboard-layout{ display:flex; gap:20px; align-items:flex-start; }
+
+  .tabs{
+    display:flex; flex-direction:column; gap:8px;
+    background:rgba(255,255,255,0.12); border:2px solid rgba(255,255,255,0.25); border-radius:20px;
+    padding:16px 12px; min-width:200px; flex-shrink:0; position:sticky; top:20px;
+  }
+  .main-content{ flex:1; min-width:0; }
 
   .class-switcher{
     display:flex; align-items:center; justify-content:center; gap:10px; flex-wrap:wrap;
@@ -59,10 +66,21 @@
   .class-switcher .cs-rename{ background:white; color:var(--primary); border:2px solid white; }
   .class-switcher .cs-delete{ background:rgba(231,76,60,0.85); color:white; }
   .tab-btn{
-    padding:12px 26px; border-radius:30px; font-weight:bold; font-size:16px; cursor:pointer;
-    background:rgba(255,255,255,0.12); color:white; border:2px solid rgba(255,255,255,0.25);
+    padding:13px 16px; border-radius:14px; font-weight:bold; font-size:15px; cursor:pointer;
+    background:transparent; color:white; border:none; text-align:left;
+    display:flex; align-items:center; gap:10px; white-space:nowrap;
   }
-  .tab-btn.active{ background:white; color:var(--primary); border-color:white; }
+  .tab-btn:hover:not(.active){ background:rgba(255,255,255,0.14); }
+  .tab-btn.active{ background:white; color:var(--primary); }
+
+  @media (max-width: 760px){
+    .dashboard-layout{ flex-direction:column; }
+    .tabs{
+      flex-direction:row; width:100%; overflow-x:auto; position:static;
+      -webkit-overflow-scrolling:touch;
+    }
+    .tab-btn{ flex-shrink:0; }
+  }
 
   .panel{
     background:white; border-radius:26px; padding:32px 30px; box-shadow:0 16px 45px rgba(0,0,0,0.35);
@@ -281,22 +299,24 @@
     <p>Timer, star rewards, and a random picker — project this on the board during class!</p>
   </header>
 
-  <div class="class-switcher">
-    <label>🏫 Class:</label>
-    <select id="classSelect"></select>
-    <button class="cs-add" id="addClassBtn">➕ New Class</button>
-    <button class="cs-rename" id="renameClassBtn">✏️ Rename</button>
-    <button class="cs-delete" id="deleteClassBtn">🗑️ Delete</button>
-  </div>
+  <div class="dashboard-layout">
+    <div class="tabs">
+      <div class="tab-btn active" data-tab="home">🏠 <span>Home</span></div>
+      <div class="tab-btn" data-tab="timer">⏱️ <span>Timer</span></div>
+      <div class="tab-btn" data-tab="stars">⭐ <span>Star Board</span></div>
+      <div class="tab-btn" data-tab="picker">🎯 <span>Random Picker</span></div>
+      <div class="tab-btn" data-tab="attendance">✅ <span>Attendance</span></div>
+      <div class="tab-btn" data-tab="noise">🔊 <span>Noise Level</span></div>
+    </div>
 
-  <div class="tabs">
-    <div class="tab-btn active" data-tab="home">🏠 Home</div>
-    <div class="tab-btn" data-tab="timer">⏱️ Timer</div>
-    <div class="tab-btn" data-tab="stars">⭐ Star Board</div>
-    <div class="tab-btn" data-tab="picker">🎯 Random Picker</div>
-    <div class="tab-btn" data-tab="attendance">✅ Attendance</div>
-    <div class="tab-btn" data-tab="noise">🔊 Noise Level</div>
-  </div>
+    <div class="main-content">
+    <div class="class-switcher">
+      <label>🏫 Class:</label>
+      <select id="classSelect"></select>
+      <button class="cs-add" id="addClassBtn">➕ New Class</button>
+      <button class="cs-rename" id="renameClassBtn">✏️ Rename</button>
+      <button class="cs-delete" id="deleteClassBtn">🗑️ Delete</button>
+    </div>
 
   <!-- HOME -->
   <div class="panel active" id="panel-home">
@@ -422,6 +442,9 @@
     </div>
     <p class="noise-privacy-note">🔒 Sound is measured live in your browser only — nothing is ever recorded, saved, or sent anywhere. If it's triggering too easily (or not enough) for your room, try a different sensitivity level above.</p>
     <div id="noiseStatus"></div>
+  </div>
+
+    </div>
   </div>
 
   <footer>Your class list and stars are saved on this computer only, so they'll be here next lesson too.</footer>

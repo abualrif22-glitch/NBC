@@ -193,6 +193,49 @@
     font-weight:bold; cursor:pointer; font-size:14px; display:inline-block;
   }
   #bulkAddMsg{ margin-top:10px; font-size:13.5px; font-weight:bold; color:#0e9e6f; min-height:18px; }
+
+  /* ===== ATTENDANCE ===== */
+  .attendance-header{ text-align:center; margin-bottom:18px; }
+  .attendance-header .att-date{ font-size:18px; font-weight:bold; color:var(--primary); }
+  .attendance-header .att-summary{ font-size:14.5px; color:#555; margin-top:4px; }
+  .attendance-list{ display:flex; flex-direction:column; gap:10px; margin-bottom:20px; }
+  .attendance-row{
+    display:flex; align-items:center; justify-content:space-between; background:#f7f7ff;
+    border-radius:14px; padding:12px 16px;
+  }
+  .attendance-name{ font-weight:bold; font-size:16px; color:var(--dark); }
+  .attendance-toggle{ display:flex; gap:8px; }
+  .attendance-toggle button{
+    padding:8px 16px; border-radius:10px; border:2px solid #ddd; background:white; color:#888;
+    font-weight:bold; font-size:13.5px; cursor:pointer;
+  }
+  .attendance-toggle button.att-present.active{ background:var(--green); border-color:var(--green); color:white; }
+  .attendance-toggle button.att-absent.active{ background:var(--red); border-color:var(--red); color:white; }
+  .attendance-actions{ display:flex; gap:12px; justify-content:center; flex-wrap:wrap; margin-bottom:10px; }
+  .attendance-actions button{ padding:12px 26px; border-radius:12px; border:none; font-weight:bold; font-size:15px; cursor:pointer; }
+  #markAllPresentBtn{ background:white; color:var(--primary); border:2px solid var(--primary) !important; }
+  #saveAttendanceBtn{ background:var(--primary); color:white; }
+  #attendanceSaveMsg{ text-align:center; color:#0e9e6f; font-weight:bold; min-height:20px; margin-bottom:16px; }
+  .attendance-history h3{ font-size:15px; color:#333; margin:10px 0 10px; text-align:center; }
+  .history-row{ display:flex; justify-content:space-between; padding:8px 14px; border-bottom:1px solid #eee; font-size:14px; color:#555; }
+
+  /* ===== NOISE METER ===== */
+  .noise-face{ text-align:center; font-size:80px; margin-bottom:6px; transition:transform .2s ease; }
+  .noise-bar-track{ background:#eee; border-radius:20px; height:36px; overflow:hidden; margin-bottom:18px; }
+  .noise-bar-fill{ height:100%; width:0%; background:var(--green); transition:width .1s linear, background .2s ease; }
+  .noise-warning-banner{
+    background:var(--red); color:white; text-align:center; font-weight:bold; font-size:18px;
+    padding:14px; border-radius:14px; margin-bottom:18px; animation:noiseWarnPulse 0.8s infinite;
+  }
+  @keyframes noiseWarnPulse{ 0%,100%{ transform:scale(1); } 50%{ transform:scale(1.03); } }
+  .noise-controls{ display:flex; justify-content:center; gap:14px; margin-bottom:18px; }
+  .noise-controls button{ padding:14px 30px; border-radius:14px; border:none; font-weight:bold; font-size:16px; cursor:pointer; color:white; }
+  #startListenBtn{ background:var(--green); }
+  #stopListenBtn{ background:#94a3b8; }
+  .sensitivity-row{ display:flex; justify-content:center; gap:18px; flex-wrap:wrap; margin-bottom:16px; font-size:14.5px; color:#444; }
+  .sensitivity-row label{ display:flex; align-items:center; gap:6px; cursor:pointer; }
+  .noise-privacy-note{ text-align:center; font-size:12.5px; color:#888; margin-bottom:8px; }
+  #noiseStatus{ text-align:center; color:var(--red); font-weight:bold; min-height:20px; }
 </style>
 </head>
 <body>
@@ -251,6 +294,8 @@
     <div class="tab-btn" data-tab="timer">⏱️ Timer</div>
     <div class="tab-btn" data-tab="stars">⭐ Star Board</div>
     <div class="tab-btn" data-tab="picker">🎯 Random Picker</div>
+    <div class="tab-btn" data-tab="attendance">✅ Attendance</div>
+    <div class="tab-btn" data-tab="noise">🔊 Noise Level</div>
   </div>
 
   <!-- HOME -->
@@ -343,6 +388,42 @@
     </div>
   </div>
 
+  <!-- ATTENDANCE -->
+  <div class="panel" id="panel-attendance">
+    <div class="attendance-header">
+      <div class="att-date" id="attendanceDate"></div>
+      <div class="att-summary" id="attendanceSummary"></div>
+    </div>
+    <div class="attendance-list" id="attendanceList"></div>
+    <div class="attendance-actions">
+      <button id="markAllPresentBtn">✅ Mark All Present</button>
+      <button id="saveAttendanceBtn">💾 Save Today's Attendance</button>
+    </div>
+    <div id="attendanceSaveMsg"></div>
+    <div class="attendance-history">
+      <h3>📅 Recent History</h3>
+      <div id="attendanceHistory"></div>
+    </div>
+  </div>
+
+  <!-- NOISE LEVEL -->
+  <div class="panel" id="panel-noise">
+    <div class="noise-face" id="noiseFace">😌</div>
+    <div class="noise-bar-track"><div class="noise-bar-fill" id="noiseBarFill"></div></div>
+    <div class="noise-warning-banner" id="noiseWarningBanner" style="display:none;">🤫 It's getting loud — let's bring the volume down!</div>
+    <div class="noise-controls">
+      <button id="startListenBtn">🎤 Start Listening</button>
+      <button id="stopListenBtn" style="display:none;">⏹ Stop Listening</button>
+    </div>
+    <div class="sensitivity-row">
+      <label><input type="radio" name="noiseSensitivity" value="quiet"> 🤫 Quiet Task</label>
+      <label><input type="radio" name="noiseSensitivity" value="normal" checked> 🙂 Normal</label>
+      <label><input type="radio" name="noiseSensitivity" value="group"> 👥 Group Work</label>
+    </div>
+    <p class="noise-privacy-note">🔒 Sound is measured live in your browser only — nothing is ever recorded, saved, or sent anywhere. If it's triggering too easily (or not enough) for your room, try a different sensitivity level above.</p>
+    <div id="noiseStatus"></div>
+  </div>
+
   <footer>Your class list and stars are saved on this computer only, so they'll be here next lesson too.</footer>
 </div>
 
@@ -423,6 +504,7 @@ function switchToClass(id){
   renderPickerName();
   document.getElementById('pickerName').textContent = 'Tap "Pick a Student!"';
   document.getElementById('awardFromPickerBtn').style.display = 'none';
+  renderAttendance();
 }
 document.getElementById('classSelect').addEventListener('change', (e)=> switchToClass(e.target.value));
 document.getElementById('addClassBtn').addEventListener('click', ()=>{
@@ -463,6 +545,10 @@ const STORAGE_PICK_POOL = "classroomDashboardPickPool"; // kept for reference; a
 
 /* ================= TABS ================= */
 function switchTab(tabName){
+  const previousTab = document.querySelector('.tab-btn.active')?.dataset.tab;
+  if(previousTab === 'noise' && tabName !== 'noise' && typeof stopListening === 'function' && isListening){
+    stopListening(); // release the microphone whenever we leave this tab
+  }
   document.querySelectorAll('.tab-btn').forEach(b=>b.classList.remove('active'));
   document.querySelectorAll('.panel').forEach(p=>p.classList.remove('active'));
   document.querySelector(`.tab-btn[data-tab="${tabName}"]`).classList.add('active');
@@ -470,6 +556,7 @@ function switchTab(tabName){
   if(tabName === 'home') renderHome();
   if(tabName === 'stars') renderStarBoard();
   if(tabName === 'picker') renderPickerName();
+  if(tabName === 'attendance') renderAttendance();
 }
 document.querySelectorAll('.tab-btn').forEach(btn=>{
   btn.addEventListener('click', ()=> switchTab(btn.dataset.tab));
@@ -851,6 +938,191 @@ document.getElementById('awardFromPickerBtn').addEventListener('click', ()=>{
   spawnConfetti(24);
   showCelebrateBanner(`⭐ Great job, ${lastPicked}!`);
 });
+
+/* ================= ATTENDANCE ================= */
+function getTodayKey(){
+  const d = new Date();
+  return d.getFullYear() + '-' + String(d.getMonth()+1).padStart(2,'0') + '-' + String(d.getDate()).padStart(2,'0');
+}
+function readAttendance(){
+  const cls = getActiveClass();
+  if(!cls) return {};
+  try{ return JSON.parse(localStorage.getItem('classroomDashboardAttendance_'+cls.id) || "{}"); }catch(e){ return {}; }
+}
+function writeAttendance(data){
+  const cls = getActiveClass();
+  if(!cls) return;
+  try{ localStorage.setItem('classroomDashboardAttendance_'+cls.id, JSON.stringify(data)); }catch(e){}
+}
+let todaysAttendance = {}; // in-memory working copy for today, {studentName: 'present'|'absent'}
+
+function renderAttendance(){
+  const roster = normalizeRoster(readRoster());
+  const allData = readAttendance();
+  const todayKey = getTodayKey();
+  todaysAttendance = allData[todayKey] ? { ...allData[todayKey] } : {};
+  roster.forEach(s => { if(!(s.name in todaysAttendance)) todaysAttendance[s.name] = 'present'; });
+
+  document.getElementById('attendanceDate').textContent =
+    new Date().toLocaleDateString(undefined, { weekday:'long', year:'numeric', month:'long', day:'numeric' });
+
+  renderAttendanceList(roster);
+  updateAttendanceSummary(roster);
+  renderAttendanceHistory(allData);
+  document.getElementById('attendanceSaveMsg').textContent = '';
+}
+function renderAttendanceList(roster){
+  const list = document.getElementById('attendanceList');
+  if(roster.length === 0){
+    list.innerHTML = '<div class="empty-roster">No students in this class yet — add some on the Star Board tab.</div>';
+    return;
+  }
+  list.innerHTML = roster.map(s => {
+    const status = todaysAttendance[s.name] || 'present';
+    return `<div class="attendance-row">
+      <span class="attendance-name">${s.name}</span>
+      <div class="attendance-toggle">
+        <button class="att-present ${status==='present'?'active':''}" data-name="${s.name}" data-status="present">✅ Present</button>
+        <button class="att-absent ${status==='absent'?'active':''}" data-name="${s.name}" data-status="absent">❌ Absent</button>
+      </div>
+    </div>`;
+  }).join('');
+  list.querySelectorAll('button[data-status]').forEach(btn=>{
+    btn.addEventListener('click', ()=>{
+      todaysAttendance[btn.dataset.name] = btn.dataset.status;
+      renderAttendanceList(roster);
+      updateAttendanceSummary(roster);
+    });
+  });
+}
+function updateAttendanceSummary(roster){
+  const present = roster.filter(s => (todaysAttendance[s.name] || 'present') === 'present').length;
+  const absent = roster.length - present;
+  document.getElementById('attendanceSummary').textContent =
+    roster.length ? `✅ ${present} present  ·  ❌ ${absent} absent  ·  ${roster.length} total` : '';
+}
+function renderAttendanceHistory(allData){
+  const dates = Object.keys(allData).sort().reverse().slice(0, 7);
+  const el = document.getElementById('attendanceHistory');
+  if(dates.length === 0){
+    el.innerHTML = '<p style="color:#999; text-align:center; font-size:14px;">No saved attendance yet — mark today\'s and click Save above.</p>';
+    return;
+  }
+  el.innerHTML = dates.map(d => {
+    const rec = allData[d];
+    const values = Object.values(rec);
+    const presentCount = values.filter(v => v === 'present').length;
+    return `<div class="history-row"><span>${d}</span><span>${presentCount}/${values.length} present</span></div>`;
+  }).join('');
+}
+document.getElementById('markAllPresentBtn').addEventListener('click', ()=>{
+  const roster = normalizeRoster(readRoster());
+  roster.forEach(s => { todaysAttendance[s.name] = 'present'; });
+  renderAttendanceList(roster);
+  updateAttendanceSummary(roster);
+});
+document.getElementById('saveAttendanceBtn').addEventListener('click', ()=>{
+  const allData = readAttendance();
+  allData[getTodayKey()] = { ...todaysAttendance };
+  writeAttendance(allData);
+  document.getElementById('attendanceSaveMsg').textContent = "✅ Saved today's attendance!";
+  renderAttendanceHistory(allData);
+  setTimeout(()=>{ document.getElementById('attendanceSaveMsg').textContent = ''; }, 2500);
+});
+
+/* ================= NOISE LEVEL METER ================= */
+let noiseAudioCtx = null, noiseAnalyser = null, micStream = null, noiseRafId = null;
+let isListening = false, loudStartTime = null, warningSoundPlayed = false;
+const SENSITIVITY_THRESHOLDS = { quiet: 18, normal: 35, group: 55 };
+let currentThreshold = SENSITIVITY_THRESHOLDS.normal;
+
+document.querySelectorAll('input[name="noiseSensitivity"]').forEach(radio=>{
+  radio.addEventListener('change', (e)=>{ currentThreshold = SENSITIVITY_THRESHOLDS[e.target.value]; });
+});
+
+async function startListening(){
+  document.getElementById('noiseStatus').textContent = '';
+  try{
+    micStream = await navigator.mediaDevices.getUserMedia({ audio: true });
+  }catch(err){
+    document.getElementById('noiseStatus').textContent =
+      'Microphone access was blocked or unavailable. Please allow microphone access in your browser to use the noise meter.';
+    return;
+  }
+  noiseAudioCtx = new (window.AudioContext || window.webkitAudioContext)();
+  const source = noiseAudioCtx.createMediaStreamSource(micStream);
+  noiseAnalyser = noiseAudioCtx.createAnalyser();
+  noiseAnalyser.fftSize = 512;
+  source.connect(noiseAnalyser);
+  isListening = true;
+  loudStartTime = null;
+  warningSoundPlayed = false;
+  document.getElementById('startListenBtn').style.display = 'none';
+  document.getElementById('stopListenBtn').style.display = 'inline-block';
+  noiseLoop();
+}
+function stopListening(){
+  isListening = false;
+  if(noiseRafId) cancelAnimationFrame(noiseRafId);
+  if(micStream){ micStream.getTracks().forEach(t => t.stop()); micStream = null; }
+  if(noiseAudioCtx){ noiseAudioCtx.close(); noiseAudioCtx = null; }
+  document.getElementById('startListenBtn').style.display = 'inline-block';
+  document.getElementById('stopListenBtn').style.display = 'none';
+  setNoiseUI(0, false);
+}
+function playWarningBeep(){
+  try{
+    const ctx = new (window.AudioContext || window.webkitAudioContext)();
+    const o = ctx.createOscillator(); const g = ctx.createGain();
+    o.type = 'sine'; o.frequency.value = 440;
+    o.connect(g); g.connect(ctx.destination);
+    g.gain.setValueAtTime(0.15, ctx.currentTime);
+    g.gain.exponentialRampToValueAtTime(0.001, ctx.currentTime + 0.5);
+    o.start(); o.stop(ctx.currentTime + 0.5);
+  }catch(e){ /* audio not available */ }
+}
+function noiseLoop(){
+  if(!isListening) return;
+  const data = new Uint8Array(noiseAnalyser.fftSize);
+  noiseAnalyser.getByteTimeDomainData(data);
+  let sumSquares = 0;
+  for(let i=0;i<data.length;i++){
+    const v = (data[i]-128)/128;
+    sumSquares += v*v;
+  }
+  const rms = Math.sqrt(sumSquares/data.length);
+  const level = Math.min(100, Math.round(rms*300));
+
+  const now = performance.now();
+  const isLoudNow = level >= currentThreshold;
+  if(isLoudNow){
+    if(loudStartTime === null) loudStartTime = now;
+  } else {
+    loudStartTime = null;
+    warningSoundPlayed = false;
+  }
+  const sustainedLoud = loudStartTime !== null && (now - loudStartTime > 1200);
+  if(sustainedLoud && !warningSoundPlayed){
+    playWarningBeep();
+    warningSoundPlayed = true;
+  }
+  setNoiseUI(level, sustainedLoud);
+  noiseRafId = requestAnimationFrame(noiseLoop);
+}
+function setNoiseUI(level, warning){
+  document.getElementById('noiseBarFill').style.width = level + '%';
+  document.getElementById('noiseBarFill').style.background = warning
+    ? '#E74C3C' : (level > currentThreshold*0.7 ? '#FFD23F' : '#06D6A0');
+  document.getElementById('noiseWarningBanner').style.display = warning ? 'block' : 'none';
+  const face = !isListening ? '😴'
+    : level < currentThreshold*0.4 ? '😌'
+    : level < currentThreshold*0.7 ? '🙂'
+    : level < currentThreshold ? '😐'
+    : '😬';
+  document.getElementById('noiseFace').textContent = face;
+}
+document.getElementById('startListenBtn').addEventListener('click', startListening);
+document.getElementById('stopListenBtn').addEventListener('click', stopListening);
 </script>
 </body>
 </html>

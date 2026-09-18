@@ -1,0 +1,103 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>Vote</title>
+<script src="https://www.gstatic.com/firebasejs/10.13.0/firebase-app-compat.js"></script>
+<script src="https://www.gstatic.com/firebasejs/10.13.0/firebase-firestore-compat.js"></script>
+<style>
+  :root{ --primary:#3A0CA3; --secondary:#4CC9F0; --dark:#1A1A2E; --green:#06D6A0; --red:#E74C3C; }
+  *{box-sizing:border-box;}
+  html,body{ margin:0; height:100%; }
+  body{
+    font-family:'Segoe UI', Calibri, Arial, sans-serif;
+    background:linear-gradient(160deg,#1A1A2E 0%, #3A0CA3 55%, #2A2A72 100%);
+    min-height:100vh; display:flex; align-items:center; justify-content:center; padding:20px;
+  }
+  .card{
+    background:white; border-radius:24px; padding:32px 26px; max-width:440px; width:100%;
+    box-shadow:0 16px 45px rgba(0,0,0,0.35); text-align:center;
+  }
+  .card h1{ font-size:22px; color:var(--primary); margin:0 0 6px; }
+  .card p.sub{ color:#666; font-size:14px; margin:0 0 22px; }
+  #question{ font-size:20px; font-weight:bold; color:var(--dark); margin-bottom:22px; }
+  .vote-btn{
+    display:block; width:100%; padding:16px; margin-bottom:12px; border-radius:14px; border:2px solid var(--secondary);
+    background:white; color:var(--dark); font-weight:bold; font-size:16px; cursor:pointer;
+  }
+  .vote-btn:active{ background:#eef8fd; }
+  .vote-btn:disabled{ opacity:0.5; cursor:not-allowed; }
+  .status-msg{ font-size:15px; color:#555; margin-top:10px; }
+  .success-icon{ font-size:56px; margin-bottom:10px; }
+  .closed-icon{ font-size:56px; margin-bottom:10px; }
+</style>
+</head>
+<body>
+<div class="card" id="card">
+  <h1>🗳️ Class Poll</h1>
+  <p class="sub">Tap an option to cast your vote.</p>
+  <div id="content">
+    <p class="status-msg">Connecting...</p>
+  </div>
+</div>
+
+<script>
+const params = new URLSearchParams(window.location.search);
+const classId = params.get('class');
+const content = document.getElementById('content');
+
+if(!classId){
+  content.innerHTML = '<p class="status-msg">This link is missing information — ask your teacher for the correct link or QR code.</p>';
+} else {
+  try{
+    firebase.initializeApp({
+      apiKey: "AIzaSyCEJtHd802MyuZUlwt6OfGkl9IitHaSOaA",
+      authDomain: "tasks-results.firebaseapp.com",
+      projectId: "tasks-results",
+      storageBucket: "tasks-results.firebasestorage.app",
+      messagingSenderId: "1014525306500",
+      appId: "1:1014525306500:web:3ffe2e6f5554e9140e04d1"
+    });
+    const db = firebase.firestore();
+    const ref = db.collection('livePolls').doc(classId);
+
+    function votedKey(question){ return 'votedPoll_' + classId + '_' + question; }
+
+    ref.onSnapshot((doc)=>{
+      if(!doc.exists || !doc.data().active){
+        content.innerHTML = `<div class="closed-icon">🤫</div><p class="status-msg">No poll running right now — ask your teacher!</p>`;
+        return;
+      }
+      const data = doc.data();
+      const alreadyVoted = localStorage.getItem(votedKey(data.question));
+      if(alreadyVoted){
+        content.innerHTML = `<div class="success-icon">✅</div><p class="status-msg">Thanks — you voted for <strong>${alreadyVoted}</strong>! Watch the board for live results.</p>`;
+        return;
+      }
+      content.innerHTML = `
+        <div id="question">${data.question}</div>
+        ${data.options.map((opt,i)=>`<button class="vote-btn" data-idx="${i}" data-label="${opt}">${opt}</button>`).join('')}
+      `;
+      content.querySelectorAll('.vote-btn').forEach(btn=>{
+        btn.addEventListener('click', async ()=>{
+          content.querySelectorAll('.vote-btn').forEach(b=>b.disabled = true);
+          try{
+            await ref.update({ ['votes.' + btn.dataset.idx]: firebase.firestore.FieldValue.increment(1) });
+            localStorage.setItem(votedKey(data.question), btn.dataset.label);
+            content.innerHTML = `<div class="success-icon">✅</div><p class="status-msg">Thanks — you voted for <strong>${btn.dataset.label}</strong>! Watch the board for live results.</p>`;
+          }catch(err){
+            content.innerHTML = `<p class="status-msg">Something went wrong sending your vote. Please try again.</p>`;
+          }
+        });
+      });
+    }, (err)=>{
+      content.innerHTML = '<p class="status-msg">Could not connect. Check your internet connection and try reloading.</p>';
+    });
+  }catch(err){
+    content.innerHTML = '<p class="status-msg">Could not load the voting page. Please try again.</p>';
+  }
+}
+</script>
+</body>
+</html>

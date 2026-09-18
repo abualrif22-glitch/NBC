@@ -4,7 +4,10 @@
 <meta charset="UTF-8">
 <meta name="viewport" content="width=device-width, initial-scale=1">
 <title>Classroom Dashboard</title>
+<script src="https://cdnjs.cloudflare.com/ajax/libs/qrcodejs/1.0.0/qrcode.min.js"></script>
 <script src="https://cdnjs.cloudflare.com/ajax/libs/xlsx/0.18.5/xlsx.full.min.js"></script>
+<script src="https://www.gstatic.com/firebasejs/10.13.0/firebase-app-compat.js"></script>
+<script src="https://www.gstatic.com/firebasejs/10.13.0/firebase-firestore-compat.js"></script>
 <style>
   :root{
     --dark:#1A1A2E; --light:#F7F9FC; --primary:#3A0CA3; --secondary:#4CC9F0;
@@ -322,6 +325,60 @@
   .announce-actions button{ padding:11px 24px; border-radius:12px; border:none; font-weight:bold; font-size:14.5px; cursor:pointer; }
   #saveAnnounceBtn{ background:var(--primary); color:white; }
   #clearAnnounceBtn{ background:white; color:var(--red); border:2px solid var(--red) !important; }
+
+  /* ===== DRAWING BOARD ===== */
+  .draw-toolbar{ display:flex; gap:14px; justify-content:center; align-items:center; flex-wrap:wrap; margin-bottom:14px; }
+  .draw-toolbar label{ font-size:13.5px; font-weight:bold; color:#555; display:flex; align-items:center; gap:6px; }
+  .draw-toolbar input[type=color]{ width:40px; height:36px; border:none; border-radius:8px; cursor:pointer; }
+  .draw-toolbar input[type=range]{ width:100px; }
+  .draw-toolbar button{ padding:9px 18px; border-radius:10px; border:2px solid var(--primary); background:white; color:var(--primary); font-weight:bold; font-size:13.5px; cursor:pointer; }
+  .draw-toolbar button.active{ background:var(--primary); color:white; }
+  .draw-toolbar button.danger{ border-color:var(--red); color:var(--red); }
+  #drawCanvas{ width:100%; aspect-ratio:16/9; background:white; border-radius:16px; border:3px dashed #ddd; touch-action:none; cursor:crosshair; }
+
+  /* ===== QR CODE ===== */
+  .qr-input-row{ display:flex; gap:10px; justify-content:center; margin-bottom:18px; flex-wrap:wrap; }
+  .qr-input-row input{ flex:1; min-width:240px; padding:12px 16px; border-radius:12px; border:2px solid #ddd; font-size:15px; }
+  .qr-input-row button{ padding:12px 24px; border-radius:12px; border:none; background:var(--primary); color:white; font-weight:bold; cursor:pointer; }
+  #qrDisplay{ display:flex; flex-direction:column; align-items:center; justify-content:center; min-height:260px; background:#f7f7ff; border-radius:20px; padding:24px; }
+  #qrCodeBox{ background:white; padding:16px; border-radius:12px; }
+  #qrLinkLabel{ margin-top:14px; font-size:14px; color:#555; word-break:break-all; text-align:center; max-width:400px; }
+  #qrStatus{ color:var(--red); font-weight:bold; text-align:center; min-height:20px; }
+
+  /* ===== IMAGE / VIDEO ===== */
+  .media-input-row{ display:flex; gap:10px; justify-content:center; margin-bottom:18px; flex-wrap:wrap; align-items:center; }
+  .media-input-row input[type=text]{ flex:1; min-width:240px; padding:12px 16px; border-radius:12px; border:2px solid #ddd; font-size:15px; }
+  .media-input-row button{ padding:12px 22px; border-radius:12px; border:none; background:var(--primary); color:white; font-weight:bold; cursor:pointer; }
+  .media-input-row .upload-label{ padding:12px 22px; border-radius:12px; border:2px solid var(--primary); background:white; color:var(--primary); font-weight:bold; cursor:pointer; }
+  #imageDisplay, #videoDisplay{ background:#f7f7ff; border-radius:20px; min-height:280px; display:flex; align-items:center; justify-content:center; overflow:hidden; }
+  #imageDisplay img{ max-width:100%; max-height:520px; border-radius:12px; }
+  #imageDisplay .placeholder, #videoDisplay .placeholder{ color:#999; font-size:15px; text-align:center; padding:40px; }
+  #videoDisplay iframe{ width:100%; aspect-ratio:16/9; border:none; border-radius:12px; }
+
+  /* ===== WEBCAM ===== */
+  #webcamVideo{ width:100%; max-width:640px; border-radius:16px; background:#000; display:block; margin:0 auto 18px; }
+  .webcam-controls{ display:flex; justify-content:center; gap:14px; margin-bottom:14px; }
+  .webcam-controls button{ padding:14px 30px; border-radius:14px; border:none; font-weight:bold; font-size:16px; cursor:pointer; color:white; }
+  #startWebcamBtn{ background:var(--green); }
+  #stopWebcamBtn{ background:#94a3b8; }
+
+  /* ===== LIVE POLL ===== */
+  .poll-setup input[type=text]{ width:100%; padding:12px 16px; border-radius:12px; border:2px solid #ddd; font-size:15px; margin-bottom:12px; }
+  .poll-option-row{ display:flex; gap:8px; margin-bottom:10px; align-items:center; }
+  .poll-option-row input{ flex:1; padding:10px 14px; border-radius:10px; border:2px solid #ddd; font-size:14.5px; }
+  .poll-setup-actions{ display:flex; gap:12px; margin-top:14px; flex-wrap:wrap; }
+  .poll-setup-actions button{ padding:12px 24px; border-radius:12px; border:none; font-weight:bold; font-size:14.5px; cursor:pointer; }
+  #addOptionBtn{ background:white; color:var(--primary); border:2px solid var(--primary) !important; }
+  #startPollBtn{ background:var(--green); color:white; }
+  #endPollBtn{ background:var(--red); color:white; }
+  .poll-live-area{ margin-top:22px; }
+  .poll-question-display{ text-align:center; font-size:22px; font-weight:bold; color:var(--primary); margin-bottom:18px; }
+  .poll-bar-row{ display:flex; align-items:center; gap:10px; margin-bottom:12px; }
+  .poll-bar-label{ width:160px; font-weight:bold; color:#333; font-size:14.5px; flex-shrink:0; }
+  .poll-bar-track{ flex:1; background:#eee; border-radius:10px; height:32px; overflow:hidden; }
+  .poll-bar-fill{ height:100%; background:linear-gradient(90deg,var(--primary),var(--blue,#4CC9F0)); display:flex; align-items:center; justify-content:flex-end; padding-right:10px; color:white; font-weight:bold; font-size:13px; transition:width .3s ease; }
+  .poll-qr-row{ display:flex; justify-content:center; margin-top:20px; }
+  .poll-total-votes{ text-align:center; color:#777; font-size:14px; margin-top:10px; }
 </style>
 </head>
 <body>
@@ -379,6 +436,12 @@
       <div class="tab-btn" data-tab="worksymbols">🤝 <span>Work Symbols</span></div>
       <div class="tab-btn" data-tab="groups">👥 <span>Group Maker</span></div>
       <div class="tab-btn" data-tab="announce">📋 <span>Announcements</span></div>
+      <div class="tab-btn" data-tab="drawing">🎨 <span>Drawing Board</span></div>
+      <div class="tab-btn" data-tab="qrcode">🔳 <span>QR Code</span></div>
+      <div class="tab-btn" data-tab="image">🖼️ <span>Image</span></div>
+      <div class="tab-btn" data-tab="video">🎬 <span>Video</span></div>
+      <div class="tab-btn" data-tab="webcam">📷 <span>Webcam</span></div>
+      <div class="tab-btn" data-tab="poll">🗳️ <span>Live Poll</span></div>
     </div>
 
     <div class="main-content">
@@ -561,6 +624,89 @@
     </div>
   </div>
 
+  <!-- DRAWING BOARD -->
+  <div class="panel" id="panel-drawing">
+    <div class="draw-toolbar">
+      <label>🎨 Color <input type="color" id="drawColor" value="#3A0CA3"></label>
+      <label>✏️ Size <input type="range" id="drawSize" min="2" max="30" value="6"></label>
+      <button id="drawPenBtn" class="active">✏️ Pen</button>
+      <button id="drawEraserBtn">🧽 Eraser</button>
+      <button id="drawClearBtn" class="danger">🗑️ Clear Board</button>
+    </div>
+    <canvas id="drawCanvas"></canvas>
+  </div>
+
+  <!-- QR CODE -->
+  <div class="panel" id="panel-qrcode">
+    <div class="qr-input-row">
+      <input type="text" id="qrUrlInput" placeholder="Paste a link, e.g. https://...">
+      <button id="generateQrBtn">🔳 Generate QR Code</button>
+    </div>
+    <div id="qrStatus"></div>
+    <div id="qrDisplay">
+      <div id="qrCodeBox"></div>
+      <div id="qrLinkLabel"></div>
+    </div>
+  </div>
+
+  <!-- IMAGE -->
+  <div class="panel" id="panel-image">
+    <div class="media-input-row">
+      <input type="text" id="imageUrlInput" placeholder="Paste an image URL...">
+      <button id="showImageUrlBtn">🖼️ Show</button>
+      <label class="upload-label" for="imageFileInput">📁 Or Upload a Photo</label>
+      <input type="file" id="imageFileInput" accept="image/*" style="display:none;">
+    </div>
+    <div id="imageDisplay"><div class="placeholder">No image yet — paste a link or upload a photo above.</div></div>
+  </div>
+
+  <!-- VIDEO -->
+  <div class="panel" id="panel-video">
+    <div class="media-input-row">
+      <input type="text" id="videoUrlInput" placeholder="Paste a YouTube link...">
+      <button id="showVideoBtn">🎬 Show Video</button>
+    </div>
+    <div id="videoDisplay"><div class="placeholder">Paste a YouTube link above (e.g. https://youtube.com/watch?v=...) to embed it here.</div></div>
+  </div>
+
+  <!-- WEBCAM -->
+  <div class="panel" id="panel-webcam">
+    <video id="webcamVideo" autoplay playsinline muted></video>
+    <div class="webcam-controls">
+      <button id="startWebcamBtn">📷 Start Camera</button>
+      <button id="stopWebcamBtn" style="display:none;">⏹ Stop Camera</button>
+    </div>
+    <p class="noise-privacy-note">🔒 Video is shown live in your browser only — nothing is recorded, saved, or sent anywhere.</p>
+    <div id="webcamStatus" style="text-align:center; color:var(--red); font-weight:bold;"></div>
+  </div>
+
+  <!-- LIVE POLL -->
+  <div class="panel" id="panel-poll">
+    <div class="poll-setup" id="pollSetup">
+      <input type="text" id="pollQuestionInput" placeholder="Type your poll question...">
+      <div id="pollOptionsList">
+        <div class="poll-option-row"><input type="text" placeholder="Option 1" class="poll-option-input"></div>
+        <div class="poll-option-row"><input type="text" placeholder="Option 2" class="poll-option-input"></div>
+      </div>
+      <div class="poll-setup-actions">
+        <button id="addOptionBtn">➕ Add Option</button>
+        <button id="startPollBtn">🚀 Start Poll</button>
+      </div>
+    </div>
+    <div class="poll-live-area" id="pollLiveArea" style="display:none;">
+      <div class="poll-question-display" id="pollQuestionDisplay"></div>
+      <div id="pollBars"></div>
+      <div class="poll-total-votes" id="pollTotalVotes"></div>
+      <div class="poll-qr-row">
+        <div id="pollQrBox"></div>
+      </div>
+      <p class="noise-privacy-note" id="pollVoteLink"></p>
+      <div class="poll-setup-actions" style="justify-content:center;">
+        <button id="endPollBtn">⏹ End Poll</button>
+      </div>
+    </div>
+  </div>
+
     </div>
   </div>
 
@@ -648,6 +794,7 @@ function switchToClass(id){
   renderAnnouncement();
   document.getElementById('groupsGrid').innerHTML = '';
   document.getElementById('reshuffleGroupsBtn').style.display = 'none';
+  if(typeof subscribeToPoll === 'function') subscribeToPoll();
 }
 document.getElementById('classSelect').addEventListener('change', (e)=> switchToClass(e.target.value));
 document.getElementById('addClassBtn').addEventListener('click', ()=>{
@@ -692,6 +839,9 @@ function switchTab(tabName){
   if(previousTab === 'noise' && tabName !== 'noise' && typeof stopListening === 'function' && isListening){
     stopListening(); // release the microphone whenever we leave this tab
   }
+  if(previousTab === 'webcam' && tabName !== 'webcam' && typeof stopWebcam === 'function' && isWebcamOn){
+    stopWebcam(); // release the camera whenever we leave this tab
+  }
   document.querySelectorAll('.tab-btn').forEach(b=>b.classList.remove('active'));
   document.querySelectorAll('.panel').forEach(p=>p.classList.remove('active'));
   document.querySelector(`.tab-btn[data-tab="${tabName}"]`).classList.add('active');
@@ -702,6 +852,8 @@ function switchTab(tabName){
   if(tabName === 'attendance') renderAttendance();
   if(tabName === 'worksymbols') renderWorkSymbols();
   if(tabName === 'announce') renderAnnouncement();
+  if(tabName === 'drawing') initDrawCanvas();
+  if(tabName === 'poll') renderPollTab();
 }
 document.querySelectorAll('.tab-btn').forEach(btn=>{
   btn.addEventListener('click', ()=> switchTab(btn.dataset.tab));
@@ -1411,6 +1563,246 @@ document.getElementById('clearAnnounceBtn').addEventListener('click', ()=>{
   document.getElementById('announceInput').value = '';
   renderAnnouncement();
 });
+
+/* ================= DRAWING BOARD ================= */
+let drawCanvas, drawCtx, isDrawing = false, drawMode = 'pen';
+function initDrawCanvas(){
+  drawCanvas = document.getElementById('drawCanvas');
+  if(drawCanvas.dataset.initialized) return;
+  const rect = drawCanvas.getBoundingClientRect();
+  drawCanvas.width = rect.width;
+  drawCanvas.height = rect.height;
+  drawCtx = drawCanvas.getContext('2d');
+  drawCtx.fillStyle = '#ffffff';
+  drawCtx.fillRect(0,0,drawCanvas.width, drawCanvas.height);
+  drawCtx.lineCap = 'round';
+  drawCtx.lineJoin = 'round';
+  drawCanvas.dataset.initialized = 'true';
+
+  function getPos(e){
+    const r = drawCanvas.getBoundingClientRect();
+    const clientX = e.touches ? e.touches[0].clientX : e.clientX;
+    const clientY = e.touches ? e.touches[0].clientY : e.clientY;
+    return { x: (clientX - r.left) * (drawCanvas.width/r.width), y: (clientY - r.top) * (drawCanvas.height/r.height) };
+  }
+  function startDraw(e){
+    isDrawing = true;
+    const p = getPos(e);
+    drawCtx.beginPath();
+    drawCtx.moveTo(p.x, p.y);
+    e.preventDefault();
+  }
+  function moveDraw(e){
+    if(!isDrawing) return;
+    const p = getPos(e);
+    drawCtx.lineWidth = document.getElementById('drawSize').value;
+    drawCtx.strokeStyle = drawMode === 'eraser' ? '#ffffff' : document.getElementById('drawColor').value;
+    drawCtx.lineTo(p.x, p.y);
+    drawCtx.stroke();
+    e.preventDefault();
+  }
+  function endDraw(){ isDrawing = false; }
+
+  drawCanvas.addEventListener('mousedown', startDraw);
+  drawCanvas.addEventListener('mousemove', moveDraw);
+  window.addEventListener('mouseup', endDraw);
+  drawCanvas.addEventListener('touchstart', startDraw, {passive:false});
+  drawCanvas.addEventListener('touchmove', moveDraw, {passive:false});
+  drawCanvas.addEventListener('touchend', endDraw);
+}
+document.getElementById('drawPenBtn').addEventListener('click', ()=>{
+  drawMode='pen';
+  document.getElementById('drawPenBtn').classList.add('active');
+  document.getElementById('drawEraserBtn').classList.remove('active');
+});
+document.getElementById('drawEraserBtn').addEventListener('click', ()=>{
+  drawMode='eraser';
+  document.getElementById('drawEraserBtn').classList.add('active');
+  document.getElementById('drawPenBtn').classList.remove('active');
+});
+document.getElementById('drawClearBtn').addEventListener('click', ()=>{
+  if(!drawCtx) return;
+  drawCtx.fillStyle = '#ffffff';
+  drawCtx.fillRect(0,0,drawCanvas.width, drawCanvas.height);
+});
+
+/* ================= QR CODE ================= */
+document.getElementById('generateQrBtn').addEventListener('click', ()=>{
+  const url = document.getElementById('qrUrlInput').value.trim();
+  const status = document.getElementById('qrStatus');
+  const box = document.getElementById('qrCodeBox');
+  if(!url){ status.textContent = 'Type or paste a link first.'; return; }
+  if(typeof QRCode === 'undefined'){
+    status.textContent = 'Could not load the QR code generator (needs an internet connection).';
+    return;
+  }
+  status.textContent = '';
+  box.innerHTML = '';
+  new QRCode(box, { text: url, width:220, height:220 });
+  document.getElementById('qrLinkLabel').textContent = url;
+});
+
+/* ================= IMAGE ================= */
+function showImage(src){
+  document.getElementById('imageDisplay').innerHTML = `<img src="${src}" alt="Displayed image">`;
+}
+document.getElementById('showImageUrlBtn').addEventListener('click', ()=>{
+  const url = document.getElementById('imageUrlInput').value.trim();
+  if(!url) return;
+  showImage(url);
+});
+document.getElementById('imageFileInput').addEventListener('change', (e)=>{
+  const file = e.target.files[0];
+  if(!file) return;
+  const reader = new FileReader();
+  reader.onload = (ev)=> showImage(ev.target.result);
+  reader.readAsDataURL(file);
+});
+
+/* ================= VIDEO ================= */
+function extractYouTubeId(url){
+  const m = url.match(/(?:youtube\.com\/watch\?v=|youtu\.be\/|youtube\.com\/embed\/|youtube\.com\/shorts\/)([a-zA-Z0-9_-]{11})/);
+  return m ? m[1] : null;
+}
+document.getElementById('showVideoBtn').addEventListener('click', ()=>{
+  const url = document.getElementById('videoUrlInput').value.trim();
+  const display = document.getElementById('videoDisplay');
+  if(!url) return;
+  const id = extractYouTubeId(url);
+  if(id){
+    display.innerHTML = `<iframe src="https://www.youtube-nocookie.com/embed/${id}" allow="accelerometer; autoplay; clipboard-write; encrypted-media; gyroscope; picture-in-picture" allowfullscreen></iframe>`;
+  } else {
+    display.innerHTML = `<div class="placeholder">Couldn't recognize that as a YouTube link. Try a full youtube.com or youtu.be URL.</div>`;
+  }
+});
+
+/* ================= WEBCAM ================= */
+let webcamStream = null, isWebcamOn = false;
+async function startWebcam(){
+  const status = document.getElementById('webcamStatus');
+  status.textContent = '';
+  try{
+    webcamStream = await navigator.mediaDevices.getUserMedia({ video: true });
+  }catch(err){
+    status.textContent = 'Camera access was blocked or unavailable. Please allow camera access in your browser to use this.';
+    return;
+  }
+  document.getElementById('webcamVideo').srcObject = webcamStream;
+  isWebcamOn = true;
+  document.getElementById('startWebcamBtn').style.display = 'none';
+  document.getElementById('stopWebcamBtn').style.display = 'inline-block';
+}
+function stopWebcam(){
+  if(webcamStream){ webcamStream.getTracks().forEach(t=>t.stop()); webcamStream=null; }
+  document.getElementById('webcamVideo').srcObject = null;
+  isWebcamOn = false;
+  document.getElementById('startWebcamBtn').style.display = 'inline-block';
+  document.getElementById('stopWebcamBtn').style.display = 'none';
+}
+document.getElementById('startWebcamBtn').addEventListener('click', startWebcam);
+document.getElementById('stopWebcamBtn').addEventListener('click', stopWebcam);
+
+/* ================= LIVE POLL (Firebase) ================= */
+let pollDb = null;
+try{
+  if(typeof firebase !== 'undefined'){
+    if(!firebase.apps || !firebase.apps.length){
+      firebase.initializeApp({
+        apiKey: "AIzaSyCEJtHd802MyuZUlwt6OfGkl9IitHaSOaA",
+        authDomain: "tasks-results.firebaseapp.com",
+        projectId: "tasks-results",
+        storageBucket: "tasks-results.firebasestorage.app",
+        messagingSenderId: "1014525306500",
+        appId: "1:1014525306500:web:3ffe2e6f5554e9140e04d1"
+      });
+    }
+    pollDb = firebase.firestore();
+  }
+}catch(e){ console.error('Firebase init failed for polls', e); }
+
+function getPollDocRef(){
+  const cls = getActiveClass();
+  if(!pollDb || !cls) return null;
+  return pollDb.collection('livePolls').doc(cls.id);
+}
+let pollUnsubscribe = null;
+
+document.getElementById('addOptionBtn').addEventListener('click', ()=>{
+  const list = document.getElementById('pollOptionsList');
+  if(list.children.length >= 4) return;
+  const div = document.createElement('div');
+  div.className = 'poll-option-row';
+  div.innerHTML = `<input type="text" placeholder="Option ${list.children.length+1}" class="poll-option-input">`;
+  list.appendChild(div);
+});
+
+document.getElementById('startPollBtn').addEventListener('click', async ()=>{
+  const question = document.getElementById('pollQuestionInput').value.trim();
+  const optionInputs = Array.from(document.querySelectorAll('.poll-option-input'));
+  const options = optionInputs.map(i=>i.value.trim()).filter(v=>v.length>0);
+  if(!question || options.length < 2){
+    alert('Please type a question and at least 2 options.');
+    return;
+  }
+  const ref = getPollDocRef();
+  if(!ref){ alert('Live Poll needs an internet connection.'); return; }
+  const votes = {};
+  options.forEach((_,i)=> votes[i] = 0);
+  await ref.set({
+    question, options, votes, active: true,
+    createdAt: firebase.firestore.FieldValue.serverTimestamp()
+  });
+});
+
+function subscribeToPoll(){
+  const ref = getPollDocRef();
+  if(!ref) return;
+  if(pollUnsubscribe) pollUnsubscribe();
+  pollUnsubscribe = ref.onSnapshot((doc)=>{
+    if(!doc.exists || !doc.data().active){
+      document.getElementById('pollSetup').style.display = 'block';
+      document.getElementById('pollLiveArea').style.display = 'none';
+      return;
+    }
+    const data = doc.data();
+    document.getElementById('pollSetup').style.display = 'none';
+    document.getElementById('pollLiveArea').style.display = 'block';
+    document.getElementById('pollQuestionDisplay').textContent = data.question;
+    const voteVals = data.options.map((_,i)=> Number(data.votes?.[i]) || 0);
+    const totalVotes = voteVals.reduce((a,b)=>a+b,0);
+    const maxVotes = Math.max(...voteVals, 1);
+    document.getElementById('pollBars').innerHTML = data.options.map((opt,i)=>{
+      const v = voteVals[i];
+      const pct = Math.max(4, (v/maxVotes)*100);
+      return `<div class="poll-bar-row">
+        <div class="poll-bar-label">${opt}</div>
+        <div class="poll-bar-track"><div class="poll-bar-fill" style="width:${pct}%">${v}</div></div>
+      </div>`;
+    }).join('');
+    document.getElementById('pollTotalVotes').textContent = `${totalVotes} vote${totalVotes===1?'':'s'} so far`;
+
+    const cls = getActiveClass();
+    const voteUrl = new URL('Poll Vote.html?class=' + cls.id, window.location.href).href;
+    document.getElementById('pollVoteLink').textContent = 'Students vote at: ' + voteUrl;
+    const box = document.getElementById('pollQrBox');
+    if(typeof QRCode !== 'undefined'){
+      box.innerHTML = '';
+      new QRCode(box, { text: voteUrl, width:180, height:180 });
+    } else {
+      box.textContent = '';
+    }
+  }, (err)=>{
+    console.error('Poll subscription error', err);
+  });
+}
+document.getElementById('endPollBtn').addEventListener('click', async ()=>{
+  const ref = getPollDocRef();
+  if(!ref) return;
+  await ref.update({ active: false });
+});
+function renderPollTab(){
+  subscribeToPoll();
+}
 </script>
 </body>
 </html>

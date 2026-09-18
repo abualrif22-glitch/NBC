@@ -254,6 +254,74 @@
   .sensitivity-row label{ display:flex; align-items:center; gap:6px; cursor:pointer; }
   .noise-privacy-note{ text-align:center; font-size:12.5px; color:#888; margin-bottom:8px; }
   #noiseStatus{ text-align:center; color:var(--red); font-weight:bold; min-height:20px; }
+
+  /* ===== TIMER MODE TOGGLE ===== */
+  .timer-mode-toggle{ display:flex; justify-content:center; gap:10px; margin-bottom:16px; }
+  .timer-mode-toggle button{
+    padding:9px 20px; border-radius:20px; border:2px solid var(--primary); background:white;
+    color:var(--primary); font-weight:bold; font-size:14px; cursor:pointer;
+  }
+  .timer-mode-toggle button.active{ background:var(--primary); color:white; }
+
+  /* ===== TRAFFIC LIGHT ===== */
+  .traffic-light-box{
+    background:#1A1A2E; border-radius:30px; padding:24px; width:140px; margin:0 auto 22px;
+    display:flex; flex-direction:column; gap:18px; align-items:center;
+  }
+  .tl-light{
+    width:90px; height:90px; border-radius:50%; cursor:pointer; opacity:0.25;
+    transition:opacity .2s ease, box-shadow .2s ease; box-shadow:none;
+  }
+  .tl-light.tl-red{ background:#E74C3C; }
+  .tl-light.tl-yellow{ background:#FFD23F; }
+  .tl-light.tl-green{ background:#06D6A0; }
+  .tl-light.on{ opacity:1; }
+  .tl-light.tl-red.on{ box-shadow:0 0 40px 10px rgba(231,76,60,0.7); }
+  .tl-light.tl-yellow.on{ box-shadow:0 0 40px 10px rgba(255,210,63,0.7); }
+  .tl-light.tl-green.on{ box-shadow:0 0 40px 10px rgba(6,214,160,0.7); }
+  .traffic-meaning{ text-align:center; font-size:22px; font-weight:bold; color:var(--primary); }
+
+  /* ===== WORK SYMBOLS ===== */
+  .ws-display{
+    text-align:center; background:#f7f7ff; border-radius:22px; padding:36px 20px; margin-bottom:22px;
+    min-height:150px; display:flex; flex-direction:column; align-items:center; justify-content:center;
+  }
+  .ws-display .ws-icon{ font-size:76px; margin-bottom:8px; }
+  .ws-display .ws-label{ font-size:22px; font-weight:bold; color:var(--primary); }
+  .ws-grid{ display:grid; grid-template-columns:repeat(auto-fit, minmax(130px,1fr)); gap:14px; }
+  .ws-option{
+    background:white; border:2px solid #ddd; border-radius:16px; padding:16px 10px; text-align:center;
+    cursor:pointer; transition:border-color .15s ease, background .15s ease;
+  }
+  .ws-option:hover{ background:#f7f7ff; }
+  .ws-option.active{ border-color:var(--primary); background:#f0ebff; }
+  .ws-option .ws-opt-icon{ font-size:38px; }
+  .ws-option .ws-opt-label{ font-size:13px; font-weight:bold; color:#444; margin-top:6px; }
+
+  /* ===== GROUP MAKER ===== */
+  .group-controls{ display:flex; gap:12px; justify-content:center; align-items:center; flex-wrap:wrap; margin-bottom:22px; }
+  .group-controls input{ width:70px; padding:10px; text-align:center; font-size:16px; font-weight:bold; border:2px solid #ddd; border-radius:10px; }
+  .group-controls button{ padding:12px 24px; border-radius:12px; border:none; background:var(--primary); color:white; font-weight:bold; font-size:14.5px; cursor:pointer; }
+  .groups-grid{ display:grid; grid-template-columns:repeat(auto-fit, minmax(170px,1fr)); gap:16px; }
+  .group-card{ background:#f7f7ff; border-radius:16px; padding:16px; }
+  .group-card h4{ margin:0 0 10px; color:var(--primary); font-size:15px; text-align:center; }
+  .group-card ul{ list-style:none; margin:0; padding:0; }
+  .group-card li{ background:white; border-radius:10px; padding:8px 12px; margin-bottom:6px; font-weight:bold; color:#333; font-size:14px; text-align:center; }
+
+  /* ===== ANNOUNCEMENTS ===== */
+  #announceDisplay{
+    background:#f7f7ff; border-radius:20px; padding:30px; min-height:160px; font-size:22px; font-weight:bold;
+    color:var(--dark); white-space:pre-wrap; text-align:center; margin-bottom:18px; line-height:1.5;
+  }
+  #announceDisplay.empty{ color:#aaa; font-weight:normal; font-size:16px; }
+  #announceInput{
+    width:100%; min-height:90px; padding:14px; border-radius:14px; border:2px solid #ddd;
+    font-size:15px; font-family:inherit; margin-bottom:12px; resize:vertical;
+  }
+  .announce-actions{ display:flex; gap:12px; justify-content:center; }
+  .announce-actions button{ padding:11px 24px; border-radius:12px; border:none; font-weight:bold; font-size:14.5px; cursor:pointer; }
+  #saveAnnounceBtn{ background:var(--primary); color:white; }
+  #clearAnnounceBtn{ background:white; color:var(--red); border:2px solid var(--red) !important; }
 </style>
 </head>
 <body>
@@ -307,6 +375,10 @@
       <div class="tab-btn" data-tab="picker">🎯 <span>Random Picker</span></div>
       <div class="tab-btn" data-tab="attendance">✅ <span>Attendance</span></div>
       <div class="tab-btn" data-tab="noise">🔊 <span>Noise Level</span></div>
+      <div class="tab-btn" data-tab="traffic">🚦 <span>Traffic Light</span></div>
+      <div class="tab-btn" data-tab="worksymbols">🤝 <span>Work Symbols</span></div>
+      <div class="tab-btn" data-tab="groups">👥 <span>Group Maker</span></div>
+      <div class="tab-btn" data-tab="announce">📋 <span>Announcements</span></div>
     </div>
 
     <div class="main-content">
@@ -348,20 +420,26 @@
 
   <!-- TIMER -->
   <div class="panel" id="panel-timer">
-    <div class="timer-display" id="timerDisplay">05:00</div>
-    <div class="presets">
-      <button data-secs="30">30 sec</button>
-      <button data-secs="60">1 min</button>
-      <button data-secs="120">2 min</button>
-      <button data-secs="300">5 min</button>
-      <button data-secs="600">10 min</button>
+    <div class="timer-mode-toggle">
+      <button id="modeCountdownBtn" class="active">⏱️ Countdown</button>
+      <button id="modeStopwatchBtn">⏲️ Stopwatch</button>
     </div>
-    <div class="custom-time">
-      <input type="number" id="customMin" min="0" max="59" value="0" placeholder="min">
-      <span style="font-weight:bold;color:#888;">min</span>
-      <input type="number" id="customSec" min="0" max="59" value="0" placeholder="sec">
-      <span style="font-weight:bold;color:#888;">sec</span>
-      <button id="setCustomBtn">Set</button>
+    <div class="timer-display" id="timerDisplay">05:00</div>
+    <div id="countdownControls">
+      <div class="presets">
+        <button data-secs="30">30 sec</button>
+        <button data-secs="60">1 min</button>
+        <button data-secs="120">2 min</button>
+        <button data-secs="300">5 min</button>
+        <button data-secs="600">10 min</button>
+      </div>
+      <div class="custom-time">
+        <input type="number" id="customMin" min="0" max="59" value="0" placeholder="min">
+        <span style="font-weight:bold;color:#888;">min</span>
+        <input type="number" id="customSec" min="0" max="59" value="0" placeholder="sec">
+        <span style="font-weight:bold;color:#888;">sec</span>
+        <button id="setCustomBtn">Set</button>
+      </div>
     </div>
     <div class="timer-controls">
       <button id="startPauseBtn">▶ Start</button>
@@ -442,6 +520,45 @@
     </div>
     <p class="noise-privacy-note">🔒 Sound is measured live in your browser only — nothing is ever recorded, saved, or sent anywhere. If it's triggering too easily (or not enough) for your room, try a different sensitivity level above.</p>
     <div id="noiseStatus"></div>
+  </div>
+
+  <!-- TRAFFIC LIGHT -->
+  <div class="panel" id="panel-traffic">
+    <div class="traffic-light-box">
+      <div class="tl-light tl-red" data-color="red"></div>
+      <div class="tl-light tl-yellow" data-color="yellow"></div>
+      <div class="tl-light tl-green" data-color="green"></div>
+    </div>
+    <div class="traffic-meaning" id="trafficMeaning">Tap a light to set the class mode</div>
+  </div>
+
+  <!-- WORK SYMBOLS -->
+  <div class="panel" id="panel-worksymbols">
+    <div class="ws-display" id="wsDisplay">
+      <div style="color:#aaa; font-size:16px;">Tap a symbol below to show it here, big and clear.</div>
+    </div>
+    <div class="ws-grid" id="wsGrid"></div>
+  </div>
+
+  <!-- GROUP MAKER -->
+  <div class="panel" id="panel-groups">
+    <div class="group-controls">
+      <label style="font-weight:bold; color:#555;">Number of groups:</label>
+      <input type="number" id="groupCount" min="2" max="10" value="4">
+      <button id="makeGroupsBtn">🔀 Make Groups</button>
+      <button id="reshuffleGroupsBtn" class="secondary" style="display:none; background:white; color:var(--primary); border:2px solid var(--primary);">🔁 Shuffle Again</button>
+    </div>
+    <div class="groups-grid" id="groupsGrid"></div>
+  </div>
+
+  <!-- ANNOUNCEMENTS -->
+  <div class="panel" id="panel-announce">
+    <div id="announceDisplay" class="empty">Nothing posted yet — type today's agenda or instructions below and click Post.</div>
+    <textarea id="announceInput" placeholder="e.g. Today's Agenda:&#10;1. Warm-up quiz&#10;2. Group work: page 24&#10;3. Share back"></textarea>
+    <div class="announce-actions">
+      <button id="saveAnnounceBtn">📌 Post to Screen</button>
+      <button id="clearAnnounceBtn">🗑️ Clear</button>
+    </div>
   </div>
 
     </div>
@@ -528,6 +645,9 @@ function switchToClass(id){
   document.getElementById('pickerName').textContent = 'Tap "Pick a Student!"';
   document.getElementById('awardFromPickerBtn').style.display = 'none';
   renderAttendance();
+  renderAnnouncement();
+  document.getElementById('groupsGrid').innerHTML = '';
+  document.getElementById('reshuffleGroupsBtn').style.display = 'none';
 }
 document.getElementById('classSelect').addEventListener('change', (e)=> switchToClass(e.target.value));
 document.getElementById('addClassBtn').addEventListener('click', ()=>{
@@ -580,6 +700,8 @@ function switchTab(tabName){
   if(tabName === 'stars') renderStarBoard();
   if(tabName === 'picker') renderPickerName();
   if(tabName === 'attendance') renderAttendance();
+  if(tabName === 'worksymbols') renderWorkSymbols();
+  if(tabName === 'announce') renderAnnouncement();
 }
 document.querySelectorAll('.tab-btn').forEach(btn=>{
   btn.addEventListener('click', ()=> switchTab(btn.dataset.tab));
@@ -636,6 +758,7 @@ function showCelebrateBanner(text){
 
 /* ================= TIMER ================= */
 let totalSeconds = 300, remainingSeconds = 300, timerInterval = null, isRunning = false;
+let timerMode = 'countdown'; // 'countdown' | 'stopwatch'
 const timerDisplay = document.getElementById('timerDisplay');
 let audioCtx = null;
 
@@ -645,7 +768,7 @@ function formatTime(s){
 }
 function updateTimerDisplay(){
   timerDisplay.textContent = formatTime(remainingSeconds);
-  timerDisplay.classList.toggle('warning', remainingSeconds <= 10 && remainingSeconds > 0);
+  timerDisplay.classList.toggle('warning', timerMode==='countdown' && remainingSeconds <= 10 && remainingSeconds > 0);
 }
 function playBeep(){
   try{
@@ -676,15 +799,42 @@ document.getElementById('setCustomBtn').addEventListener('click', ()=>{
   const sec = parseInt(document.getElementById('customSec').value,10) || 0;
   setTimer(Math.max(1, min*60+sec));
 });
+document.getElementById('modeCountdownBtn').addEventListener('click', ()=>{
+  if(timerMode === 'countdown') return;
+  timerMode = 'countdown';
+  clearInterval(timerInterval); isRunning = false;
+  document.getElementById('modeCountdownBtn').classList.add('active');
+  document.getElementById('modeStopwatchBtn').classList.remove('active');
+  document.getElementById('countdownControls').style.display = 'block';
+  document.getElementById('startPauseBtn').textContent = '▶ Start';
+  remainingSeconds = totalSeconds;
+  updateTimerDisplay();
+});
+document.getElementById('modeStopwatchBtn').addEventListener('click', ()=>{
+  if(timerMode === 'stopwatch') return;
+  timerMode = 'stopwatch';
+  clearInterval(timerInterval); isRunning = false;
+  document.getElementById('modeStopwatchBtn').classList.add('active');
+  document.getElementById('modeCountdownBtn').classList.remove('active');
+  document.getElementById('countdownControls').style.display = 'none';
+  document.getElementById('startPauseBtn').textContent = '▶ Start';
+  remainingSeconds = 0;
+  updateTimerDisplay();
+});
 document.getElementById('startPauseBtn').addEventListener('click', ()=>{
   if(isRunning){
     clearInterval(timerInterval); isRunning = false;
     document.getElementById('startPauseBtn').textContent = '▶ Start';
-  } else {
-    if(remainingSeconds <= 0) return;
-    isRunning = true;
-    document.getElementById('startPauseBtn').textContent = '⏸ Pause';
-    timerInterval = setInterval(()=>{
+    return;
+  }
+  if(timerMode === 'countdown' && remainingSeconds <= 0) return;
+  isRunning = true;
+  document.getElementById('startPauseBtn').textContent = '⏸ Pause';
+  timerInterval = setInterval(()=>{
+    if(timerMode === 'stopwatch'){
+      remainingSeconds++;
+      updateTimerDisplay();
+    } else {
       remainingSeconds--;
       updateTimerDisplay();
       if(remainingSeconds <= 0){
@@ -693,10 +843,19 @@ document.getElementById('startPauseBtn').addEventListener('click', ()=>{
         playBeep();
         showCelebrateBanner("⏰ Time's up!");
       }
-    }, 1000);
+    }
+  }, 1000);
+});
+document.getElementById('resetTimerBtn').addEventListener('click', ()=>{
+  if(timerMode === 'stopwatch'){
+    clearInterval(timerInterval); isRunning = false;
+    remainingSeconds = 0;
+    document.getElementById('startPauseBtn').textContent = '▶ Start';
+    updateTimerDisplay();
+  } else {
+    setTimer(totalSeconds);
   }
 });
-document.getElementById('resetTimerBtn').addEventListener('click', ()=> setTimer(totalSeconds));
 updateTimerDisplay();
 
 /* ================= STAR BOARD ================= */
@@ -1146,6 +1305,112 @@ function setNoiseUI(level, warning){
 }
 document.getElementById('startListenBtn').addEventListener('click', startListening);
 document.getElementById('stopListenBtn').addEventListener('click', stopListening);
+
+/* ================= TRAFFIC LIGHT ================= */
+const TRAFFIC_MEANINGS = {
+  red: "🔴 Stop and listen",
+  yellow: "🟡 Getting there — quiet down",
+  green: "🟢 Go ahead — free to talk"
+};
+document.querySelectorAll('.tl-light').forEach(light=>{
+  light.addEventListener('click', ()=>{
+    document.querySelectorAll('.tl-light').forEach(l=>l.classList.remove('on'));
+    light.classList.add('on');
+    document.getElementById('trafficMeaning').textContent = TRAFFIC_MEANINGS[light.dataset.color];
+  });
+});
+
+/* ================= WORK SYMBOLS ================= */
+const WORK_SYMBOLS = [
+  { icon: "🤫", label: "Silence" },
+  { icon: "🗣️", label: "Whisper" },
+  { icon: "🤝", label: "Partner Work" },
+  { icon: "👥", label: "Group Work" },
+  { icon: "🧍", label: "Independent Work" },
+  { icon: "✋", label: "Ask 3, Then Me" },
+];
+function renderWorkSymbols(){
+  const grid = document.getElementById('wsGrid');
+  if(grid.children.length > 0) return; // build once
+  grid.innerHTML = WORK_SYMBOLS.map((w,i)=>`
+    <div class="ws-option" data-idx="${i}">
+      <div class="ws-opt-icon">${w.icon}</div>
+      <div class="ws-opt-label">${w.label}</div>
+    </div>
+  `).join('');
+  grid.querySelectorAll('.ws-option').forEach(opt=>{
+    opt.addEventListener('click', ()=>{
+      grid.querySelectorAll('.ws-option').forEach(o=>o.classList.remove('active'));
+      opt.classList.add('active');
+      const w = WORK_SYMBOLS[parseInt(opt.dataset.idx,10)];
+      document.getElementById('wsDisplay').innerHTML =
+        `<div class="ws-icon">${w.icon}</div><div class="ws-label">${w.label}</div>`;
+    });
+  });
+}
+
+/* ================= GROUP MAKER ================= */
+function shuffleArray(arr){
+  const a = [...arr];
+  for(let i=a.length-1;i>0;i--){
+    const j = Math.floor(Math.random()*(i+1));
+    [a[i],a[j]] = [a[j],a[i]];
+  }
+  return a;
+}
+function makeGroups(){
+  const roster = normalizeRoster(readRoster());
+  const grid = document.getElementById('groupsGrid');
+  if(roster.length === 0){
+    grid.innerHTML = '<div class="empty-roster">No students in this class yet — add some on the Star Board tab.</div>';
+    document.getElementById('reshuffleGroupsBtn').style.display = 'none';
+    return;
+  }
+  let numGroups = parseInt(document.getElementById('groupCount').value, 10) || 4;
+  numGroups = Math.max(2, Math.min(numGroups, roster.length));
+  const shuffled = shuffleArray(roster.map(s=>s.name));
+  const groups = Array.from({length: numGroups}, () => []);
+  shuffled.forEach((name, i) => groups[i % numGroups].push(name));
+  grid.innerHTML = groups.map((g, i) => `
+    <div class="group-card">
+      <h4>Group ${i+1}</h4>
+      <ul>${g.map(n=>`<li>${n}</li>`).join('')}</ul>
+    </div>
+  `).join('');
+  document.getElementById('reshuffleGroupsBtn').style.display = 'inline-block';
+}
+document.getElementById('makeGroupsBtn').addEventListener('click', makeGroups);
+document.getElementById('reshuffleGroupsBtn').addEventListener('click', makeGroups);
+
+/* ================= ANNOUNCEMENTS ================= */
+function getAnnounceKey(){
+  const cls = getActiveClass();
+  return 'classroomDashboardAnnounce_' + (cls ? cls.id : 'default');
+}
+function renderAnnouncement(){
+  let text = '';
+  try{ text = localStorage.getItem(getAnnounceKey()) || ''; }catch(e){}
+  const display = document.getElementById('announceDisplay');
+  if(text.trim()){
+    display.textContent = text;
+    display.classList.remove('empty');
+  } else {
+    display.textContent = "Nothing posted yet — type today's agenda or instructions below and click Post.";
+    display.classList.add('empty');
+  }
+  document.getElementById('announceInput').value = text;
+}
+document.getElementById('saveAnnounceBtn').addEventListener('click', ()=>{
+  const text = document.getElementById('announceInput').value;
+  try{ localStorage.setItem(getAnnounceKey(), text); }catch(e){}
+  renderAnnouncement();
+});
+document.getElementById('clearAnnounceBtn').addEventListener('click', ()=>{
+  if(!confirm('Clear the posted announcement?')) return;
+  try{ localStorage.removeItem(getAnnounceKey()); }catch(e){}
+  document.getElementById('announceInput').value = '';
+  renderAnnouncement();
+});
 </script>
 </body>
 </html>

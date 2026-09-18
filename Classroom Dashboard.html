@@ -286,20 +286,37 @@
 
   /* ===== WORK SYMBOLS ===== */
   .ws-display{
-    text-align:center; background:#f7f7ff; border-radius:22px; padding:36px 20px; margin-bottom:22px;
-    min-height:150px; display:flex; flex-direction:column; align-items:center; justify-content:center;
+    text-align:center; border-radius:26px; padding:44px 20px; margin-bottom:26px;
+    min-height:260px; display:flex; flex-direction:column; align-items:center; justify-content:center;
+    background:#f7f7ff; transition:background .35s ease;
   }
-  .ws-display .ws-icon{ font-size:76px; margin-bottom:8px; }
-  .ws-display .ws-label{ font-size:22px; font-weight:bold; color:var(--primary); }
-  .ws-grid{ display:grid; grid-template-columns:repeat(auto-fit, minmax(130px,1fr)); gap:14px; }
+  .ws-display .ws-icon{
+    font-size:clamp(110px, 22vw, 180px); margin-bottom:14px; line-height:1; display:inline-block;
+    animation: wsBounce 1.8s ease-in-out infinite;
+    filter: drop-shadow(0 10px 18px rgba(0,0,0,0.18));
+  }
+  @keyframes wsBounce{
+    0%,100%{ transform:translateY(0) scale(1) rotate(0deg); }
+    50%{ transform:translateY(-12px) scale(1.06) rotate(-2deg); }
+  }
+  .ws-display .ws-label{
+    font-size:32px; font-weight:bold; color:var(--primary);
+    background:white; padding:10px 30px; border-radius:30px; box-shadow:0 6px 16px rgba(0,0,0,0.12);
+  }
+  .ws-grid{ display:grid; grid-template-columns:repeat(auto-fit, minmax(160px,1fr)); gap:18px; }
   .ws-option{
-    background:white; border:2px solid #ddd; border-radius:16px; padding:16px 10px; text-align:center;
-    cursor:pointer; transition:border-color .15s ease, background .15s ease;
+    background:white; border:3px solid #eee; border-radius:22px; padding:22px 14px; text-align:center;
+    cursor:pointer; transition:transform .15s ease, border-color .15s ease, box-shadow .15s ease;
+    box-shadow:0 4px 12px rgba(0,0,0,0.07);
   }
-  .ws-option:hover{ background:#f7f7ff; }
-  .ws-option.active{ border-color:var(--primary); background:#f0ebff; }
-  .ws-option .ws-opt-icon{ font-size:38px; }
-  .ws-option .ws-opt-label{ font-size:13px; font-weight:bold; color:#444; margin-top:6px; }
+  .ws-option:hover{ transform:translateY(-5px) scale(1.04); box-shadow:0 10px 22px rgba(0,0,0,0.14); }
+  .ws-option.active{ transform:scale(1.06); box-shadow:0 10px 24px rgba(0,0,0,0.18); }
+  .ws-option .ws-icon-circle{
+    width:84px; height:84px; border-radius:50%; margin:0 auto 12px; display:flex; align-items:center; justify-content:center;
+    font-size:48px; transition:transform .15s ease;
+  }
+  .ws-option.active .ws-icon-circle{ transform:scale(1.1); }
+  .ws-option .ws-opt-label{ font-size:15.5px; font-weight:bold; color:#444; margin-top:4px; }
 
   /* ===== GROUP MAKER ===== */
   .group-controls{ display:flex; gap:12px; justify-content:center; align-items:center; flex-wrap:wrap; margin-bottom:22px; }
@@ -1474,19 +1491,19 @@ document.querySelectorAll('.tl-light').forEach(light=>{
 
 /* ================= WORK SYMBOLS ================= */
 const WORK_SYMBOLS = [
-  { icon: "🤫", label: "Silence" },
-  { icon: "🗣️", label: "Whisper" },
-  { icon: "🤝", label: "Partner Work" },
-  { icon: "👥", label: "Group Work" },
-  { icon: "🧍", label: "Independent Work" },
-  { icon: "✋", label: "Ask 3, Then Me" },
+  { icon: "🤫", label: "Silence", color: "#4CC9F0" },
+  { icon: "🗣️", label: "Whisper", color: "#06D6A0" },
+  { icon: "🤝", label: "Partner Work", color: "#FF5C8A" },
+  { icon: "👥", label: "Group Work", color: "#6C63FF" },
+  { icon: "🧍", label: "Independent Work", color: "#FFD23F" },
+  { icon: "✋", label: "Ask 3, Then Me", color: "#FF8C42" },
 ];
 function renderWorkSymbols(){
   const grid = document.getElementById('wsGrid');
   if(grid.children.length > 0) return; // build once
   grid.innerHTML = WORK_SYMBOLS.map((w,i)=>`
-    <div class="ws-option" data-idx="${i}">
-      <div class="ws-opt-icon">${w.icon}</div>
+    <div class="ws-option" data-idx="${i}" style="border-color:${w.color}33;">
+      <div class="ws-icon-circle" style="background:${w.color}33;">${w.icon}</div>
       <div class="ws-opt-label">${w.label}</div>
     </div>
   `).join('');
@@ -1495,8 +1512,10 @@ function renderWorkSymbols(){
       grid.querySelectorAll('.ws-option').forEach(o=>o.classList.remove('active'));
       opt.classList.add('active');
       const w = WORK_SYMBOLS[parseInt(opt.dataset.idx,10)];
+      opt.style.borderColor = w.color;
+      document.getElementById('wsDisplay').style.background = `${w.color}22`;
       document.getElementById('wsDisplay').innerHTML =
-        `<div class="ws-icon">${w.icon}</div><div class="ws-label">${w.label}</div>`;
+        `<div class="ws-icon">${w.icon}</div><div class="ws-label" style="color:${w.color};">${w.label}</div>`;
     });
   });
 }

@@ -1,0 +1,342 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>Invent-a-Device! - Year 3 Computing Game</title>
+<style>
+  :root{
+    --primary:#3A0CA3; --secondary:#4CC9F0; --accent:#F72585;
+    --light:#F7F7FC; --dark:#1A1A2E; --green:#06D6A0; --red:#E74C3C;
+  }
+  *{box-sizing:border-box; -webkit-tap-highlight-color: transparent;}
+  html,body{ margin:0; height:100%; }
+  body{
+    font-family:'Segoe UI', Calibri, Arial, sans-serif;
+    background:linear-gradient(135deg,#3A0CA3 0%,#4CC9F0 100%);
+    min-height:100vh; display:flex; align-items:center; justify-content:center; padding:22px;
+  }
+  .wrap{ background:var(--light); border-radius:24px; max-width:900px; width:100%; padding:26px 30px 34px;
+    box-shadow:0 20px 50px rgba(0,0,0,0.35); position:relative; overflow:hidden; }
+  h1{ color:var(--primary); text-align:center; margin:0 0 4px; font-size:clamp(22px,4vw,30px); }
+  .sub{ text-align:center; color:#555; margin:0 0 16px; font-size:clamp(13px,2vw,15px); }
+  .hud{ display:flex; justify-content:space-between; align-items:center; background:white; border-radius:16px;
+    padding:12px 20px; margin-bottom:16px; box-shadow:0 2px 8px rgba(0,0,0,0.08); font-weight:bold; color:var(--primary);
+    flex-wrap:wrap; gap:8px; font-size:clamp(13px,2vw,16px); }
+  .hud span.big{ color:var(--accent); font-size:1.2em; }
+  .section-label{ font-weight:bold; color:var(--dark); margin:14px 0 8px; font-size:15px; text-align:center; }
+  .picker-grid{ display:grid; grid-template-columns:repeat(auto-fit, minmax(120px,1fr)); gap:12px; margin-bottom:10px; }
+  .pick-option{
+    background:white; border:3px solid #eee; border-radius:16px; padding:14px 8px; text-align:center;
+    cursor:pointer; transition:transform .12s ease, border-color .12s ease;
+  }
+  .pick-option:hover{ transform:translateY(-3px); }
+  .pick-option.active{ border-color:var(--primary); background:#f0ebff; transform:scale(1.05); }
+  .pick-option .opt-icon{ font-size:38px; }
+  .pick-option .opt-label{ font-size:12.5px; font-weight:bold; color:#444; margin-top:6px; }
+  .name-row{ display:flex; gap:10px; justify-content:center; margin:16px 0; }
+  .name-row input{ flex:1; max-width:400px; padding:11px 16px; border-radius:12px; border:2px solid #ddd; font-size:15px; }
+  .build-btn-row{ display:flex; justify-content:center; margin-bottom:10px; }
+  #buildBtn{ background:var(--accent); color:white; border:none; padding:14px 34px; border-radius:14px; font-size:17px; font-weight:bold; cursor:pointer; }
+  #buildBtn:disabled{ opacity:0.4; cursor:not-allowed; }
+  .invention-card{
+    background:white; border-radius:20px; padding:22px; margin:18px 0; text-align:center;
+    box-shadow:0 8px 24px rgba(0,0,0,0.12); display:none;
+  }
+  .invention-flow{ display:flex; align-items:center; justify-content:center; gap:16px; margin-bottom:14px; flex-wrap:wrap; }
+  .flow-icon{ font-size:52px; background:#f7f7ff; border-radius:16px; padding:14px 18px; }
+  .flow-arrow{ font-size:28px; color:var(--primary); }
+  .invention-name{ font-size:20px; font-weight:bold; color:var(--primary); margin-bottom:6px; }
+  .invention-desc{ font-size:15px; color:#555; }
+  .gallery{ margin-top:20px; }
+  .gallery h3{ text-align:center; color:var(--dark); font-size:16px; margin-bottom:10px; }
+  .gallery-grid{ display:grid; grid-template-columns:repeat(auto-fill, minmax(150px,1fr)); gap:10px; }
+  .gallery-item{ background:white; border-radius:12px; padding:10px; text-align:center; font-size:12.5px; box-shadow:0 3px 8px rgba(0,0,0,0.08); }
+  .gallery-item .gi-icons{ font-size:26px; margin-bottom:4px; }
+  .gallery-item .gi-name{ font-weight:bold; color:var(--primary); }
+  .msg{ text-align:center; margin-top:12px; min-height:28px; font-size:14.5px; font-weight:bold; color:var(--red); }
+  .gate-overlay{ position:fixed; inset:0; background:rgba(26,26,46,0.72); display:flex; align-items:center; justify-content:center; z-index:100; padding:20px; }
+  .gate-card{ background:white; border-radius:20px; padding:34px 36px; max-width:420px; width:100%; text-align:center; box-shadow:0 20px 50px rgba(0,0,0,0.4); }
+  .gate-card h2{ color:var(--primary); margin:0 0 8px; font-size:24px; }
+  .gate-card p{ color:#555; margin:0 0 18px; font-size:14.5px; }
+  .gate-card input{ width:100%; font-size:18px; padding:12px 14px; border-radius:10px; border:2px solid var(--secondary);
+    text-align:center; font-weight:bold; color:var(--dark); margin-bottom:14px; box-sizing:border-box; }
+  .gate-card input:focus{ outline:none; border-color:var(--primary); }
+  .gate-card button{ width:100%; padding:13px; font-size:16px; border:none; border-radius:10px; background:var(--primary); color:white; font-weight:bold; cursor:pointer; }
+  .gate-error{ color:var(--red); font-size:13px; min-height:18px; margin-bottom:6px; font-weight:bold; }
+  #resultsPanel{ display:none; background:white; border-radius:14px; padding:18px 20px; margin-top:16px; box-shadow:0 2px 8px rgba(0,0,0,0.08); text-align:center; }
+  #resultsPanel h3{ margin:0 0 4px; color:var(--primary); font-size:18px; }
+  .save-row{ display:flex; gap:12px; justify-content:center; flex-wrap:wrap; margin-top:12px; }
+  .saved-note{ font-size:13px; color:#0e9e6f; font-weight:bold; min-height:18px; margin-top:8px; }
+  .confetti-piece{ position:absolute; top:-20px; width:12px; height:16px; z-index:20; pointer-events:none; animation: fall linear forwards; }
+  @keyframes fall{ to{ transform: translateY(600px) rotate(540deg); opacity:0.2; } }
+  .celebrate-banner{ position:absolute; left:50%; top:45%; transform:translate(-50%,-50%) scale(0.5); background:white; border-radius:22px;
+    padding:24px 36px; box-shadow:0 12px 40px rgba(0,0,0,0.35); text-align:center; z-index:30; opacity:0; pointer-events:none; }
+  .celebrate-banner.show{ animation: bannerPop .6s cubic-bezier(.34,1.56,.64,1) forwards; }
+  @keyframes bannerPop{ 0%{opacity:0; transform:translate(-50%,-50%) scale(0.4) rotate(-6deg);} 60%{opacity:1; transform:translate(-50%,-50%) scale(1.08) rotate(2deg);} 100%{opacity:1; transform:translate(-50%,-50%) scale(1) rotate(0);} }
+  .celebrate-banner .big{ font-size:24px; font-weight:bold; color:var(--primary); }
+</style>
+</head>
+<body>
+
+<div class="gate-overlay" id="gateOverlay">
+  <div class="gate-card">
+    <h2>💡 Invent-a-Device!</h2>
+    <p>Type your name to start inventing.</p>
+    <input type="text" id="nameInput" placeholder="Your name" maxlength="24" autocomplete="off">
+    <div class="gate-error" id="nameError"></div>
+    <button id="startBtn">Start ▶</button>
+  </div>
+</div>
+
+<div class="wrap" id="wrap">
+  <h1>💡 Invent-a-Device!</h1>
+  <p class="sub">Pick an input and an output, then build your very own digital invention!</p>
+  <div class="hud">
+    <div>Player: <span class="big" id="playerName">—</span></div>
+    <div>Inventions Built: <span class="big" id="buildCount">0</span> / <span id="buildTarget">5</span></div>
+  </div>
+
+  <div class="section-label">1️⃣ Choose an INPUT</div>
+  <div class="picker-grid" id="inputGrid"></div>
+
+  <div class="section-label">2️⃣ Choose an OUTPUT</div>
+  <div class="picker-grid" id="outputGrid"></div>
+
+  <div class="name-row">
+    <input type="text" id="inventionNameInput" placeholder="Name your invention (optional)" maxlength="30">
+  </div>
+  <div class="build-btn-row">
+    <button id="buildBtn" disabled>🔨 Build It!</button>
+  </div>
+  <p class="msg" id="msg"></p>
+
+  <div class="invention-card" id="inventionCard"></div>
+
+  <div class="gallery">
+    <h3>🖼️ Your Invention Gallery</h3>
+    <div class="gallery-grid" id="galleryGrid"></div>
+  </div>
+</div>
+
+<script>
+const INPUTS = [
+  { icon: "🎤", label: "Microphone", verb: "hears a sound" },
+  { icon: "🔘", label: "Button", verb: "is pressed" },
+  { icon: "💡", label: "Light Sensor", verb: "senses it go dark" },
+  { icon: "🏃", label: "Movement Sensor", verb: "detects movement" },
+  { icon: "📷", label: "Camera", verb: "sees a picture" },
+  { icon: "🌡️", label: "Temperature Sensor", verb: "feels it get hot" },
+];
+const OUTPUTS = [
+  { icon: "💡", label: "Flashing Lights", verb: "flash in bright colours" },
+  { icon: "🔊", label: "Alarm Sound", verb: "makes a loud sound" },
+  { icon: "📱", label: "Screen Message", verb: "shows a message" },
+  { icon: "🚪", label: "Door Opens", verb: "swings open" },
+  { icon: "🌀", label: "Spinning Fan", verb: "starts spinning" },
+  { icon: "🎵", label: "Music", verb: "starts playing" },
+];
+
+let chosenInput = null, chosenOutput = null, buildCount = 0, studentName = "";
+const BUILD_TARGET = 5;
+const gallery = [];
+const STORAGE_KEY = "inventADeviceResults";
+const wrap = document.getElementById('wrap');
+
+function renderGrids(){
+  document.getElementById('inputGrid').innerHTML = INPUTS.map((it,i)=>`
+    <div class="pick-option" data-type="input" data-idx="${i}">
+      <div class="opt-icon">${it.icon}</div><div class="opt-label">${it.label}</div>
+    </div>`).join('');
+  document.getElementById('outputGrid').innerHTML = OUTPUTS.map((it,i)=>`
+    <div class="pick-option" data-type="output" data-idx="${i}">
+      <div class="opt-icon">${it.icon}</div><div class="opt-label">${it.label}</div>
+    </div>`).join('');
+
+  document.querySelectorAll('.pick-option[data-type="input"]').forEach(el=>{
+    el.addEventListener('click', ()=>{
+      document.querySelectorAll('.pick-option[data-type="input"]').forEach(o=>o.classList.remove('active'));
+      el.classList.add('active');
+      chosenInput = INPUTS[parseInt(el.dataset.idx,10)];
+      checkReady();
+    });
+  });
+  document.querySelectorAll('.pick-option[data-type="output"]').forEach(el=>{
+    el.addEventListener('click', ()=>{
+      document.querySelectorAll('.pick-option[data-type="output"]').forEach(o=>o.classList.remove('active'));
+      el.classList.add('active');
+      chosenOutput = OUTPUTS[parseInt(el.dataset.idx,10)];
+      checkReady();
+    });
+  });
+}
+function checkReady(){
+  document.getElementById('buildBtn').disabled = !(chosenInput && chosenOutput);
+}
+renderGrids();
+
+function spawnConfetti(n){
+  const colors=['#3A0CA3','#4CC9F0','#F72585','#06D6A0','#FFD23F','#FFFFFF'];
+  for(let i=0;i<n;i++){
+    const p=document.createElement('div'); p.className='confetti-piece';
+    p.style.left=Math.random()*100+'%'; p.style.background=colors[Math.floor(Math.random()*colors.length)];
+    p.style.animationDuration=(1.2+Math.random()*1.1)+'s';
+    wrap.appendChild(p); setTimeout(()=>p.remove(),2500);
+  }
+}
+function showCelebrateBanner(text, sub){
+  const b=document.createElement('div'); b.className='celebrate-banner';
+  b.innerHTML = `<div class="big">${text}</div><div style="font-size:14px;color:#555;">${sub||''}</div>`;
+  wrap.appendChild(b); requestAnimationFrame(()=>b.classList.add('show'));
+  setTimeout(()=>{ b.style.transition='opacity .3s'; b.style.opacity='0'; setTimeout(()=>b.remove(),320); },1300);
+}
+
+document.getElementById('buildBtn').addEventListener('click', ()=>{
+  if(!chosenInput || !chosenOutput) return;
+  const nameInput = document.getElementById('inventionNameInput');
+  const name = nameInput.value.trim() || `${studentName}'s Invention #${buildCount+1}`;
+
+  const card = document.getElementById('inventionCard');
+  card.style.display = 'block';
+  card.innerHTML = `
+    <div class="invention-flow">
+      <div class="flow-icon">${chosenInput.icon}</div>
+      <div class="flow-arrow">➡️</div>
+      <div class="flow-icon">⚙️</div>
+      <div class="flow-arrow">➡️</div>
+      <div class="flow-icon">${chosenOutput.icon}</div>
+    </div>
+    <div class="invention-name">${name}</div>
+    <div class="invention-desc">When the <strong>${chosenInput.label}</strong> ${chosenInput.verb}, the <strong>${chosenOutput.label}</strong> ${chosenOutput.verb}!</div>
+  `;
+  spawnConfetti(20);
+  showCelebrateBanner('🎉 Invention Built!', name);
+
+  gallery.push({ name, inputIcon: chosenInput.icon, outputIcon: chosenOutput.icon });
+  buildCount++;
+  document.getElementById('buildCount').textContent = buildCount;
+  renderGallery();
+
+  // reset pickers for the next invention
+  document.querySelectorAll('.pick-option').forEach(o=>o.classList.remove('active'));
+  chosenInput = null; chosenOutput = null;
+  nameInput.value = '';
+  checkReady();
+
+  if(buildCount >= BUILD_TARGET){
+    setTimeout(showFinal, 1600);
+  }
+});
+
+function renderGallery(){
+  document.getElementById('galleryGrid').innerHTML = gallery.map(g=>`
+    <div class="gallery-item">
+      <div class="gi-icons">${g.inputIcon} ➡️ ${g.outputIcon}</div>
+      <div class="gi-name">${g.name}</div>
+    </div>
+  `).join('');
+}
+
+function showFinal(){
+  document.getElementById('msg').style.color = '#0e9e6f';
+  document.getElementById('msg').textContent = `🏆 Amazing! You built ${buildCount} inventions and completed the challenge!`;
+  spawnConfetti(40);
+  showResultsPanel();
+  if(window.__submitResultToCloud){
+    window.__submitResultToCloud({
+      name: studentName,
+      game: "Invent-a-Device! (Y3)",
+      score: buildCount,
+      total: BUILD_TARGET,
+      date: new Date().toLocaleDateString() + ' ' + new Date().toLocaleTimeString([], {hour:'2-digit', minute:'2-digit'})
+    });
+  }
+}
+function showResultsPanel(){
+  let panel = document.getElementById('resultsPanel');
+  if(!panel){
+    panel = document.createElement('div'); panel.id='resultsPanel';
+    panel.innerHTML = `
+      <h3>🏁 Well done!</h3>
+      <div id="resultsSummary" style="font-size:14.5px;color:#444;"></div>
+      <div class="save-row">
+        <button id="saveResultBtn" style="background:var(--primary);color:white;border:none;padding:12px 24px;border-radius:10px;font-weight:bold;cursor:pointer;">💾 Save My Results</button>
+        <button id="downloadAllBtn" style="background:white;color:var(--primary);border:2px solid var(--primary);padding:12px 24px;border-radius:10px;font-weight:bold;cursor:pointer;">📋 Download Class Results</button>
+      </div>
+      <div class="saved-note" id="savedNote"></div>`;
+    wrap.appendChild(panel);
+    document.getElementById('saveResultBtn').addEventListener('click', onSaveResult);
+    document.getElementById('downloadAllBtn').addEventListener('click', onDownloadAll);
+  }
+  panel.style.display='block';
+  document.getElementById('resultsSummary').textContent = `${studentName} built ${buildCount} out of ${BUILD_TARGET} inventions.`;
+}
+function readSavedResults(){ try{ return JSON.parse(localStorage.getItem(STORAGE_KEY)||"[]"); }catch(e){ return []; } }
+function writeSavedResults(list){ try{ localStorage.setItem(STORAGE_KEY, JSON.stringify(list)); }catch(e){} }
+function csvEscape(v){ const s=String(v); return /[",\n]/.test(s) ? '"'+s.replace(/"/g,'""')+'"' : s; }
+function downloadCSV(filename, rows){
+  const csv = rows.map(r=>r.map(csvEscape).join(",")).join("\r\n");
+  const blob = new Blob([csv], {type:"text/csv;charset=utf-8;"});
+  const url = URL.createObjectURL(blob);
+  const a=document.createElement('a'); a.href=url; a.download=filename;
+  document.body.appendChild(a); a.click(); document.body.removeChild(a);
+  setTimeout(()=>URL.revokeObjectURL(url),1000);
+}
+function onSaveResult(){
+  const now = new Date();
+  const record = { name:studentName, score:buildCount, total:BUILD_TARGET, date: now.toLocaleDateString()+' '+now.toLocaleTimeString([], {hour:'2-digit',minute:'2-digit'}) };
+  const list = readSavedResults(); list.push(record); writeSavedResults(list);
+  const safeName = (studentName||'student').replace(/[^a-z0-9]+/gi,'_');
+  downloadCSV(`InventADevice_${safeName}_${now.toISOString().slice(0,10)}.csv`, [["Name","Score","Total","Date"],[record.name,record.score,record.total,record.date]]);
+  document.getElementById('savedNote').textContent = '✅ Saved! A results file was downloaded, and your score was stored on this computer.';
+}
+function onDownloadAll(){
+  const list = readSavedResults();
+  if(list.length===0){ document.getElementById('savedNote').textContent='No saved results yet on this computer.'; return; }
+  const rows=[["Name","Score","Total","Date"], ...list.map(r=>[r.name,r.score,r.total,r.date])];
+  downloadCSV(`InventADevice_AllResults_${new Date().toISOString().slice(0,10)}.csv`, rows);
+}
+
+const gateOverlay=document.getElementById('gateOverlay');
+const nameInput=document.getElementById('nameInput');
+const nameError=document.getElementById('nameError');
+function startGame(){
+  const val = nameInput.value.trim();
+  if(!val){ nameError.textContent="Please type your name to start."; nameInput.focus(); return; }
+  studentName = val.slice(0,24);
+  document.getElementById('playerName').textContent = studentName;
+  document.getElementById('buildTarget').textContent = BUILD_TARGET;
+  gateOverlay.style.display='none';
+}
+document.getElementById('startBtn').addEventListener('click', startGame);
+nameInput.addEventListener('keydown', e=>{ if(e.key==='Enter') startGame(); });
+nameInput.focus();
+</script>
+
+<!-- ===== Cloud sync: sends each result to the shared Firestore database ===== -->
+<script src="https://www.gstatic.com/firebasejs/10.13.0/firebase-app-compat.js"></script>
+<script src="https://www.gstatic.com/firebasejs/10.13.0/firebase-firestore-compat.js"></script>
+<script>
+  const firebaseConfig = {
+    apiKey: "AIzaSyCEJtHd802MyuZUlwt6OfGkl9IitHaSOaA",
+    authDomain: "tasks-results.firebaseapp.com",
+    projectId: "tasks-results",
+    storageBucket: "tasks-results.firebasestorage.app",
+    messagingSenderId: "1014525306500",
+    appId: "1:1014525306500:web:3ffe2e6f5554e9140e04d1"
+  };
+  try{
+    firebase.initializeApp(firebaseConfig);
+    const db = firebase.firestore();
+    window.__submitResultToCloud = function(record){
+      return db.collection("results").add({
+        ...record,
+        createdAt: firebase.firestore.FieldValue.serverTimestamp()
+      }).then(() => true).catch((err) => { console.error("Cloud sync failed:", err); return false; });
+    };
+  }catch(err){
+    console.error("Firebase init failed:", err);
+  }
+</script>
+</body>
+</html>

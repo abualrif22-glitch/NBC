@@ -1,0 +1,371 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>Puzzle Piece Push! - Year 1 Computing Game</title>
+<style>
+  :root{
+    --primary:#FF7F50; --secondary:#4FC3F7; --accent:#FFD54F; --green:#8BC34A;
+    --light:#FFF9F0; --dark:#2B2250; --red:#E85C4A;
+  }
+  *{box-sizing:border-box; -webkit-tap-highlight-color: transparent;}
+  html,body{ margin:0; height:100%; touch-action:none; }
+  body{
+    font-family:'Segoe UI', Calibri, Arial, sans-serif;
+    background:linear-gradient(135deg,#FF7F50 0%,#FFD54F 100%);
+    min-height:100vh; display:flex; align-items:center; justify-content:center; padding:20px;
+  }
+  .wrap{ background:var(--light); border-radius:26px; max-width:900px; width:100%; padding:26px 30px 34px;
+    box-shadow:0 20px 50px rgba(0,0,0,0.3); position:relative; overflow:hidden; }
+  h1{ color:var(--primary); text-align:center; margin:0 0 4px; font-size:clamp(24px,4vw,32px); }
+  .sub{ text-align:center; color:#6B5B4A; margin:0 0 16px; font-size:clamp(13px,2vw,15px); }
+  .hud{ display:flex; justify-content:space-between; align-items:center; background:white; border-radius:16px;
+    padding:12px 20px; margin-bottom:16px; box-shadow:0 2px 8px rgba(0,0,0,0.08); font-weight:bold; color:var(--primary);
+    flex-wrap:wrap; gap:8px; font-size:clamp(13px,2vw,16px); }
+  .hud span.big{ color:var(--red); font-size:1.2em; }
+  .stage{ background:#FFF0E0; border-radius:22px; padding:20px; border:3px dashed #FFD2B0; position:relative; min-height:420px; }
+  .slots-row{ display:flex; justify-content:center; gap:24px; flex-wrap:wrap; margin-bottom:30px; }
+  .slot{
+    width:110px; height:110px; border-radius:20px; border:4px dashed #ccc; background:rgba(255,255,255,0.6);
+    display:flex; align-items:center; justify-content:center; font-size:56px; opacity:0.5;
+  }
+  .slot.filled{ border-style:solid; opacity:1; background:white; }
+  .pieces-row{ display:flex; justify-content:center; gap:20px; flex-wrap:wrap; }
+  .piece{
+    width:90px; height:90px; border-radius:18px; background:white; box-shadow:0 6px 16px rgba(0,0,0,0.18);
+    display:flex; align-items:center; justify-content:center; font-size:48px; cursor:grab;
+    user-select:none; touch-action:none; transition:transform .1s ease;
+  }
+  .piece:active{ cursor:grabbing; }
+  .piece.dragging{ opacity:0.4; }
+  .piece.placed{ visibility:hidden; }
+  .msg{ text-align:center; margin-top:18px; min-height:34px; font-size:clamp(15px,2.3vw,18px); font-weight:bold; color:var(--primary); }
+  .msg.happy{ color:#1a9e6b; } .msg.oops{ color:var(--red); }
+  .controls{ display:flex; justify-content:center; margin-top:16px; gap:12px; }
+  button.ctrl{ background:var(--primary); color:white; border:none; padding:13px 28px; border-radius:12px; font-size:16px; font-weight:bold; cursor:pointer; }
+  button.ctrl.secondary{ background:white; color:var(--primary); border:2px solid var(--primary); }
+  .gate-overlay{ position:fixed; inset:0; background:rgba(43,34,80,0.75); display:flex; align-items:center; justify-content:center; z-index:100; padding:20px; }
+  .gate-card{ background:white; border-radius:20px; padding:34px 36px; max-width:420px; width:100%; text-align:center; box-shadow:0 20px 50px rgba(0,0,0,0.4); }
+  .gate-card h2{ color:var(--primary); margin:0 0 8px; font-size:24px; }
+  .gate-card p{ color:#555; margin:0 0 18px; font-size:14.5px; }
+  .gate-card input{ width:100%; font-size:18px; padding:12px 14px; border-radius:10px; border:2px solid var(--secondary);
+    text-align:center; font-weight:bold; color:var(--dark); margin-bottom:14px; box-sizing:border-box; }
+  .gate-card input:focus{ outline:none; border-color:var(--primary); }
+  .gate-card button{ width:100%; padding:13px; font-size:16px; border:none; border-radius:10px; background:var(--primary); color:white; font-weight:bold; cursor:pointer; }
+  .gate-error{ color:var(--red); font-size:13px; min-height:18px; margin-bottom:6px; font-weight:bold; }
+  #resultsPanel{ display:none; background:white; border-radius:14px; padding:18px 20px; margin-top:16px; box-shadow:0 2px 8px rgba(0,0,0,0.08); text-align:center; }
+  #resultsPanel h3{ margin:0 0 4px; color:var(--primary); font-size:18px; }
+  .save-row{ display:flex; gap:12px; justify-content:center; flex-wrap:wrap; margin-top:12px; }
+  .saved-note{ font-size:13px; color:#0e9e6f; font-weight:bold; min-height:18px; margin-top:8px; }
+  .confetti-piece{ position:absolute; top:-20px; width:12px; height:16px; z-index:20; pointer-events:none; animation: fall linear forwards; }
+  @keyframes fall{ to{ transform: translateY(600px) rotate(540deg); opacity:0.2; } }
+  .celebrate-banner{ position:absolute; left:50%; top:45%; transform:translate(-50%,-50%) scale(0.5); background:white; border-radius:22px;
+    padding:24px 36px; box-shadow:0 12px 40px rgba(0,0,0,0.35); text-align:center; z-index:30; opacity:0; pointer-events:none; }
+  .celebrate-banner.show{ animation: bannerPop .6s cubic-bezier(.34,1.56,.64,1) forwards; }
+  @keyframes bannerPop{ 0%{opacity:0; transform:translate(-50%,-50%) scale(0.4) rotate(-6deg);} 60%{opacity:1; transform:translate(-50%,-50%) scale(1.08) rotate(2deg);} 100%{opacity:1; transform:translate(-50%,-50%) scale(1) rotate(0);} }
+  .celebrate-banner .big{ font-size:24px; font-weight:bold; color:var(--primary); }
+</style>
+</head>
+<body>
+
+<div class="gate-overlay" id="gateOverlay">
+  <div class="gate-card">
+    <h2>🖱️ Puzzle Piece Push!</h2>
+    <p>Type your name to start.</p>
+    <input type="text" id="nameInput" placeholder="Your name" maxlength="24" autocomplete="off">
+    <div class="gate-error" id="nameError"></div>
+    <button id="startBtn">Start ▶</button>
+  </div>
+</div>
+
+<div class="wrap" id="wrap">
+  <h1>🖱️ Puzzle Piece Push!</h1>
+  <p class="sub" id="subline">Click and hold a piece, drag it to its matching space, then let go!</p>
+  <div class="hud">
+    <div>Player: <span class="big" id="playerName">—</span></div>
+    <div>Level <span class="big" id="levelNum">1</span> / <span id="levelTotal">3</span></div>
+    <div>Tries: <span class="big" id="tryCount">0</span></div>
+  </div>
+  <div class="stage" id="stage">
+    <div class="slots-row" id="slotsRow"></div>
+    <div class="pieces-row" id="piecesRow"></div>
+  </div>
+  <p class="msg" id="msg">Drag each piece to the space that matches!</p>
+  <div class="controls">
+    <button class="ctrl secondary" id="resetLevelBtn">⟲ Restart Level</button>
+  </div>
+</div>
+
+<script>
+const LEVELS = [
+  ["⚽","🍎","🚗"],
+  ["⚽","🍎","🚗","🐶"],
+  ["⚽","🍎","🚗","🐶","🌟","🎈"],
+];
+let levelIdx = 0, tries = 0, placedCount = 0, wrongAttempts = 0, studentName = "";
+const STORAGE_KEY = "puzzlePiecePushResults";
+document.getElementById('levelTotal').textContent = LEVELS.length;
+const wrap = document.getElementById('wrap');
+const msg = document.getElementById('msg');
+
+function shuffle(arr){ const a=[...arr]; for(let i=a.length-1;i>0;i--){ const j=Math.floor(Math.random()*(i+1)); [a[i],a[j]]=[a[j],a[i]]; } return a; }
+
+function buildLevel(idx){
+  const items = LEVELS[idx];
+  placedCount = 0;
+  document.getElementById('levelNum').textContent = idx+1;
+  msg.className = 'msg';
+  msg.textContent = 'Drag each piece to the space that matches!';
+
+  const slotsRow = document.getElementById('slotsRow');
+  slotsRow.innerHTML = items.map((emoji,i)=>`<div class="slot" data-target="${emoji}" id="slot-${i}"></div>`).join('');
+
+  const piecesRow = document.getElementById('piecesRow');
+  const shuffled = shuffle(items);
+  piecesRow.innerHTML = shuffled.map((emoji,i)=>`<div class="piece" data-emoji="${emoji}" id="piece-${i}">${emoji}</div>`).join('');
+
+  attachDragHandlers();
+}
+
+function attachDragHandlers(){
+  const pieces = document.querySelectorAll('.piece');
+  pieces.forEach(piece=>{
+    let dragging = false;
+    let offsetX = 0, offsetY = 0;
+    let startParent = null;
+
+    function pointerDown(e){
+      if(piece.classList.contains('placed')) return;
+      dragging = true;
+      piece.classList.add('dragging');
+      const rect = piece.getBoundingClientRect();
+      const point = e.touches ? e.touches[0] : e;
+      offsetX = point.clientX - rect.left;
+      offsetY = point.clientY - rect.top;
+      piece.style.position = 'fixed';
+      piece.style.zIndex = 1000;
+      piece.style.width = rect.width+'px';
+      piece.style.height = rect.height+'px';
+      movePiece(point);
+      document.addEventListener('mousemove', pointerMove);
+      document.addEventListener('touchmove', pointerMove, {passive:false});
+      document.addEventListener('mouseup', pointerUp);
+      document.addEventListener('touchend', pointerUp);
+      e.preventDefault();
+    }
+    function movePiece(point){
+      piece.style.left = (point.clientX - offsetX) + 'px';
+      piece.style.top = (point.clientY - offsetY) + 'px';
+    }
+    function pointerMove(e){
+      if(!dragging) return;
+      const point = e.touches ? e.touches[0] : e;
+      movePiece(point);
+      e.preventDefault();
+    }
+    function pointerUp(e){
+      if(!dragging) return;
+      dragging = false;
+      piece.classList.remove('dragging');
+      document.removeEventListener('mousemove', pointerMove);
+      document.removeEventListener('touchmove', pointerMove);
+      document.removeEventListener('mouseup', pointerUp);
+      document.removeEventListener('touchend', pointerUp);
+
+      const point = e.changedTouches ? e.changedTouches[0] : e;
+      const pieceRect = piece.getBoundingClientRect();
+      const pieceCenterX = pieceRect.left + pieceRect.width/2;
+      const pieceCenterY = pieceRect.top + pieceRect.height/2;
+
+      let landed = null;
+      document.querySelectorAll('.slot').forEach(slot=>{
+        const r = slot.getBoundingClientRect();
+        if(pieceCenterX >= r.left && pieceCenterX <= r.right && pieceCenterY >= r.top && pieceCenterY <= r.bottom){
+          landed = slot;
+        }
+      });
+
+      tries++;
+      document.getElementById('tryCount').textContent = tries;
+
+      if(landed && !landed.classList.contains('filled') && landed.dataset.target === piece.dataset.emoji){
+        // correct placement
+        landed.classList.add('filled');
+        landed.textContent = piece.dataset.emoji;
+        piece.classList.add('placed');
+        piece.style.position = '';
+        piece.style.left = ''; piece.style.top = ''; piece.style.zIndex = '';
+        placedCount++;
+        spawnConfetti(14);
+        msg.className = 'msg happy';
+        msg.textContent = '✅ Great dragging!';
+        if(placedCount === LEVELS[levelIdx].length){
+          setTimeout(levelComplete, 500);
+        }
+      } else {
+        // snap back
+        wrongAttempts++;
+        piece.style.position = '';
+        piece.style.left = ''; piece.style.top = ''; piece.style.zIndex = '';
+        if(landed){
+          msg.className = 'msg oops';
+          msg.textContent = "❌ Not quite \u2014 try a different space!";
+        }
+      }
+    }
+    piece.addEventListener('mousedown', pointerDown);
+    piece.addEventListener('touchstart', pointerDown, {passive:false});
+  });
+}
+
+function spawnConfetti(n){
+  const colors=['#FF7F50','#4FC3F7','#FFD54F','#8BC34A','#2B2250','#FFFFFF'];
+  for(let i=0;i<n;i++){
+    const p=document.createElement('div'); p.className='confetti-piece';
+    p.style.left=Math.random()*100+'%'; p.style.background=colors[Math.floor(Math.random()*colors.length)];
+    p.style.animationDuration=(1.2+Math.random()*1.1)+'s';
+    wrap.appendChild(p); setTimeout(()=>p.remove(),2500);
+  }
+}
+function showCelebrateBanner(text, sub){
+  const b=document.createElement('div'); b.className='celebrate-banner';
+  b.innerHTML = `<div class="big">${text}</div><div style="font-size:14px;color:#555;">${sub||''}</div>`;
+  wrap.appendChild(b); requestAnimationFrame(()=>b.classList.add('show'));
+  setTimeout(()=>{ b.style.transition='opacity .3s'; b.style.opacity='0'; setTimeout(()=>b.remove(),320); },1300);
+}
+
+function levelComplete(){
+  spawnConfetti(30);
+  showCelebrateBanner('🎉 Level Complete!', `You did it, ${studentName}!`);
+  levelIdx++;
+  if(levelIdx < LEVELS.length){
+    setTimeout(()=>buildLevel(levelIdx), 1400);
+  } else {
+    setTimeout(showFinal, 1400);
+  }
+}
+
+function showFinal(){
+  const accuracy = Math.max(0, Math.round(100 * (tries - wrongAttempts) / Math.max(tries,1)));
+  document.getElementById('stage').innerHTML = `
+    <div style="text-align:center; padding:30px 10px;">
+      <div style="font-size:76px;">🏆</div>
+      <div style="font-size:22px;font-weight:bold;color:var(--primary);margin-bottom:8px;">You're a Mouse Master!</div>
+      <div style="font-size:17px;color:#555;margin-bottom:18px;">Accuracy: ${accuracy}% (${tries} tries for ${LEVELS.flat().length} pieces)</div>
+      <button class="ctrl secondary" id="playAgainBtn">Play Again 🔄</button>
+    </div>`;
+  msg.textContent = '';
+  document.getElementById('playAgainBtn').addEventListener('click', ()=>{
+    levelIdx = 0; tries = 0; wrongAttempts = 0;
+    document.getElementById('tryCount').textContent = 0;
+    buildLevel(0);
+  });
+  showResultsPanel(accuracy);
+
+  if(window.__submitResultToCloud){
+    window.__submitResultToCloud({
+      name: studentName,
+      game: "Puzzle Piece Push! (Y1)",
+      score: accuracy,
+      total: 100,
+      date: new Date().toLocaleDateString() + ' ' + new Date().toLocaleTimeString([], {hour:'2-digit', minute:'2-digit'})
+    });
+  }
+}
+
+function showResultsPanel(accuracy){
+  let panel = document.getElementById('resultsPanel');
+  if(!panel){
+    panel = document.createElement('div'); panel.id='resultsPanel';
+    panel.innerHTML = `
+      <h3>🏁 Well done!</h3>
+      <div id="resultsSummary" style="font-size:14.5px;color:#444;"></div>
+      <div class="save-row">
+        <button class="ctrl" id="saveResultBtn">💾 Save My Results</button>
+        <button class="ctrl secondary" id="downloadAllBtn">📋 Download Class Results</button>
+      </div>
+      <div class="saved-note" id="savedNote"></div>`;
+    wrap.appendChild(panel);
+    document.getElementById('saveResultBtn').addEventListener('click', onSaveResult);
+    document.getElementById('downloadAllBtn').addEventListener('click', onDownloadAll);
+  }
+  panel.style.display='block';
+  document.getElementById('resultsSummary').textContent = `${studentName} finished with ${accuracy}% accuracy.`;
+  document.getElementById('savedNote').textContent = '';
+}
+function readSavedResults(){ try{ return JSON.parse(localStorage.getItem(STORAGE_KEY)||"[]"); }catch(e){ return []; } }
+function writeSavedResults(list){ try{ localStorage.setItem(STORAGE_KEY, JSON.stringify(list)); }catch(e){} }
+function csvEscape(v){ const s=String(v); return /[",\n]/.test(s) ? '"'+s.replace(/"/g,'""')+'"' : s; }
+function downloadCSV(filename, rows){
+  const csv = rows.map(r=>r.map(csvEscape).join(",")).join("\r\n");
+  const blob = new Blob([csv], {type:"text/csv;charset=utf-8;"});
+  const url = URL.createObjectURL(blob);
+  const a=document.createElement('a'); a.href=url; a.download=filename;
+  document.body.appendChild(a); a.click(); document.body.removeChild(a);
+  setTimeout(()=>URL.revokeObjectURL(url),1000);
+}
+function onSaveResult(){
+  const accuracy = Math.max(0, Math.round(100 * (tries - wrongAttempts) / Math.max(tries,1)));
+  const now = new Date();
+  const record = { name:studentName, score:accuracy, total:100, date: now.toLocaleDateString()+' '+now.toLocaleTimeString([], {hour:'2-digit',minute:'2-digit'}) };
+  const list = readSavedResults(); list.push(record); writeSavedResults(list);
+  const safeName = (studentName||'student').replace(/[^a-z0-9]+/gi,'_');
+  downloadCSV(`PuzzlePiecePush_${safeName}_${now.toISOString().slice(0,10)}.csv`, [["Name","Score","Total","Date"],[record.name,record.score,record.total,record.date]]);
+  document.getElementById('savedNote').textContent = '✅ Saved! A results file was downloaded, and your score was stored on this computer.';
+}
+function onDownloadAll(){
+  const list = readSavedResults();
+  if(list.length===0){ document.getElementById('savedNote').textContent='No saved results yet on this computer.'; return; }
+  const rows=[["Name","Score","Total","Date"], ...list.map(r=>[r.name,r.score,r.total,r.date])];
+  downloadCSV(`PuzzlePiecePush_AllResults_${new Date().toISOString().slice(0,10)}.csv`, rows);
+}
+
+document.getElementById('resetLevelBtn').addEventListener('click', ()=>{
+  tries = 0; document.getElementById('tryCount').textContent = 0;
+  buildLevel(levelIdx);
+});
+
+const gateOverlay=document.getElementById('gateOverlay');
+const nameInput=document.getElementById('nameInput');
+const nameError=document.getElementById('nameError');
+function startGame(){
+  const val = nameInput.value.trim();
+  if(!val){ nameError.textContent="Please type your name to start."; nameInput.focus(); return; }
+  studentName = val.slice(0,24);
+  document.getElementById('playerName').textContent = studentName;
+  gateOverlay.style.display='none';
+  buildLevel(0);
+}
+document.getElementById('startBtn').addEventListener('click', startGame);
+nameInput.addEventListener('keydown', e=>{ if(e.key==='Enter') startGame(); });
+nameInput.focus();
+</script>
+
+<!-- ===== Cloud sync: sends each result to the shared Firestore database ===== -->
+<script src="https://www.gstatic.com/firebasejs/10.13.0/firebase-app-compat.js"></script>
+<script src="https://www.gstatic.com/firebasejs/10.13.0/firebase-firestore-compat.js"></script>
+<script>
+  const firebaseConfig = {
+    apiKey: "AIzaSyCEJtHd802MyuZUlwt6OfGkl9IitHaSOaA",
+    authDomain: "tasks-results.firebaseapp.com",
+    projectId: "tasks-results",
+    storageBucket: "tasks-results.firebasestorage.app",
+    messagingSenderId: "1014525306500",
+    appId: "1:1014525306500:web:3ffe2e6f5554e9140e04d1"
+  };
+  try{
+    firebase.initializeApp(firebaseConfig);
+    const db = firebase.firestore();
+    window.__submitResultToCloud = function(record){
+      return db.collection("results").add({
+        ...record,
+        createdAt: firebase.firestore.FieldValue.serverTimestamp()
+      }).then(() => true).catch((err) => { console.error("Cloud sync failed:", err); return false; });
+    };
+  }catch(err){
+    console.error("Firebase init failed:", err);
+  }
+</script>
+</body>
+</html>

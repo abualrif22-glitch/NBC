@@ -8,6 +8,8 @@
   :root{
     --dark:#1A1A2E;
     --light:#F7F9FC;
+    --y1:#FF7F50;
+    --y1-2:#4FC3F7;
     --y2:#FF5C8A;
     --y2-2:#3DDC97;
     --y3:#3A0CA3;
@@ -75,6 +77,7 @@
     margin-bottom:18px;
     box-shadow:0 6px 16px rgba(0,0,0,0.2);
   }
+  .year-badge.y1{ background:linear-gradient(135deg,var(--y1),var(--y1-2)); }
   .year-badge.y2{ background:linear-gradient(135deg,var(--y2),var(--y2-2)); }
   .year-badge.y3{ background:linear-gradient(135deg,var(--y3),var(--y3-2)); }
   .year-badge.y4{ background:linear-gradient(135deg,var(--y4),var(--y4-2)); }
@@ -104,6 +107,7 @@
   .game-card .stripe{
     position:absolute; top:0; left:0; right:0; height:8px;
   }
+  .game-card.y1 .stripe{ background:linear-gradient(90deg,var(--y1),var(--y1-2)); }
   .game-card.y2 .stripe{ background:linear-gradient(90deg,var(--y2),var(--y2-2)); }
   .game-card.y3 .stripe{ background:linear-gradient(90deg,var(--y3),var(--y3-2)); }
   .game-card.y4 .stripe{ background:linear-gradient(90deg,var(--y4),var(--y4-2)); }
@@ -144,6 +148,7 @@
     font-size:15px;
     color:white;
   }
+  .game-card.y1 .play-btn{ background:var(--y1); }
   .game-card.y2 .play-btn{ background:var(--y2); }
   .game-card.y3 .play-btn{ background:var(--y3); }
   .game-card.y4 .play-btn{ background:var(--y4); }
@@ -233,6 +238,22 @@
   </div>
 
   <div id="hubContent">
+    <div class="year-section" data-year="1">
+      <div class="year-badge y1">🟠 Year 1</div>
+      <div class="card-grid">
+
+        <a class="game-card y1" href="Puzzle Piece Push - fun computer activity (Y1).html" data-keywords="puzzle piece push mouse click drag computer parts lesson 2">
+          <div class="stripe"></div>
+          <div class="game-emoji">🖱️</div>
+          <div class="game-lesson">Lesson 2 · Using Technology</div>
+          <div class="game-title">Puzzle Piece Push!</div>
+          <div class="game-desc">Practise your mouse skills — click and drag pieces to their matching spaces across 3 fun levels.</div>
+          <span class="play-btn">▶ Play Now</span>
+        </a>
+
+      </div>
+    </div>
+
     <div class="year-section" data-year="2">
       <div class="year-badge y2">🟣 Year 2</div>
       <div class="card-grid">
@@ -286,6 +307,24 @@
           <div class="game-lesson">Bonus · Digital Devices</div>
           <div class="game-title">Digital or Not?</div>
           <div class="game-desc">Spot the tricky ones! Some things use electricity but aren't actually digital devices — can you tell which?</div>
+          <span class="play-btn">▶ Play Now</span>
+        </a>
+
+        <a class="game-card y3" href="Invent-a-Device - fun computer activity (Y3).html" data-keywords="invent device input output build design bonus">
+          <div class="stripe"></div>
+          <div class="game-emoji">💡</div>
+          <div class="game-lesson">Bonus · Input & Output</div>
+          <div class="game-title">Invent-a-Device!</div>
+          <div class="game-desc">Pick an input and an output, then build your very own digital invention — like disco lights that flash to music!</div>
+          <span class="play-btn">▶ Play Now</span>
+        </a>
+
+        <a class="game-card y3" href="Connect the Chain - fun computer activity (Y3).html" data-keywords="connect chain input output device match bonus">
+          <div class="stripe"></div>
+          <div class="game-emoji">🔗</div>
+          <div class="game-lesson">Bonus · Input & Output</div>
+          <div class="game-title">Connect the Chain!</div>
+          <div class="game-desc">Match each input to its digital device, then to the output it produces — from keyboards to pedestrian crossings!</div>
           <span class="play-btn">▶ Play Now</span>
         </a>
 

@@ -103,14 +103,14 @@
 // Real chains from the Year 3 curriculum's "Device inputs and outputs" activity.
 const CHAINS = [
   { input:{icon:"\u2328\uFE0F", label:"Keyboard"}, device:{icon:"\uD83D\uDCBB", label:"Laptop"}, output:{icon:"\uD83D\uDDA5\uFE0F", label:"Screen"} },
-  { input:{icon:"\uD83D\uDCF1", label:"Touchscreen"}, device:{icon:"\uD83D\uDCF1", label:"Tablet"}, output:{icon:"\uD83D\uDDA5\uFE0F", label:"Screen"} },
-  { input:{icon:"\uD83C\uDFAE", label:"Games Controller"}, device:{icon:"\uD83C\uDFAE", label:"Games Console"}, output:{icon:"\uD83D\uDD0A", label:"Speaker"} },
-  { input:{icon:"\uD83D\uDD18", label:"Crossing Button"}, device:{icon:"\uD83D\uDEA6", label:"Pedestrian Crossing"}, output:{icon:"\uD83D\uDEA6", label:"Crossing Lights"} },
+  { input:{icon:"\uD83D\uDC46", label:"Touchscreen"}, device:{icon:"\uD83D\uDCF1", label:"Tablet"}, output:{icon:"\uD83D\uDDA5\uFE0F", label:"Screen"} },
+  { input:{icon:"\uD83D\uDD79\uFE0F", label:"Games Controller"}, device:{icon:"\uD83C\uDFAE", label:"Games Console"}, output:{icon:"\uD83D\uDD0A", label:"Speaker"} },
+  { input:{icon:"\uD83D\uDD18", label:"Crossing Button"}, device:{icon:"\uD83D\uDEB8", label:"Pedestrian Crossing"}, output:{icon:"\uD83D\uDEA6", label:"Crossing Lights"} },
 ];
 // Distractor devices/outputs shown alongside the correct answer for variety.
 const ALL_DEVICES = [
   {icon:"\uD83D\uDCBB", label:"Laptop"}, {icon:"\uD83D\uDCF1", label:"Tablet"},
-  {icon:"\uD83C\uDFAE", label:"Games Console"}, {icon:"\uD83D\uDEA6", label:"Pedestrian Crossing"},
+  {icon:"\uD83C\uDFAE", label:"Games Console"}, {icon:"\uD83D\uDEB8", label:"Pedestrian Crossing"},
 ];
 const ALL_OUTPUTS = [
   {icon:"\uD83D\uDDA5\uFE0F", label:"Screen"}, {icon:"\uD83D\uDD0A", label:"Speaker"},
@@ -157,7 +157,7 @@ function renderRound(){
   renderChainDisplay(chain, false, false);
   document.getElementById('stageLabel').textContent = `Which digital device does the ${chain.input.label} belong to?`;
 
-  const options = shuffle([chain.device, ...shuffle(ALL_DEVICES.filter(d=>d.label!==chain.device.label)).slice(0,3)]);
+  const options = shuffle([chain.device, ...shuffle(ALL_DEVICES.filter(d=>d.label!==chain.device.label)).slice(0,2)]);
   document.getElementById('optionsGrid').innerHTML = options.map(o=>`
     <div class="opt-card" data-label="${o.label}">
       <div class="oc-icon">${o.icon}</div><div class="oc-label">${o.label}</div>
@@ -195,7 +195,7 @@ function advanceStage(chain){
     renderChainDisplay(chain, true, false);
     document.getElementById('stageLabel').textContent = `What output does the ${chain.device.label} produce?`;
     document.getElementById('msg').textContent = '';
-    const options = shuffle([chain.output, ...shuffle(ALL_OUTPUTS.filter(o=>o.label!==chain.output.label)).slice(0,3)]);
+    const options = shuffle([chain.output, ...shuffle(ALL_OUTPUTS.filter(o=>o.label!==chain.output.label)).slice(0,2)]);
     document.getElementById('optionsGrid').innerHTML = options.map(o=>`
       <div class="opt-card" data-label="${o.label}">
         <div class="oc-icon">${o.icon}</div><div class="oc-label">${o.label}</div>
@@ -267,7 +267,8 @@ function showResultsPanel(total){
         <button class="ctrl" id="saveResultBtn">💾 Save My Results</button>
         <button class="ctrl secondary" id="downloadAllBtn">📋 Download Class Results</button>
       </div>
-      <div class="saved-note" id="savedNote"></div>`;
+      <div class="saved-note" id="savedNote"></div>
+      <div style="margin-top:14px;"><a href="index.html" style="display:inline-block; background:#1A1A2E; color:white; text-decoration:none; padding:12px 26px; border-radius:12px; font-weight:bold; font-size:14.5px;">🏠 Back to Hub</a></div>`;
     wrap.appendChild(panel);
     document.getElementById('saveResultBtn').addEventListener('click', ()=>onSaveResult(total));
     document.getElementById('downloadAllBtn').addEventListener('click', onDownloadAll);

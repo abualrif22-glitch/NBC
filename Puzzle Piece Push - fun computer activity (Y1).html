@@ -286,7 +286,8 @@ function showResultsPanel(accuracy){
         <button class="ctrl" id="saveResultBtn">💾 Save My Results</button>
         <button class="ctrl secondary" id="downloadAllBtn">📋 Download Class Results</button>
       </div>
-      <div class="saved-note" id="savedNote"></div>`;
+      <div class="saved-note" id="savedNote"></div>
+      <div style="margin-top:14px;"><a href="index.html" style="display:inline-block; background:#1A1A2E; color:white; text-decoration:none; padding:12px 26px; border-radius:12px; font-weight:bold; font-size:14.5px;">🏠 Back to Hub</a></div>`;
     wrap.appendChild(panel);
     document.getElementById('saveResultBtn').addEventListener('click', onSaveResult);
     document.getElementById('downloadAllBtn').addEventListener('click', onDownloadAll);

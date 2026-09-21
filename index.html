@@ -16,6 +16,10 @@
     --y3-2:#4CC9F0;
     --y4:#2A2A72;
     --y4-2:#00C9A7;
+    --y5:#0D9488;
+    --y5-2:#84CC16;
+    --y6:#BE123C;
+    --y6-2:#FBBF24;
   }
   *{box-sizing:border-box;}
   html,body{ margin:0; }
@@ -64,7 +68,71 @@
 
   .year-section{
     margin-bottom:44px;
+    display:none;
   }
+  .year-section.active{
+    display:block;
+  }
+  .folder-grid{
+    display:grid;
+    grid-template-columns:repeat(auto-fit, minmax(220px,1fr));
+    gap:22px;
+    margin-top:10px;
+  }
+  .folder-tile{
+    border-radius:24px;
+    padding:34px 20px;
+    text-align:center;
+    text-decoration:none;
+    cursor:pointer;
+    color:white;
+    box-shadow:0 10px 28px rgba(0,0,0,0.25);
+    transition:transform .18s ease, box-shadow .18s ease;
+    position:relative;
+    overflow:hidden;
+  }
+  .folder-tile:hover{
+    transform:translateY(-8px) scale(1.03);
+    box-shadow:0 16px 36px rgba(0,0,0,0.35);
+  }
+  .folder-tile .folder-icon{
+    font-size:56px;
+    margin-bottom:10px;
+    filter:drop-shadow(0 4px 8px rgba(0,0,0,0.25));
+  }
+  .folder-tile .folder-title{
+    font-size:22px;
+    font-weight:bold;
+    margin-bottom:6px;
+  }
+  .folder-tile .folder-count{
+    font-size:13.5px;
+    opacity:0.9;
+    font-weight:600;
+  }
+  .folder-tile.y1{ background:linear-gradient(150deg,var(--y1),var(--y1-2)); }
+  .folder-tile.y2{ background:linear-gradient(150deg,var(--y2),var(--y2-2)); }
+  .folder-tile.y3{ background:linear-gradient(150deg,var(--y3),var(--y3-2)); }
+  .folder-tile.y4{ background:linear-gradient(150deg,var(--y4),var(--y4-2)); }
+  .folder-tile.y5{ background:linear-gradient(150deg,var(--y5),var(--y5-2)); }
+  .folder-tile.y6{ background:linear-gradient(150deg,var(--y6),var(--y6-2)); }
+  .folder-tile.teachers{ background:linear-gradient(150deg,#1A1A2E,#4B4B78); }
+  .back-to-folders{
+    display:inline-flex;
+    align-items:center;
+    gap:8px;
+    background:white;
+    color:var(--dark);
+    font-weight:bold;
+    padding:11px 22px;
+    border-radius:14px;
+    border:none;
+    cursor:pointer;
+    margin-bottom:20px;
+    box-shadow:0 3px 10px rgba(0,0,0,0.12);
+    font-size:14.5px;
+  }
+  .back-to-folders:hover{ background:#f0f0f5; }
   .year-badge{
     display:inline-flex;
     align-items:center;
@@ -81,6 +149,8 @@
   .year-badge.y2{ background:linear-gradient(135deg,var(--y2),var(--y2-2)); }
   .year-badge.y3{ background:linear-gradient(135deg,var(--y3),var(--y3-2)); }
   .year-badge.y4{ background:linear-gradient(135deg,var(--y4),var(--y4-2)); }
+  .year-badge.y5{ background:linear-gradient(135deg,var(--y5),var(--y5-2)); }
+  .year-badge.y6{ background:linear-gradient(135deg,var(--y6),var(--y6-2)); }
 
   .card-grid{
     display:grid;
@@ -237,6 +307,46 @@
     <input type="text" id="searchBox" placeholder="🔍 Search for a game or a topic...">
   </div>
 
+  <div id="folderGrid" class="folder-grid">
+    <div class="folder-tile y1" data-open="1">
+      <div class="folder-icon">📁</div>
+      <div class="folder-title">Year 1</div>
+      <div class="folder-count">1 activity</div>
+    </div>
+    <div class="folder-tile y2" data-open="2">
+      <div class="folder-icon">📁</div>
+      <div class="folder-title">Year 2</div>
+      <div class="folder-count">2 activities</div>
+    </div>
+    <div class="folder-tile y3" data-open="3">
+      <div class="folder-icon">📁</div>
+      <div class="folder-title">Year 3</div>
+      <div class="folder-count">5 activities</div>
+    </div>
+    <div class="folder-tile y4" data-open="4">
+      <div class="folder-icon">📁</div>
+      <div class="folder-title">Year 4</div>
+      <div class="folder-count">2 activities</div>
+    </div>
+    <div class="folder-tile y5" data-open="5">
+      <div class="folder-icon">📁</div>
+      <div class="folder-title">Year 5</div>
+      <div class="folder-count">Coming soon</div>
+    </div>
+    <div class="folder-tile y6" data-open="6">
+      <div class="folder-icon">📁</div>
+      <div class="folder-title">Year 6</div>
+      <div class="folder-count">Coming soon</div>
+    </div>
+    <div class="folder-tile teachers" data-open="teachers">
+      <div class="folder-icon">🧑‍🏫</div>
+      <div class="folder-title">For Teachers</div>
+      <div class="folder-count">3 tools</div>
+    </div>
+  </div>
+
+  <button class="back-to-folders" id="backToFolders" style="display:none;">⬅ Back to All Years</button>
+
   <div id="hubContent">
     <div class="year-section" data-year="1">
       <div class="year-badge y1">🟠 Year 1</div>
@@ -357,9 +467,31 @@
     </div>
   </div>
 
+  <div class="year-section" data-year="5">
+    <div class="year-badge y5">🟢 Year 5</div>
+    <div class="card-grid">
+      <div style="grid-column:1/-1; text-align:center; color:white; background:rgba(255,255,255,0.12); border-radius:20px; padding:40px 20px;">
+        <div style="font-size:44px; margin-bottom:10px;">🚧</div>
+        <div style="font-size:18px; font-weight:bold;">Year 5 activities are coming soon!</div>
+        <div style="font-size:14px; opacity:0.85; margin-top:6px;">Check back after your next lesson revamp.</div>
+      </div>
+    </div>
+  </div>
+
+  <div class="year-section" data-year="6">
+    <div class="year-badge y6">🔴 Year 6</div>
+    <div class="card-grid">
+      <div style="grid-column:1/-1; text-align:center; color:white; background:rgba(255,255,255,0.12); border-radius:20px; padding:40px 20px;">
+        <div style="font-size:44px; margin-bottom:10px;">🚧</div>
+        <div style="font-size:18px; font-weight:bold;">Year 6 activities are coming soon!</div>
+        <div style="font-size:14px; opacity:0.85; margin-top:6px;">Check back after your next lesson revamp.</div>
+      </div>
+    </div>
+  </div>
+
   <p class="no-results" id="noResults">No games match your search. Try a different word!</p>
 
-  <div class="year-section">
+  <div class="year-section" data-year="teachers">
     <div class="year-badge" style="background:linear-gradient(135deg,#1A1A2E,#4B4B78);">🧑‍🏫 For Teachers</div>
     <div class="card-grid">
       <a class="game-card" style="text-decoration:none;" href="Classroom Dashboard.html" data-keywords="classroom dashboard timer stars random picker manage class">
@@ -399,27 +531,68 @@
 const searchBox = document.getElementById('searchBox');
 const yearSections = document.querySelectorAll('.year-section');
 const noResults = document.getElementById('noResults');
+const folderGrid = document.getElementById('folderGrid');
+const backToFolders = document.getElementById('backToFolders');
+
+function showFolderGrid(){
+  folderGrid.style.display = 'grid';
+  backToFolders.style.display = 'none';
+  noResults.style.display = 'none';
+  yearSections.forEach(section => section.classList.remove('active'));
+}
+
+function openFolder(year){
+  folderGrid.style.display = 'none';
+  backToFolders.style.display = 'inline-flex';
+  noResults.style.display = 'none';
+  yearSections.forEach(section => {
+    const match = section.dataset.year === year;
+    section.classList.toggle('active', match);
+    if(match){
+      section.querySelectorAll('.game-card').forEach(card => card.style.display = '');
+    }
+  });
+}
+
+document.querySelectorAll('.folder-tile').forEach(tile => {
+  tile.addEventListener('click', () => openFolder(tile.dataset.open));
+});
+backToFolders.addEventListener('click', () => {
+  searchBox.value = '';
+  showFolderGrid();
+});
 
 searchBox.addEventListener('input', () => {
   const q = searchBox.value.trim().toLowerCase();
-  let anyVisible = false;
 
+  if(q === ''){
+    showFolderGrid();
+    return;
+  }
+
+  // Searching breaks out of folder view to show matches across every year.
+  folderGrid.style.display = 'none';
+  backToFolders.style.display = 'inline-flex';
+
+  let anyVisible = false;
   yearSections.forEach(section => {
     const cards = section.querySelectorAll('.game-card');
     let sectionHasMatch = false;
     cards.forEach(card => {
       const haystack = (card.dataset.keywords + ' ' + card.textContent).toLowerCase();
-      const match = q === '' || haystack.includes(q);
+      const match = haystack.includes(q);
       card.style.display = match ? '' : 'none';
       if (match) sectionHasMatch = true;
     });
-    section.style.display = sectionHasMatch ? '' : 'none';
+    section.classList.toggle('active', sectionHasMatch);
     if (sectionHasMatch) anyVisible = true;
   });
 
   noResults.style.display = anyVisible ? 'none' : 'block';
 });
+
+// Start on the folder grid.
+showFolderGrid();
 </script>
 </body>
 </html>
-<!-- auto-deploy test: 2026-09-14T14:34:56Z -->

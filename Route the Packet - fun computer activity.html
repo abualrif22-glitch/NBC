@@ -60,6 +60,17 @@
     gap:8px;
   }
   .hud span.big{ color:var(--accent); font-size:20px; }
+  .delivery-banner{
+    background:linear-gradient(90deg,var(--accent),#ffcf6b);
+    color:var(--primary);
+    font-weight:bold;
+    font-size:17px;
+    text-align:center;
+    padding:12px 16px;
+    border-radius:14px;
+    margin-bottom:16px;
+    box-shadow:0 3px 10px rgba(0,0,0,0.1);
+  }
   #board{
     position:relative;
     background:#eef3fb;
@@ -293,6 +304,8 @@
     <div>Time: <span class="big" id="timer">45</span>s</div>
   </div>
 
+  <div class="delivery-banner" id="deliveryBanner">📧 Deliver to: —</div>
+
   <div id="board">
     <svg id="lines"></svg>
   </div>
@@ -338,6 +351,7 @@
 const levels = [
   {
     label: "Network A → Network B",
+    recipient: "PC 4 (Friend)",
     nodes: {
       pc1: {type:'pc', x:40,  y:40,  label:'PC 1 (You)'},
       pc2: {type:'pc', x:40,  y:300,  label:'PC 2'},
@@ -353,6 +367,7 @@ const levels = [
   },
   {
     label: "Hospital Network → Shop Network",
+    recipient: "Shop PC",
     nodes: {
       pc1: {type:'pc', x:40,  y:210, label:'Hospital PC'},
       sw1: {type:'switch', x:220, y:210, label:'Switch 1'},
@@ -360,13 +375,15 @@ const levels = [
       r2: {type:'router', x:590, y:100, label:'Router 2'},
       sw2: {type:'switch', x:640, y:300, label:'Switch 2'},
       pc2: {type:'pc', x:830, y:300, label:'Shop PC'},
+      pc3: {type:'pc', x:830, y:100, label:'Bakery PC'},
     },
-    edges: [['pc1','sw1'],['sw1','r1'],['r1','r2'],['r2','sw2'],['sw2','pc2']],
+    edges: [['pc1','sw1'],['sw1','r1'],['r1','r2'],['r2','sw2'],['sw2','pc2'],['sw2','pc3']],
     start:'pc1', goal:'pc2',
     path:['pc1','sw1','r1','r2','sw2','pc2']
   },
   {
     label: "Home → School (long way round!)",
+    recipient: "School PC",
     nodes: {
       pc1: {type:'pc', x:40,  y:40, label:'Home PC'},
       sw1: {type:'switch', x:40, y:300, label:'Switch 1'},
@@ -375,27 +392,31 @@ const levels = [
       r3: {type:'router', x:660, y:300, label:'Router 3'},
       sw2: {type:'switch', x:840, y:170, label:'Switch 2'},
       pc2: {type:'pc', x:840, y:40, label:'School PC'},
+      pc3: {type:'pc', x:840, y:300, label:'Library PC'},
     },
-    edges: [['pc1','sw1'],['sw1','r1'],['r1','r2'],['r2','r3'],['r3','sw2'],['sw2','pc2']],
+    edges: [['pc1','sw1'],['sw1','r1'],['r1','r2'],['r2','r3'],['r3','sw2'],['sw2','pc2'],['sw2','pc3']],
     start:'pc1', goal:'pc2',
     path:['pc1','sw1','r1','r2','r3','sw2','pc2']
   },
   {
     label: "TRICKY: Office → Library (one path is a dead end!)",
+    recipient: "Library PC",
     nodes: {
       pc1:  {type:'pc', x:10,  y:220, label:'Office PC'},
       sw1:  {type:'switch', x:180, y:220, label:'Switch 1'},
       r1:   {type:'router', x:360, y:90,  label:'Router 1'},
       rDead:{type:'dead', x:360, y:350, label:'Dead End'},
       sw2:  {type:'switch', x:540, y:220, label:'Switch 2'},
-      pc2:  {type:'pc', x:710, y:220, label:'Library PC'},
+      pc2:  {type:'pc', x:710, y:100, label:'Library PC'},
+      pc3:  {type:'pc', x:710, y:340, label:'Post Office PC'},
     },
-    edges: [['pc1','sw1'],['sw1','r1'],['sw1','rDead'],['r1','sw2'],['sw2','pc2']],
+    edges: [['pc1','sw1'],['sw1','r1'],['sw1','rDead'],['r1','sw2'],['sw2','pc2'],['sw2','pc3']],
     start:'pc1', goal:'pc2',
     path:['pc1','sw1','r1','sw2','pc2']
   },
   {
     label: "EXPERT: Village Satellite Link → City Server (one path is a dead end!)",
+    recipient: "City Server",
     nodes: {
       pc1:  {type:'pc', x:10,  y:200, label:'Village PC'},
       sw1:  {type:'switch', x:170, y:200, label:'Switch 1'},
@@ -403,9 +424,10 @@ const levels = [
       rDead:{type:'dead', x:340, y:340, label:'Dead End'},
       r1:   {type:'router', x:510, y:200, label:'Router 1'},
       sw2:  {type:'switch', x:680, y:200, label:'Switch 2'},
-      pc2:  {type:'pc', x:840, y:200, label:'City Server'},
+      pc2:  {type:'pc', x:840, y:80, label:'City Server'},
+      pc3:  {type:'pc', x:840, y:320, label:'City Cafe PC'},
     },
-    edges: [['pc1','sw1'],['sw1','sat'],['sw1','rDead'],['sat','r1'],['r1','sw2'],['sw2','pc2']],
+    edges: [['pc1','sw1'],['sw1','sat'],['sw1','rDead'],['sat','r1'],['r1','sw2'],['sw2','pc2'],['sw2','pc3']],
     start:'pc1', goal:'pc2',
     path:['pc1','sw1','sat','r1','sw2','pc2']
   }
@@ -439,6 +461,7 @@ function buildLevel(i){
   progressIdx = 0;
   document.getElementById('timer').textContent = timer;
   document.getElementById('roundNum').textContent = i+1;
+  document.getElementById('deliveryBanner').textContent = '📧 Deliver to: ' + levels[i].recipient;
   board.querySelectorAll('.node,.token').forEach(n=>n.remove());
   linesSvg.innerHTML = '';
   msg.className = 'msg';
@@ -463,7 +486,8 @@ function buildLevel(i){
     const div = document.createElement('div');
     div.className = 'node ' + n.type;
     if(key===lvl.start) div.classList.add('start');
-    if(key===lvl.goal) div.classList.add('goal');
+    // Note: we deliberately do NOT mark the goal node visually here —
+    // kids must read the "Deliver to" banner and choose the right computer themselves.
     div.style.left = n.x+'px';
     div.style.top = n.y+'px';
     const iconText = n.label.indexOf('\uD83D\uDCE1')===0 ? '' : emojiMap[n.type];
@@ -586,8 +610,11 @@ function handleClick(key){
     document.getElementById('streak').textContent = streak;
     msg.className = 'msg oops';
     const isDeadEnd = lvl.nodes[key] && lvl.nodes[key].type === 'dead';
+    const isWrongRecipient = lvl.nodes[key] && lvl.nodes[key].type === 'pc' && key !== lvl.start;
     msg.textContent = isDeadEnd
       ? "\u274C That's a dead end! Nothing connects onward from there. Try the other switch or router instead."
+      : isWrongRecipient
+      ? `\u274C Wrong computer! This message is addressed to ${lvl.recipient}, not ${lvl.nodes[key].label}. Try again!`
       : "\u274C Not that way — the packet got lost! Think about which switch or router connects next.";
   }
 }

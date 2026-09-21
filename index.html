@@ -117,6 +117,20 @@
   .folder-tile.y5{ background:linear-gradient(150deg,var(--y5),var(--y5-2)); }
   .folder-tile.y6{ background:linear-gradient(150deg,var(--y6),var(--y6-2)); }
   .folder-tile.teachers{ background:linear-gradient(150deg,#1A1A2E,#4B4B78); }
+  .teacher-link{
+    display:inline-flex;
+    align-items:center;
+    gap:8px;
+    background:rgba(255,255,255,0.14);
+    color:white;
+    padding:10px 22px;
+    border-radius:30px;
+    font-weight:bold;
+    font-size:14px;
+    cursor:pointer;
+    border:2px solid rgba(255,255,255,0.3);
+  }
+  .teacher-link:hover{ background:rgba(255,255,255,0.24); }
   .back-to-folders{
     display:inline-flex;
     align-items:center;
@@ -307,6 +321,10 @@
     <input type="text" id="searchBox" placeholder="🔍 Search for a game or a topic...">
   </div>
 
+  <div style="text-align:center; margin-bottom:26px;">
+    <div class="teacher-link" id="teacherLink">🧑‍🏫 For Teachers</div>
+  </div>
+
   <div id="folderGrid" class="folder-grid">
     <div class="folder-tile y1" data-open="1">
       <div class="folder-icon">📁</div>
@@ -337,11 +355,6 @@
       <div class="folder-icon">📁</div>
       <div class="folder-title">Year 6</div>
       <div class="folder-count">Coming soon</div>
-    </div>
-    <div class="folder-tile teachers" data-open="teachers">
-      <div class="folder-icon">🧑‍🏫</div>
-      <div class="folder-title">For Teachers</div>
-      <div class="folder-count">3 tools</div>
     </div>
   </div>
 
@@ -557,6 +570,7 @@ function openFolder(year){
 document.querySelectorAll('.folder-tile').forEach(tile => {
   tile.addEventListener('click', () => openFolder(tile.dataset.open));
 });
+document.getElementById('teacherLink').addEventListener('click', () => openFolder('teachers'));
 backToFolders.addEventListener('click', () => {
   searchBox.value = '';
   showFolderGrid();

@@ -396,9 +396,48 @@
   .poll-bar-fill{ height:100%; background:linear-gradient(90deg,var(--primary),var(--blue,#4CC9F0)); display:flex; align-items:center; justify-content:flex-end; padding-right:10px; color:white; font-weight:bold; font-size:13px; transition:width .3s ease; }
   .poll-qr-row{ display:flex; justify-content:center; margin-top:20px; }
   .poll-total-votes{ text-align:center; color:#777; font-size:14px; margin-top:10px; }
+
+  /* ---------- Password gate ---------- */
+  .gate-overlay{
+    position:fixed; inset:0; background:rgba(26,26,46,0.82); display:flex; align-items:center;
+    justify-content:center; z-index:200; padding:20px;
+  }
+  .gate-card{
+    background:white; border-radius:20px; padding:34px 36px; max-width:400px; width:100%;
+    text-align:center; box-shadow:0 20px 50px rgba(0,0,0,0.4);
+  }
+  .gate-card .lock-icon{ font-size:40px; margin-bottom:6px; }
+  .gate-card h2{ color:var(--primary); margin:0 0 8px; font-size:22px; }
+  .gate-card p{ color:#555; margin:0 0 18px; font-size:14px; }
+  .gate-card input[type=password]{
+    width:100%; font-size:18px; padding:12px 14px; border-radius:10px; border:2px solid var(--secondary);
+    text-align:center; font-weight:bold; color:var(--dark); margin-bottom:12px; box-sizing:border-box;
+  }
+  .gate-card input:focus{ outline:none; border-color:var(--primary); }
+  .gate-card .remember-row{ display:flex; align-items:center; justify-content:center; gap:8px; margin-bottom:16px; font-size:13.5px; color:#555; }
+  .gate-card button{
+    width:100%; padding:13px; font-size:16px; border:none; border-radius:10px;
+    background:var(--primary); color:white; font-weight:bold; cursor:pointer;
+  }
+  .gate-error{ color:#E74C3C; font-size:13px; min-height:18px; margin-bottom:6px; font-weight:bold; }
 </style>
 </head>
 <body>
+<div class="gate-overlay" id="gateOverlay">
+  <div class="gate-card">
+    <div class="lock-icon">🔒</div>
+    <h2>Teacher Access Only</h2>
+    <p>This is your classroom control panel. Please enter the password to continue.</p>
+    <input type="password" id="passwordInput" placeholder="Password" autocomplete="off">
+    <div class="gate-error" id="passwordError"></div>
+    <div class="remember-row">
+      <input type="checkbox" id="rememberMe" style="width:auto;">
+      <label for="rememberMe">Remember me on this computer</label>
+    </div>
+    <button id="unlockBtn">Unlock ▶</button>
+  </div>
+</div>
+
 <div class="bg-scene">
   <div class="bg-blob b1"></div>
   <div class="bg-blob b2"></div>
@@ -435,6 +474,7 @@
     <circle cx="4" cy="58" r="0.5" style="animation-delay:-3.1s;" />
   </svg>
 </div>
+<div id="protectedContent" style="display:none;">
 <div class="page" id="page" style="position:relative;">
   <header>
     <h1>🎛️ Classroom Dashboard</h1>
@@ -729,6 +769,54 @@
 
   <footer>Your class list and stars are saved on this computer only, so they'll be here next lesson too.</footer>
 </div>
+</div>
+
+<script>
+  // ---- Password gate: SHA-256 hash so the password isn't sitting in plain text ----
+  const CORRECT_HASH = "aed359ddc3238b355dc049459beb2719aaba6d358900731632c71cc7890f06a0";
+  const REMEMBER_KEY = "classroomDashboardUnlocked";
+
+  async function sha256Hex(text){
+    const data = new TextEncoder().encode(text);
+    const hashBuffer = await crypto.subtle.digest("SHA-256", data);
+    return Array.from(new Uint8Array(hashBuffer)).map(b => b.toString(16).padStart(2, "0")).join("");
+  }
+
+  function unlockDashboard(){
+    document.getElementById('gateOverlay').style.display = 'none';
+    document.getElementById('protectedContent').style.display = 'block';
+  }
+
+  async function tryUnlock(){
+    const val = document.getElementById('passwordInput').value;
+    const errEl = document.getElementById('passwordError');
+    if(!val){ errEl.textContent = "Please type the password."; return; }
+    const hash = await sha256Hex(val);
+    if(hash === CORRECT_HASH){
+      if(document.getElementById('rememberMe').checked){
+        try{ localStorage.setItem(REMEMBER_KEY, "1"); }catch(e){}
+      }
+      unlockDashboard();
+    } else {
+      errEl.textContent = "That password isn't right — try again.";
+      document.getElementById('passwordInput').value = '';
+      document.getElementById('passwordInput').focus();
+    }
+  }
+
+  document.getElementById('unlockBtn').addEventListener('click', tryUnlock);
+  document.getElementById('passwordInput').addEventListener('keydown', (e) => { if(e.key === 'Enter') tryUnlock(); });
+
+  try{
+    if(localStorage.getItem(REMEMBER_KEY) === "1"){
+      unlockDashboard();
+    } else {
+      document.getElementById('passwordInput').focus();
+    }
+  }catch(e){
+    document.getElementById('passwordInput').focus();
+  }
+</script>
 
 <script>
 const STORAGE_ROSTER = "classroomDashboardRoster"; // legacy single-class key, used only for one-time migration

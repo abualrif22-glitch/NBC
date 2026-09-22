@@ -76,57 +76,66 @@
   .folder-grid{
     display:grid;
     grid-template-columns:repeat(auto-fit, minmax(230px,1fr));
-    gap:30px 24px;
-    margin-top:18px;
+    gap:34px 26px;
+    margin-top:20px;
   }
   .folder-tile{
     position:relative;
     cursor:pointer;
-    padding-top:20px;
+    padding-top:22px;
   }
   .folder-tab{
     position:absolute;
-    top:0; left:20px;
-    width:56px; height:20px;
-    border-radius:8px 8px 0 0;
-    z-index:1;
-    transition:height .18s ease;
+    top:2px; left:26px;
+    width:68px; height:26px;
+    border-radius:12px 12px 0 0;
+    z-index:0;
   }
   .folder-card{
     position:relative;
-    background:#ffffff;
-    border-radius:6px 20px 20px 20px;
-    padding:28px 18px 22px;
+    border-radius:10px 28px 28px 28px;
+    padding:38px 18px 24px;
     text-align:center;
-    box-shadow:0 10px 26px rgba(0,0,0,0.22);
-    transition:transform .2s ease, box-shadow .2s ease;
-    border-top:5px solid transparent;
+    border:4px solid rgba(255,255,255,0.55);
+    box-shadow:0 10px 0 rgba(0,0,0,0.16), 0 16px 30px rgba(0,0,0,0.28);
+    transition:transform .28s cubic-bezier(.34,1.56,.64,1), box-shadow .2s ease;
   }
+  .folder-tile:nth-child(odd) .folder-card{ transform:rotate(-1.2deg); }
+  .folder-tile:nth-child(even) .folder-card{ transform:rotate(1.2deg); }
   .folder-tile:hover .folder-card{
-    transform:translateY(-8px);
-    box-shadow:0 18px 38px rgba(0,0,0,0.32);
+    transform:translateY(-10px) rotate(0deg) scale(1.06);
+    box-shadow:0 6px 0 rgba(0,0,0,0.16), 0 22px 34px rgba(0,0,0,0.32);
   }
-  .folder-tile:hover .folder-tab{ height:25px; }
   .folder-icon-badge{
-    width:62px; height:62px;
-    border-radius:18px;
+    width:78px; height:78px;
+    border-radius:50%;
+    background:white;
     display:flex; align-items:center; justify-content:center;
-    font-size:30px;
+    font-size:42px;
     margin:0 auto 14px;
-    color:white;
-    box-shadow:0 6px 14px rgba(0,0,0,0.2);
+    box-shadow:0 5px 0 rgba(0,0,0,0.14);
+    border:4px solid rgba(255,255,255,0.9);
+    animation:badgeFloat 3.2s ease-in-out infinite;
+  }
+  @keyframes badgeFloat{
+    0%,100%{ transform:translateY(0) rotate(-4deg); }
+    50%{ transform:translateY(-7px) rotate(4deg); }
   }
   .folder-title{
-    font-size:20px;
-    font-weight:800;
-    color:var(--dark);
-    margin-bottom:3px;
-    letter-spacing:-0.2px;
+    font-size:23px;
+    font-weight:900;
+    color:white;
+    text-shadow:0 2px 0 rgba(0,0,0,0.18);
+    margin-bottom:5px;
   }
   .folder-count{
-    font-size:12.5px;
-    font-weight:700;
-    color:#9096ac;
+    font-size:12px;
+    font-weight:800;
+    color:white;
+    background:rgba(255,255,255,0.28);
+    display:inline-block;
+    padding:5px 14px;
+    border-radius:20px;
     margin-bottom:16px;
     text-transform:uppercase;
     letter-spacing:0.4px;
@@ -134,35 +143,36 @@
   .folder-peek{
     display:flex;
     justify-content:center;
-    gap:7px;
   }
   .folder-peek span{
-    width:30px; height:30px;
+    width:34px; height:34px;
     border-radius:50%;
-    background:#f3f3f9;
+    background:white;
     display:flex; align-items:center; justify-content:center;
-    font-size:14.5px;
-    border:2px solid white;
-    box-shadow:0 2px 6px rgba(0,0,0,0.12);
+    font-size:16px;
+    border:3px solid rgba(255,255,255,0.7);
+    box-shadow:0 3px 0 rgba(0,0,0,0.14);
+    margin-left:-8px;
   }
+  .folder-peek span:first-child{ margin-left:0; }
   .folder-peek span.more{
-    background:#eceef4;
-    color:#8890a8;
-    font-weight:800;
-    font-size:11.5px;
+    background:rgba(255,255,255,0.85);
+    color:#555;
+    font-weight:900;
+    font-size:11px;
   }
-  .folder-tile.y1 .folder-tab, .folder-tile.y1 .folder-icon-badge{ background:linear-gradient(135deg,var(--y1),var(--y1-2)); }
-  .folder-tile.y1 .folder-card{ border-top-color:var(--y1); }
-  .folder-tile.y2 .folder-tab, .folder-tile.y2 .folder-icon-badge{ background:linear-gradient(135deg,var(--y2),var(--y2-2)); }
-  .folder-tile.y2 .folder-card{ border-top-color:var(--y2); }
-  .folder-tile.y3 .folder-tab, .folder-tile.y3 .folder-icon-badge{ background:linear-gradient(135deg,var(--y3),var(--y3-2)); }
-  .folder-tile.y3 .folder-card{ border-top-color:var(--y3); }
-  .folder-tile.y4 .folder-tab, .folder-tile.y4 .folder-icon-badge{ background:linear-gradient(135deg,var(--y4),var(--y4-2)); }
-  .folder-tile.y4 .folder-card{ border-top-color:var(--y4); }
-  .folder-tile.y5 .folder-tab, .folder-tile.y5 .folder-icon-badge{ background:linear-gradient(135deg,var(--y5),var(--y5-2)); }
-  .folder-tile.y5 .folder-card{ border-top-color:var(--y5); }
-  .folder-tile.y6 .folder-tab, .folder-tile.y6 .folder-icon-badge{ background:linear-gradient(135deg,var(--y6),var(--y6-2)); }
-  .folder-tile.y6 .folder-card{ border-top-color:var(--y6); }
+  .folder-tile.y1 .folder-tab{ background:var(--y1-2); }
+  .folder-tile.y1 .folder-card{ background:linear-gradient(150deg,var(--y1),var(--y1-2)); }
+  .folder-tile.y2 .folder-tab{ background:var(--y2-2); }
+  .folder-tile.y2 .folder-card{ background:linear-gradient(150deg,var(--y2),var(--y2-2)); }
+  .folder-tile.y3 .folder-tab{ background:var(--y3-2); }
+  .folder-tile.y3 .folder-card{ background:linear-gradient(150deg,var(--y3),var(--y3-2)); }
+  .folder-tile.y4 .folder-tab{ background:var(--y4-2); }
+  .folder-tile.y4 .folder-card{ background:linear-gradient(150deg,var(--y4),var(--y4-2)); }
+  .folder-tile.y5 .folder-tab{ background:var(--y5-2); }
+  .folder-tile.y5 .folder-card{ background:linear-gradient(150deg,var(--y5),var(--y5-2)); }
+  .folder-tile.y6 .folder-tab{ background:var(--y6-2); }
+  .folder-tile.y6 .folder-card{ background:linear-gradient(150deg,var(--y6),var(--y6-2)); }
   .teacher-link{
     display:inline-flex;
     align-items:center;

@@ -1,0 +1,325 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>Technology or Not! - Year 1 Computing Game</title>
+<style>
+  :root{
+    --primary:#FF7F50; --secondary:#4FC3F7; --accent:#FFD54F; --green:#8BC34A;
+    --light:#FFF9F0; --dark:#2B2250; --red:#E85C4A;
+  }
+  *{box-sizing:border-box; -webkit-tap-highlight-color: transparent;}
+  html,body{ margin:0; height:100%; }
+  body{
+    font-family:'Segoe UI', Calibri, Arial, sans-serif;
+    background:linear-gradient(135deg,#FF7F50 0%,#FFD54F 100%);
+    min-height:100vh; display:flex; align-items:center; justify-content:center; padding:20px;
+  }
+  .wrap{ background:var(--light); border-radius:26px; max-width:640px; width:100%; padding:26px 30px 34px;
+    box-shadow:0 20px 50px rgba(0,0,0,0.3); position:relative; overflow:hidden; }
+  h1{ color:var(--primary); text-align:center; margin:0 0 4px; font-size:clamp(24px,5vw,32px); }
+  .sub{ text-align:center; color:#6B5B4A; margin:0 0 16px; font-size:clamp(13px,2vw,15px); }
+  .hud{ display:flex; justify-content:space-between; align-items:center; background:white; border-radius:16px;
+    padding:12px 20px; margin-bottom:18px; box-shadow:0 2px 8px rgba(0,0,0,0.08); font-weight:bold; color:var(--primary);
+    flex-wrap:wrap; gap:8px; font-size:clamp(13px,2vw,16px); }
+  .hud span.big{ color:var(--red); font-size:1.2em; }
+
+  .item-stage{
+    background:#FFF0E0; border:4px dashed #FFD2B0; border-radius:24px; padding:34px 20px;
+    display:flex; flex-direction:column; align-items:center; justify-content:center; min-height:220px; margin-bottom:20px;
+  }
+  .item-emoji{ font-size:110px; line-height:1; animation: itemFloat 2.4s ease-in-out infinite; filter:drop-shadow(0 8px 14px rgba(0,0,0,0.18)); }
+  @keyframes itemFloat{ 0%,100%{ transform:translateY(0) rotate(-2deg); } 50%{ transform:translateY(-8px) rotate(2deg); } }
+  .item-label{ font-size:22px; font-weight:bold; color:var(--dark); margin-top:14px; }
+
+  .choice-row{ display:flex; gap:16px; justify-content:center; flex-wrap:wrap; }
+  .choice-btn{
+    flex:1; min-width:180px; padding:22px 16px; border-radius:20px; border:5px solid transparent;
+    font-size:19px; font-weight:bold; cursor:pointer; display:flex; flex-direction:column; align-items:center; gap:8px;
+    transition:transform .12s ease;
+  }
+  .choice-btn:hover{ transform:translateY(-4px); }
+  .choice-btn:active{ transform:scale(0.96); }
+  .choice-btn .choice-icon{ font-size:42px; }
+  .choice-btn.tech{ background:var(--secondary); color:white; }
+  .choice-btn.nottech{ background:var(--green); color:white; }
+  .choice-btn:disabled{ opacity:0.6; cursor:not-allowed; }
+  .choice-btn.correct-flash{ border-color:#1a9e6b; }
+  .choice-btn.wrong-flash{ animation:shakeRed .4s ease; border-color:var(--red); }
+  @keyframes shakeRed{ 0%,100%{transform:translateX(0);} 25%{transform:translateX(-8px);} 75%{transform:translateX(8px);} }
+
+  .msg{ text-align:center; margin-top:16px; min-height:34px; font-size:clamp(15px,2.3vw,18px); font-weight:bold; color:var(--primary); }
+  .msg.happy{ color:#1a9e6b; } .msg.oops{ color:var(--red); }
+  .controls{ display:flex; justify-content:center; margin-top:8px; }
+  button.ctrl{ background:var(--primary); color:white; border:none; padding:13px 28px; border-radius:12px; font-size:16px; font-weight:bold; cursor:pointer; }
+  button.ctrl.secondary{ background:white; color:var(--primary); border:2px solid var(--primary); }
+
+  .gate-overlay{ position:fixed; inset:0; background:rgba(43,34,80,0.75); display:flex; align-items:center; justify-content:center; z-index:100; padding:20px; }
+  .gate-card{ background:white; border-radius:20px; padding:34px 36px; max-width:420px; width:100%; text-align:center; box-shadow:0 20px 50px rgba(0,0,0,0.4); }
+  .gate-card h2{ color:var(--primary); margin:0 0 8px; font-size:24px; }
+  .gate-card p{ color:#555; margin:0 0 18px; font-size:14.5px; }
+  .gate-card input{ width:100%; font-size:18px; padding:12px 14px; border-radius:10px; border:2px solid var(--secondary);
+    text-align:center; font-weight:bold; color:var(--dark); margin-bottom:14px; box-sizing:border-box; }
+  .gate-card button{ width:100%; padding:13px; font-size:16px; border:none; border-radius:10px; background:var(--primary); color:white; font-weight:bold; cursor:pointer; }
+  .gate-error{ color:var(--red); font-size:13px; min-height:18px; margin-bottom:6px; font-weight:bold; }
+  #resultsPanel{ display:none; background:white; border-radius:14px; padding:18px 20px; margin-top:16px; box-shadow:0 2px 8px rgba(0,0,0,0.08); text-align:center; }
+  #resultsPanel h3{ margin:0 0 4px; color:var(--primary); font-size:18px; }
+  .save-row{ display:flex; gap:12px; justify-content:center; flex-wrap:wrap; margin-top:12px; }
+  .saved-note{ font-size:13px; color:#0e9e6f; font-weight:bold; min-height:18px; margin-top:8px; }
+  .confetti-piece{ position:absolute; top:-20px; width:12px; height:16px; z-index:20; pointer-events:none; animation: fall linear forwards; }
+  @keyframes fall{ to{ transform: translateY(600px) rotate(540deg); opacity:0.2; } }
+  .celebrate-banner{ position:absolute; left:50%; top:45%; transform:translate(-50%,-50%) scale(0.5); background:white; border-radius:22px;
+    padding:24px 36px; box-shadow:0 12px 40px rgba(0,0,0,0.35); text-align:center; z-index:30; opacity:0; pointer-events:none; }
+  .celebrate-banner.show{ animation: bannerPop .6s cubic-bezier(.34,1.56,.64,1) forwards; }
+  @keyframes bannerPop{ 0%{opacity:0; transform:translate(-50%,-50%) scale(0.4) rotate(-6deg);} 60%{opacity:1; transform:translate(-50%,-50%) scale(1.08) rotate(2deg);} 100%{opacity:1; transform:translate(-50%,-50%) scale(1) rotate(0);} }
+  .celebrate-banner .big{ font-size:22px; font-weight:bold; color:var(--primary); }
+</style>
+</head>
+<body>
+
+<div class="gate-overlay" id="gateOverlay">
+  <div class="gate-card">
+    <h2>🔎 Technology or Not!</h2>
+    <p>Type your name to start.</p>
+    <input type="text" id="nameInput" placeholder="Your name" maxlength="24" autocomplete="off">
+    <div class="gate-error" id="nameError"></div>
+    <button id="startBtn">Start ▶</button>
+  </div>
+</div>
+
+<div class="wrap" id="wrap">
+  <h1>🔎 Technology or Not!</h1>
+  <p class="sub">Look at each thing, then tap the right answer!</p>
+  <div class="hud">
+    <div>Player: <span class="big" id="playerName">—</span></div>
+    <div>Item <span class="big" id="roundNum">1</span> / <span id="roundTotal">12</span></div>
+    <div>Score: <span class="big" id="score">0</span></div>
+  </div>
+
+  <div class="item-stage">
+    <div class="item-emoji" id="itemEmoji">💻</div>
+    <div class="item-label" id="itemLabel">Laptop</div>
+  </div>
+
+  <div class="choice-row">
+    <button class="choice-btn tech" id="techBtn"><span class="choice-icon">⚙️</span>Technology!</button>
+    <button class="choice-btn nottech" id="notTechBtn"><span class="choice-icon">🌳</span>Not Technology!</button>
+  </div>
+
+  <p class="msg" id="msg">Is this technology, or not?</p>
+</div>
+
+<script>
+const ITEMS = [
+  {emoji:"\uD83D\uDCBB", label:"Laptop", tech:true},
+  {emoji:"\uD83D\uDCF1", label:"Phone", tech:true},
+  {emoji:"\uD83D\uDCFA", label:"Television", tech:true},
+  {emoji:"\uD83D\uDCA1", label:"Lightbulb", tech:true},
+  {emoji:"\uD83C\uDFAE", label:"Games Console", tech:true},
+  {emoji:"\u23F0", label:"Alarm Clock", tech:true},
+  {emoji:"\uD83D\uDD26", label:"Torch", tech:true},
+  {emoji:"\uD83D\uDDA8\uFE0F", label:"Printer", tech:true},
+  {emoji:"\uD83C\uDF33", label:"Tree", tech:false},
+  {emoji:"\uD83D\uDCD6", label:"Book", tech:false},
+  {emoji:"\uD83E\uDE91", label:"Chair", tech:false},
+  {emoji:"\uD83C\uDF4E", label:"Apple", tech:false},
+  {emoji:"\u270F\uFE0F", label:"Pencil", tech:false},
+  {emoji:"\uD83D\uDC36", label:"Dog", tech:false},
+  {emoji:"\u26BD", label:"Ball", tech:false},
+  {emoji:"\uD83E\uDDF8", label:"Teddy Bear", tech:false},
+];
+
+let sequence = [], idx = 0, score = 0, tries = 0, studentName = "", answered = false;
+const STORAGE_KEY = "technologyOrNotResults";
+const wrap = document.getElementById('wrap');
+const msg = document.getElementById('msg');
+
+function shuffle(arr){ const a=[...arr]; for(let i=a.length-1;i>0;i--){ const j=Math.floor(Math.random()*(i+1)); [a[i],a[j]]=[a[j],a[i]]; } return a; }
+
+function startRound(){
+  sequence = shuffle(ITEMS).slice(0, 12);
+  document.getElementById('roundTotal').textContent = sequence.length;
+  idx = 0; score = 0; tries = 0;
+  document.getElementById('score').textContent = 0;
+  showItem();
+}
+
+function showItem(){
+  answered = false;
+  const item = sequence[idx];
+  document.getElementById('roundNum').textContent = idx+1;
+  document.getElementById('itemEmoji').textContent = item.emoji;
+  document.getElementById('itemLabel').textContent = item.label;
+  msg.className = 'msg';
+  msg.textContent = 'Is this technology, or not?';
+  document.getElementById('techBtn').disabled = false;
+  document.getElementById('notTechBtn').disabled = false;
+  document.getElementById('techBtn').classList.remove('correct-flash','wrong-flash');
+  document.getElementById('notTechBtn').classList.remove('correct-flash','wrong-flash');
+}
+
+function handleChoice(choseTech){
+  if(answered) return;
+  answered = true;
+  tries++;
+  const item = sequence[idx];
+  const correct = choseTech === item.tech;
+  const chosenBtn = document.getElementById(choseTech ? 'techBtn' : 'notTechBtn');
+  document.getElementById('techBtn').disabled = true;
+  document.getElementById('notTechBtn').disabled = true;
+
+  if(correct){
+    chosenBtn.classList.add('correct-flash');
+    score += 10;
+    document.getElementById('score').textContent = score;
+    spawnConfetti(18);
+    msg.className = 'msg happy';
+    msg.textContent = `✅ Yes! ${item.label} ${item.tech ? 'IS' : 'is NOT'} technology!`;
+    setTimeout(nextItem, 1200);
+  } else {
+    chosenBtn.classList.add('wrong-flash');
+    msg.className = 'msg oops';
+    msg.textContent = `❌ Not quite! ${item.label} ${item.tech ? 'IS' : 'is NOT'} technology.`;
+    setTimeout(nextItem, 1600);
+  }
+}
+document.getElementById('techBtn').addEventListener('click', () => handleChoice(true));
+document.getElementById('notTechBtn').addEventListener('click', () => handleChoice(false));
+
+function nextItem(){
+  idx++;
+  if(idx >= sequence.length){
+    showFinal();
+  } else {
+    showItem();
+  }
+}
+
+function spawnConfetti(n){
+  const colors=['#FF7F50','#4FC3F7','#FFD54F','#8BC34A','#2B2250','#FFFFFF'];
+  for(let i=0;i<n;i++){
+    const p=document.createElement('div'); p.className='confetti-piece';
+    p.style.left=Math.random()*100+'%'; p.style.background=colors[Math.floor(Math.random()*colors.length)];
+    p.style.animationDuration=(1.2+Math.random()*1.1)+'s';
+    wrap.appendChild(p); setTimeout(()=>p.remove(),2500);
+  }
+}
+function showCelebrateBanner(text, sub){
+  const b=document.createElement('div'); b.className='celebrate-banner';
+  b.innerHTML = `<div class="big">${text}</div><div style="font-size:14px;color:#555;">${sub||''}</div>`;
+  wrap.appendChild(b); requestAnimationFrame(()=>b.classList.add('show'));
+  setTimeout(()=>{ b.style.transition='opacity .3s'; b.style.opacity='0'; setTimeout(()=>b.remove(),320); },1400);
+}
+
+function showFinal(){
+  const accuracy = Math.round((score/10) / sequence.length * 100);
+  spawnConfetti(40);
+  showCelebrateBanner('🏆 All Done!', `${studentName} scored ${score} points!`);
+  document.querySelector('.item-stage').innerHTML = `
+    <div style="font-size:76px;">🏆</div>
+    <div style="font-size:22px;font-weight:bold;color:var(--primary);margin-top:6px;">You're a Technology Expert!</div>
+    <div style="font-size:16px;color:#666;margin-top:6px;">Accuracy: ${accuracy}%</div>`;
+  document.querySelector('.choice-row').style.display = 'none';
+  msg.textContent = '';
+  showResultsPanel(accuracy);
+  if(window.__submitResultToCloud){
+    window.__submitResultToCloud({
+      name: studentName,
+      game: "Technology or Not! (Y1)",
+      score: accuracy,
+      total: 100,
+      date: new Date().toLocaleDateString() + ' ' + new Date().toLocaleTimeString([], {hour:'2-digit', minute:'2-digit'})
+    });
+  }
+}
+function showResultsPanel(accuracy){
+  let panel = document.getElementById('resultsPanel');
+  if(!panel){
+    panel = document.createElement('div'); panel.id='resultsPanel';
+    panel.innerHTML = `
+      <h3>🏁 Well done!</h3>
+      <div id="resultsSummary" style="font-size:14.5px;color:#444;"></div>
+      <div class="save-row">
+        <button class="ctrl" id="saveResultBtn">💾 Save My Results</button>
+        <button class="ctrl secondary" id="downloadAllBtn">📋 Download Class Results</button>
+      </div>
+      <div class="saved-note" id="savedNote"></div>
+      <div style="margin-top:14px;"><a href="index.html" style="display:inline-block; background:#1A1A2E; color:white; text-decoration:none; padding:12px 26px; border-radius:12px; font-weight:bold; font-size:14.5px;">🏠 Back to Hub</a></div>`;
+    wrap.appendChild(panel);
+    document.getElementById('saveResultBtn').addEventListener('click', onSaveResult);
+    document.getElementById('downloadAllBtn').addEventListener('click', onDownloadAll);
+  }
+  panel.style.display = 'block';
+  document.getElementById('resultsSummary').textContent = `${studentName} scored ${accuracy}% (${score} points).`;
+}
+function readSavedResults(){ try{ return JSON.parse(localStorage.getItem(STORAGE_KEY)||"[]"); }catch(e){ return []; } }
+function writeSavedResults(list){ try{ localStorage.setItem(STORAGE_KEY, JSON.stringify(list)); }catch(e){} }
+function csvEscape(v){ const s=String(v); return /[",\n]/.test(s) ? '"'+s.replace(/"/g,'""')+'"' : s; }
+function downloadCSV(filename, rows){
+  const csv = rows.map(r=>r.map(csvEscape).join(",")).join("\r\n");
+  const blob = new Blob([csv], {type:"text/csv;charset=utf-8;"});
+  const url = URL.createObjectURL(blob);
+  const a=document.createElement('a'); a.href=url; a.download=filename;
+  document.body.appendChild(a); a.click(); document.body.removeChild(a);
+  setTimeout(()=>URL.revokeObjectURL(url),1000);
+}
+function onSaveResult(){
+  const accuracy = Math.round((score/10) / sequence.length * 100);
+  const now = new Date();
+  const record = { name:studentName, score:accuracy, total:100, date: now.toLocaleDateString()+' '+now.toLocaleTimeString([], {hour:'2-digit',minute:'2-digit'}) };
+  const list = readSavedResults(); list.push(record); writeSavedResults(list);
+  const safeName = (studentName||'student').replace(/[^a-z0-9]+/gi,'_');
+  downloadCSV(`TechnologyOrNot_${safeName}_${now.toISOString().slice(0,10)}.csv`, [["Name","Score","Total","Date"],[record.name,record.score,record.total,record.date]]);
+  document.getElementById('savedNote').textContent = '✅ Saved! A results file was downloaded, and your score was stored on this computer.';
+}
+function onDownloadAll(){
+  const list = readSavedResults();
+  if(list.length===0){ document.getElementById('savedNote').textContent='No saved results yet on this computer.'; return; }
+  const rows=[["Name","Score","Total","Date"], ...list.map(r=>[r.name,r.score,r.total,r.date])];
+  downloadCSV(`TechnologyOrNot_AllResults_${new Date().toISOString().slice(0,10)}.csv`, rows);
+}
+
+const gateOverlay = document.getElementById('gateOverlay');
+const nameInput = document.getElementById('nameInput');
+const nameError = document.getElementById('nameError');
+function startGame(){
+  const val = nameInput.value.trim();
+  if(!val){ nameError.textContent = "Please type your name to start."; nameInput.focus(); return; }
+  studentName = val.slice(0,24);
+  document.getElementById('playerName').textContent = studentName;
+  gateOverlay.style.display = 'none';
+  startRound();
+}
+document.getElementById('startBtn').addEventListener('click', startGame);
+nameInput.addEventListener('keydown', e=>{ if(e.key==='Enter') startGame(); });
+nameInput.focus();
+</script>
+
+<!-- ===== Cloud sync: sends each result to the shared Firestore database ===== -->
+<script src="https://www.gstatic.com/firebasejs/10.13.0/firebase-app-compat.js"></script>
+<script src="https://www.gstatic.com/firebasejs/10.13.0/firebase-firestore-compat.js"></script>
+<script>
+  const firebaseConfig = {
+    apiKey: "AIzaSyCEJtHd802MyuZUlwt6OfGkl9IitHaSOaA",
+    authDomain: "tasks-results.firebaseapp.com",
+    projectId: "tasks-results",
+    storageBucket: "tasks-results.firebasestorage.app",
+    messagingSenderId: "1014525306500",
+    appId: "1:1014525306500:web:3ffe2e6f5554e9140e04d1"
+  };
+  try{
+    firebase.initializeApp(firebaseConfig);
+    const db = firebase.firestore();
+    window.__submitResultToCloud = function(record){
+      return db.collection("results").add({
+        ...record,
+        createdAt: firebase.firestore.FieldValue.serverTimestamp()
+      }).then(() => true).catch((err) => { console.error("Cloud sync failed:", err); return false; });
+    };
+  }catch(err){
+    console.error("Firebase init failed:", err);
+  }
+</script>
+</body>
+</html>

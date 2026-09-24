@@ -1,0 +1,488 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>Finding Routes! - Year 4 Computing Activity</title>
+<style>
+  :root{
+    --primary:#2A2A72; --secondary:#00C9A7; --accent:#FFB627;
+    --light:#F5F7FC; --dark:#1A1A2E; --red:#E74C3C; --green:#06D6A0;
+  }
+  *{box-sizing:border-box; -webkit-tap-highlight-color: transparent;}
+  html,body{ margin:0; min-height:100%; }
+  body{
+    font-family:'Segoe UI', Calibri, Arial, sans-serif;
+    background:linear-gradient(135deg,#2A2A72 0%,#00C9A7 100%);
+    min-height:100vh; display:flex; align-items:center; justify-content:center; padding:20px;
+  }
+  .wrap{ background:var(--light); border-radius:26px; max-width:1040px; width:100%; padding:26px 28px 32px;
+    box-shadow:0 20px 50px rgba(0,0,0,0.35); position:relative; overflow:hidden; }
+  h1{ color:var(--primary); text-align:center; margin:0 0 4px; font-size:clamp(22px,4vw,30px); }
+  .sub{ text-align:center; color:#555; margin:0 0 16px; font-size:clamp(13px,2vw,15px); }
+  .hud{ display:flex; justify-content:space-between; align-items:center; background:white; border-radius:16px;
+    padding:12px 20px; margin-bottom:14px; box-shadow:0 2px 8px rgba(0,0,0,0.08); font-weight:bold; color:var(--primary);
+    flex-wrap:wrap; gap:8px; font-size:clamp(13px,2vw,15px); }
+  .hud span.big{ color:var(--accent); }
+  .mission-banner{
+    background:linear-gradient(90deg,var(--accent),#ffcf6b); color:var(--dark); font-weight:bold;
+    padding:14px 18px; border-radius:14px; margin-bottom:14px; text-align:center; font-size:16px;
+  }
+  .mission-progress{ text-align:center; color:#666; font-size:13.5px; margin-bottom:10px; min-height:18px; }
+  #board{ position:relative; background:#eef3fb; border-radius:16px; height:420px; border:3px dashed #c9d6ea; margin-bottom:14px; }
+  svg#lines{ position:absolute; top:0; left:0; width:100%; height:100%; pointer-events:none; z-index:1; }
+  .node{
+    position:absolute; width:64px; height:64px; border-radius:50%; display:flex; align-items:center; justify-content:center;
+    color:white; font-weight:bold; font-size:16px; cursor:pointer; box-shadow:0 5px 12px rgba(0,0,0,0.2);
+    transition:transform .12s ease, box-shadow .12s ease; z-index:2; background:var(--secondary);
+  }
+  .node:hover{ transform:scale(1.08); }
+  .node.dest{ background:var(--primary); width:70px; height:70px; font-size:18px; }
+  .node.current{ outline:4px solid var(--accent); transform:scale(1.1); }
+  .node.visited{ background:#7c8ae0; }
+  .node.wrong-flash{ animation:wrongFlash .4s ease; }
+  @keyframes wrongFlash{ 0%,100%{background:var(--secondary);} 50%{background:var(--red);} }
+  .msg{ text-align:center; margin-top:4px; min-height:30px; font-size:clamp(14px,2.2vw,16px); font-weight:bold; color:var(--primary); }
+  .msg.happy{ color:#0e9e6f; } .msg.oops{ color:var(--red); }
+  .controls{ display:flex; justify-content:center; gap:12px; margin-top:10px; flex-wrap:wrap; }
+  button.ctrl{ background:var(--primary); color:white; border:none; padding:12px 26px; border-radius:12px; font-size:15px; font-weight:bold; cursor:pointer; }
+  button.ctrl.secondary{ background:white; color:var(--primary); border:2px solid var(--primary); }
+  .routes-found{ margin-top:10px; font-size:13px; color:#555; }
+  .routes-found div{ background:white; border-radius:8px; padding:6px 12px; margin-bottom:5px; display:inline-block; margin-right:8px; }
+
+  .gate-overlay{ position:fixed; inset:0; background:rgba(26,26,46,0.72); display:flex; align-items:center; justify-content:center; z-index:100; padding:20px; }
+  .gate-card{ background:white; border-radius:20px; padding:34px 36px; max-width:420px; width:100%; text-align:center; box-shadow:0 20px 50px rgba(0,0,0,0.4); }
+  .gate-card h2{ color:var(--primary); margin:0 0 8px; font-size:24px; }
+  .gate-card p{ color:#555; margin:0 0 18px; font-size:14.5px; }
+  .gate-card input{ width:100%; font-size:18px; padding:12px 14px; border-radius:10px; border:2px solid var(--secondary);
+    text-align:center; font-weight:bold; color:var(--dark); margin-bottom:14px; box-sizing:border-box; }
+  .gate-card button{ width:100%; padding:13px; font-size:16px; border:none; border-radius:10px; background:var(--primary); color:white; font-weight:bold; cursor:pointer; }
+  .gate-error{ color:var(--red); font-size:13px; min-height:18px; margin-bottom:6px; font-weight:bold; }
+  #resultsPanel{ display:none; background:white; border-radius:14px; padding:18px 20px; margin-top:16px; box-shadow:0 2px 8px rgba(0,0,0,0.08); text-align:center; }
+  #resultsPanel h3{ margin:0 0 4px; color:var(--primary); font-size:18px; }
+  .save-row{ display:flex; gap:12px; justify-content:center; flex-wrap:wrap; margin-top:12px; }
+  .saved-note{ font-size:13px; color:#0e9e6f; font-weight:bold; min-height:18px; margin-top:8px; }
+  .confetti-piece{ position:absolute; top:-20px; width:12px; height:16px; z-index:20; pointer-events:none; animation: fall linear forwards; }
+  @keyframes fall{ to{ transform: translateY(600px) rotate(540deg); opacity:0.2; } }
+  .celebrate-banner{ position:absolute; left:50%; top:45%; transform:translate(-50%,-50%) scale(0.5); background:white; border-radius:22px;
+    padding:24px 36px; box-shadow:0 12px 40px rgba(0,0,0,0.35); text-align:center; z-index:30; opacity:0; pointer-events:none; }
+  .celebrate-banner.show{ animation: bannerPop .6s cubic-bezier(.34,1.56,.64,1) forwards; }
+  @keyframes bannerPop{ 0%{opacity:0; transform:translate(-50%,-50%) scale(0.4) rotate(-6deg);} 60%{opacity:1; transform:translate(-50%,-50%) scale(1.08) rotate(2deg);} 100%{opacity:1; transform:translate(-50%,-50%) scale(1) rotate(0);} }
+  .celebrate-banner .big{ font-size:22px; font-weight:bold; color:var(--primary); }
+  .legend{ display:flex; justify-content:center; gap:18px; margin-top:8px; font-size:12.5px; color:#555; flex-wrap:wrap; }
+  .legend span{ display:flex; align-items:center; gap:6px; }
+  .legend i{ width:14px; height:14px; border-radius:50%; display:inline-block; }
+</style>
+</head>
+<body>
+
+<div class="gate-overlay" id="gateOverlay">
+  <div class="gate-card">
+    <h2>🧭 Finding Routes!</h2>
+    <p>Type your name to start.</p>
+    <input type="text" id="nameInput" placeholder="Your name" maxlength="24" autocomplete="off">
+    <div class="gate-error" id="nameError"></div>
+    <button id="startBtn">Start ▶</button>
+  </div>
+</div>
+
+<div class="wrap" id="wrap">
+  <h1>🧭 Finding Routes!</h1>
+  <p class="sub">Click routers one at a time to trace a path — arrows show which way messages can travel!</p>
+  <div class="hud">
+    <div>Explorer: <span class="big" id="playerName">—</span></div>
+    <div>Mission <span class="big" id="missionNum">1</span> / 4</div>
+    <div>Score: <span class="big" id="score">0</span></div>
+  </div>
+  <div class="mission-banner" id="missionBanner">Loading mission...</div>
+  <div class="mission-progress" id="missionProgress"></div>
+
+  <div id="board"><svg id="lines"></svg></div>
+  <p class="msg" id="msg">Tap a router to begin your route!</p>
+  <div class="controls">
+    <button class="ctrl secondary" id="resetPathBtn">⟲ Restart This Route</button>
+  </div>
+  <div class="routes-found" id="routesFound"></div>
+  <div class="legend">
+    <span><i style="background:var(--secondary);"></i> Router</span>
+    <span><i style="background:var(--primary);"></i> Destination computer</span>
+    <span><i style="background:var(--accent); outline:3px solid var(--accent);"></i> Your current position</span>
+  </div>
+</div>
+
+<script>
+// ---- Graph definition (directed) ----
+const NODES = {
+  '1':{x:70,  y:30,  type:'router'}, '2':{x:70,  y:170, type:'router'}, '3':{x:70,  y:310, type:'router'},
+  '4':{x:270, y:30,  type:'router'}, '5':{x:270, y:170, type:'router'}, '6':{x:270, y:310, type:'router'},
+  '7':{x:470, y:30,  type:'router'}, '8':{x:470, y:170, type:'router'}, '9':{x:470, y:310, type:'router'},
+  'A':{x:700, y:10,  type:'dest'},   'B':{x:700, y:170, type:'dest'},   'C':{x:700, y:330, type:'dest'},
+};
+const EDGES = [
+  ['1','4'],['2','1'],['2','5'],['3','2'],['3','6'],
+  ['4','7'],['5','4'],['5','7'],['5','8'],['6','5'],['6','9'],
+  ['7','A'],['7','8'],['8','A'],['8','C'],['8','B'],
+  ['9','8'],['9','C'],['9','B']
+];
+const ADJ = {};
+EDGES.forEach(([a,b]) => { (ADJ[a] = ADJ[a]||[]).push(b); });
+const ENTRY_POINTS = ['1','2','3'];
+
+function bfsMinHops(starts, goal){
+  const dist = {}; const q = [];
+  starts.forEach(s => { dist[s]=0; q.push(s); });
+  while(q.length){
+    const n = q.shift();
+    if(n === goal) return dist[n];
+    (ADJ[n]||[]).forEach(nb => { if(!(nb in dist)){ dist[nb]=dist[n]+1; q.push(nb); } });
+  }
+  return null;
+}
+
+const MISSIONS = [
+  { text: "🎯 Mission 1: Find 3 DIFFERENT routes to B!", type:'multi-route', goal:'B', target:3, allowedStarts: ENTRY_POINTS },
+  { text: "⚡ Mission 2: What's the QUICKEST way to A? (fewest hops)", type:'shortest', goal:'A', allowedStarts: ENTRY_POINTS },
+  { text: "🔍 Mission 3: How could you get from Router 3 to Router 4?", type:'specific', goal:'4', allowedStarts: ['3'] },
+  { text: "🚧 Mission 4: Reach C — but don't go through Router 9!", type:'avoid', goal:'C', avoid:'9', allowedStarts: ENTRY_POINTS },
+];
+
+let studentName = "";
+let missionIdx = 0;
+let score = 0;
+let currentPath = [];
+let foundRoutesForMission1 = [];
+const STORAGE_KEY = "findingRoutesResults";
+const wrap = document.getElementById('wrap');
+const board = document.getElementById('board');
+const linesSvg = document.getElementById('lines');
+const msg = document.getElementById('msg');
+
+function centerOf(key){ const n = NODES[key]; return { x: n.x+32, y: n.y+32 }; }
+
+function drawGraph(){
+  board.querySelectorAll('.node').forEach(n=>n.remove());
+  linesSvg.innerHTML = `
+    <defs>
+      <marker id="arrow" viewBox="0 0 10 10" refX="9" refY="5" markerWidth="7" markerHeight="7" orient="auto-start-reverse">
+        <path d="M0,0 L10,5 L0,10 z" fill="#98a8c9"></path>
+      </marker>
+    </defs>`;
+  EDGES.forEach(([a,b]) => {
+    const ca = centerOf(a), cb = centerOf(b);
+    // shorten line slightly so arrowhead doesn't hide under the node circle
+    const dx = cb.x-ca.x, dy = cb.y-ca.y, len = Math.sqrt(dx*dx+dy*dy);
+    const shrink = 34;
+    const ex = cb.x - (dx/len)*shrink, ey = cb.y - (dy/len)*shrink;
+    const sx = ca.x + (dx/len)*shrink, sy = ca.y + (dy/len)*shrink;
+    const line = document.createElementNS('http://www.w3.org/2000/svg','line');
+    line.setAttribute('x1', sx); line.setAttribute('y1', sy);
+    line.setAttribute('x2', ex); line.setAttribute('y2', ey);
+    line.setAttribute('stroke', '#98a8c9'); line.setAttribute('stroke-width','3');
+    line.setAttribute('marker-end','url(#arrow)');
+    linesSvg.appendChild(line);
+  });
+  Object.entries(NODES).forEach(([key,n]) => {
+    const div = document.createElement('div');
+    div.className = 'node' + (n.type==='dest' ? ' dest' : '');
+    div.style.left = n.x+'px'; div.style.top = n.y+'px';
+    div.textContent = key;
+    div.dataset.key = key;
+    div.addEventListener('click', () => handleNodeClick(key));
+    board.appendChild(div);
+  });
+}
+
+function refreshNodeStyles(){
+  document.querySelectorAll('.node').forEach(div => {
+    const key = div.dataset.key;
+    div.classList.remove('current','visited');
+    if(currentPath.length && key === currentPath[currentPath.length-1]) div.classList.add('current');
+    else if(currentPath.includes(key)) div.classList.add('visited');
+  });
+}
+
+function flashWrong(key){
+  const div = document.querySelector(`.node[data-key="${key}"]`);
+  if(div){ div.classList.add('wrong-flash'); setTimeout(()=>div.classList.remove('wrong-flash'), 400); }
+}
+
+function handleNodeClick(key){
+  const mission = MISSIONS[missionIdx];
+  if(currentPath.length === 0){
+    if(!mission.allowedStarts.includes(key)){
+      msg.className = 'msg oops';
+      msg.textContent = mission.type === 'specific'
+        ? `This mission must start at Router ${mission.allowedStarts[0]}!`
+        : "That's not a starting router — try 1, 2, or 3!";
+      flashWrong(key);
+      return;
+    }
+    currentPath = [key];
+    msg.className = 'msg';
+    msg.textContent = `Started at ${key}. Where next?`;
+    refreshNodeStyles();
+    checkMissionProgress();
+    return;
+  }
+  const last = currentPath[currentPath.length-1];
+  if(!(ADJ[last]||[]).includes(key)){
+    msg.className = 'msg oops';
+    msg.textContent = `❌ No direct connection from ${last} to ${key} — check the arrows!`;
+    flashWrong(key);
+    return;
+  }
+  if(currentPath.includes(key)){
+    msg.className = 'msg oops';
+    msg.textContent = `You've already visited ${key} on this route!`;
+    flashWrong(key);
+    return;
+  }
+  currentPath.push(key);
+  refreshNodeStyles();
+  msg.className = 'msg';
+  msg.textContent = `${currentPath.join(' → ')}`;
+  checkMissionProgress();
+}
+
+function checkMissionProgress(){
+  const mission = MISSIONS[missionIdx];
+  const last = currentPath[currentPath.length-1];
+  if(last !== mission.goal) return; // not arrived yet
+
+  if(mission.type === 'multi-route'){
+    const key = currentPath.join('>');
+    if(foundRoutesForMission1.some(r => r.join('>') === key)){
+      msg.className = 'msg oops';
+      msg.textContent = "You've already found that exact route — try a different one!";
+      return;
+    }
+    foundRoutesForMission1.push([...currentPath]);
+    spawnConfetti(16);
+    score += 20;
+    document.getElementById('score').textContent = score;
+    renderRoutesFound();
+    if(foundRoutesForMission1.length >= mission.target){
+      msg.className = 'msg happy';
+      msg.textContent = `🎉 Amazing! You found ${mission.target} different routes to B!`;
+      setTimeout(advanceMission, 1600);
+    } else {
+      msg.className = 'msg happy';
+      msg.textContent = `✅ Route ${foundRoutesForMission1.length} found! Find ${mission.target - foundRoutesForMission1.length} more.`;
+      currentPath = [];
+      setTimeout(refreshNodeStyles, 50);
+    }
+    return;
+  }
+
+  if(mission.type === 'shortest'){
+    const minHops = bfsMinHops(mission.allowedStarts, mission.goal);
+    const hops = currentPath.length - 1;
+    if(hops === minHops){
+      score += 30;
+      document.getElementById('score').textContent = score;
+      spawnConfetti(24);
+      msg.className = 'msg happy';
+      msg.textContent = `🎉 Yes! ${currentPath.join(' → ')} — that's the shortest route (${hops} hops)!`;
+      setTimeout(advanceMission, 1700);
+    } else {
+      msg.className = 'msg oops';
+      msg.textContent = `You reached A in ${hops} hops, but there's a shorter way! Try again.`;
+      setTimeout(()=>{ currentPath = []; refreshNodeStyles(); msg.textContent='Tap a router to try again.'; }, 1600);
+    }
+    return;
+  }
+
+  if(mission.type === 'specific'){
+    score += 25;
+    document.getElementById('score').textContent = score;
+    spawnConfetti(20);
+    msg.className = 'msg happy';
+    msg.textContent = `🎉 Great routing! ${currentPath.join(' → ')}`;
+    setTimeout(advanceMission, 1700);
+    return;
+  }
+
+  if(mission.type === 'avoid'){
+    if(currentPath.includes(mission.avoid)){
+      msg.className = 'msg oops';
+      msg.textContent = `Oops — that route went through Router ${mission.avoid}! Try again.`;
+      setTimeout(()=>{ currentPath = []; refreshNodeStyles(); msg.textContent='Tap a router to try again.'; }, 1700);
+      return;
+    }
+    score += 25;
+    document.getElementById('score').textContent = score;
+    spawnConfetti(24);
+    msg.className = 'msg happy';
+    msg.textContent = `🎉 Perfect! You reached C without going through Router 9!`;
+    setTimeout(advanceMission, 1700);
+    return;
+  }
+}
+
+function renderRoutesFound(){
+  document.getElementById('routesFound').innerHTML = foundRoutesForMission1.map((r,i) =>
+    `<div>Route ${i+1}: ${r.join(' → ')}</div>`
+  ).join('');
+}
+
+function loadMission(){
+  const mission = MISSIONS[missionIdx];
+  document.getElementById('missionNum').textContent = missionIdx+1;
+  document.getElementById('missionBanner').textContent = mission.text;
+  document.getElementById('routesFound').innerHTML = '';
+  currentPath = [];
+  foundRoutesForMission1 = [];
+  msg.className = 'msg';
+  msg.textContent = mission.allowedStarts.length === 1
+    ? `Tap Router ${mission.allowedStarts[0]} to begin!`
+    : 'Tap router 1, 2, or 3 to begin your route!';
+  document.getElementById('missionProgress').textContent =
+    mission.type === 'multi-route' ? `Routes found: 0 / ${mission.target}` : '';
+  refreshNodeStyles();
+}
+
+function advanceMission(){
+  missionIdx++;
+  if(missionIdx >= MISSIONS.length){
+    showFinal();
+  } else {
+    loadMission();
+  }
+}
+
+function spawnConfetti(n){
+  const colors=['#2A2A72','#00C9A7','#FFB627','#06D6A0','#FFFFFF'];
+  for(let i=0;i<n;i++){
+    const p=document.createElement('div'); p.className='confetti-piece';
+    p.style.left=Math.random()*100+'%'; p.style.background=colors[Math.floor(Math.random()*colors.length)];
+    p.style.animationDuration=(1.2+Math.random()*1.1)+'s';
+    wrap.appendChild(p); setTimeout(()=>p.remove(),2500);
+  }
+}
+function showCelebrateBanner(text, sub){
+  const b=document.createElement('div'); b.className='celebrate-banner';
+  b.innerHTML = `<div class="big">${text}</div><div style="font-size:14px;color:#555;">${sub||''}</div>`;
+  wrap.appendChild(b); requestAnimationFrame(()=>b.classList.add('show'));
+  setTimeout(()=>{ b.style.transition='opacity .3s'; b.style.opacity='0'; setTimeout(()=>b.remove(),320); },1400);
+}
+
+document.getElementById('resetPathBtn').addEventListener('click', ()=>{
+  currentPath = [];
+  refreshNodeStyles();
+  msg.className = 'msg';
+  msg.textContent = 'Route cleared — tap a router to start again.';
+});
+
+function showFinal(){
+  spawnConfetti(40);
+  showCelebrateBanner('🏆 All Missions Complete!', `${studentName} scored ${score} points!`);
+  board.innerHTML = `<div style="display:flex; align-items:center; justify-content:center; height:100%; flex-direction:column;">
+    <div style="font-size:70px;">🏆</div>
+    <div style="font-size:22px;font-weight:bold;color:var(--primary);">You're a Routing Expert!</div>
+  </div>`;
+  document.getElementById('missionBanner').textContent = "🎉 All 4 missions complete!";
+  document.getElementById('missionProgress').textContent = '';
+  document.getElementById('routesFound').innerHTML = '';
+  msg.textContent = '';
+  document.querySelector('.controls').style.display = 'none';
+  showResultsPanel();
+  if(window.__submitResultToCloud){
+    window.__submitResultToCloud({
+      name: studentName,
+      game: "Finding Routes! (Y4)",
+      score: score,
+      total: 100,
+      date: new Date().toLocaleDateString() + ' ' + new Date().toLocaleTimeString([], {hour:'2-digit', minute:'2-digit'})
+    });
+  }
+}
+function showResultsPanel(){
+  let panel = document.getElementById('resultsPanel');
+  if(!panel){
+    panel = document.createElement('div'); panel.id='resultsPanel';
+    panel.innerHTML = `
+      <h3>🏁 Well done!</h3>
+      <div id="resultsSummary" style="font-size:14.5px;color:#444;"></div>
+      <div class="save-row">
+        <button id="saveResultBtn" style="background:var(--primary);color:white;border:none;padding:12px 24px;border-radius:10px;font-weight:bold;cursor:pointer;">💾 Save My Results</button>
+        <button id="downloadAllBtn" style="background:white;color:var(--primary);border:2px solid var(--primary);padding:12px 24px;border-radius:10px;font-weight:bold;cursor:pointer;">📋 Download Class Results</button>
+      </div>
+      <div class="saved-note" id="savedNote"></div>
+      <div style="margin-top:14px;"><a href="index.html" style="display:inline-block; background:#1A1A2E; color:white; text-decoration:none; padding:12px 26px; border-radius:12px; font-weight:bold; font-size:14.5px;">🏠 Back to Hub</a></div>`;
+    wrap.appendChild(panel);
+    document.getElementById('saveResultBtn').addEventListener('click', onSaveResult);
+    document.getElementById('downloadAllBtn').addEventListener('click', onDownloadAll);
+  }
+  panel.style.display = 'block';
+  document.getElementById('resultsSummary').textContent = `${studentName} scored ${score} out of 100.`;
+}
+function readSavedResults(){ try{ return JSON.parse(localStorage.getItem(STORAGE_KEY)||"[]"); }catch(e){ return []; } }
+function writeSavedResults(list){ try{ localStorage.setItem(STORAGE_KEY, JSON.stringify(list)); }catch(e){} }
+function csvEscape(v){ const s=String(v); return /[",\n]/.test(s) ? '"'+s.replace(/"/g,'""')+'"' : s; }
+function downloadCSV(filename, rows){
+  const csv = rows.map(r=>r.map(csvEscape).join(",")).join("\r\n");
+  const blob = new Blob([csv], {type:"text/csv;charset=utf-8;"});
+  const url = URL.createObjectURL(blob);
+  const a=document.createElement('a'); a.href=url; a.download=filename;
+  document.body.appendChild(a); a.click(); document.body.removeChild(a);
+  setTimeout(()=>URL.revokeObjectURL(url),1000);
+}
+function onSaveResult(){
+  const now = new Date();
+  const record = { name:studentName, score:score, total:100, date: now.toLocaleDateString()+' '+now.toLocaleTimeString([], {hour:'2-digit',minute:'2-digit'}) };
+  const list = readSavedResults(); list.push(record); writeSavedResults(list);
+  const safeName = (studentName||'student').replace(/[^a-z0-9]+/gi,'_');
+  downloadCSV(`FindingRoutes_${safeName}_${now.toISOString().slice(0,10)}.csv`, [["Name","Score","Total","Date"],[record.name,record.score,record.total,record.date]]);
+  document.getElementById('savedNote').textContent = '✅ Saved! A results file was downloaded, and your score was stored on this computer.';
+}
+function onDownloadAll(){
+  const list = readSavedResults();
+  if(list.length===0){ document.getElementById('savedNote').textContent='No saved results yet on this computer.'; return; }
+  const rows=[["Name","Score","Total","Date"], ...list.map(r=>[r.name,r.score,r.total,r.date])];
+  downloadCSV(`FindingRoutes_AllResults_${new Date().toISOString().slice(0,10)}.csv`, rows);
+}
+
+const gateOverlay = document.getElementById('gateOverlay');
+const nameInput = document.getElementById('nameInput');
+const nameError = document.getElementById('nameError');
+function startGame(){
+  const val = nameInput.value.trim();
+  if(!val){ nameError.textContent = "Please type your name to start."; nameInput.focus(); return; }
+  studentName = val.slice(0,24);
+  document.getElementById('playerName').textContent = studentName;
+  gateOverlay.style.display = 'none';
+  drawGraph();
+  loadMission();
+}
+document.getElementById('startBtn').addEventListener('click', startGame);
+nameInput.addEventListener('keydown', e=>{ if(e.key==='Enter') startGame(); });
+nameInput.focus();
+</script>
+
+<!-- ===== Cloud sync: sends each result to the shared Firestore database ===== -->
+<script src="https://www.gstatic.com/firebasejs/10.13.0/firebase-app-compat.js"></script>
+<script src="https://www.gstatic.com/firebasejs/10.13.0/firebase-firestore-compat.js"></script>
+<script>
+  const firebaseConfig = {
+    apiKey: "AIzaSyCEJtHd802MyuZUlwt6OfGkl9IitHaSOaA",
+    authDomain: "tasks-results.firebaseapp.com",
+    projectId: "tasks-results",
+    storageBucket: "tasks-results.firebasestorage.app",
+    messagingSenderId: "1014525306500",
+    appId: "1:1014525306500:web:3ffe2e6f5554e9140e04d1"
+  };
+  try{
+    firebase.initializeApp(firebaseConfig);
+    const db = firebase.firestore();
+    window.__submitResultToCloud = function(record){
+      return db.collection("results").add({
+        ...record,
+        createdAt: firebase.firestore.FieldValue.serverTimestamp()
+      }).then(() => true).catch((err) => { console.error("Cloud sync failed:", err); return false; });
+    };
+  }catch(err){
+    console.error("Firebase init failed:", err);
+  }
+</script>
+</body>
+</html>

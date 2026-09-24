@@ -26,8 +26,10 @@
   .hud span.big{ color:var(--accent); }
   .mission-banner{
     background:linear-gradient(90deg,var(--accent),#ffcf6b); color:var(--dark); font-weight:bold;
-    padding:14px 18px; border-radius:14px; margin-bottom:14px; text-align:center; font-size:16px;
+    padding:14px 18px; border-radius:14px; margin-bottom:10px; text-align:center; font-size:16px;
   }
+  .start-hint{ text-align:center; color:var(--primary); font-weight:bold; font-size:14px; margin-bottom:10px;
+    background:#eef0fb; border-radius:10px; padding:8px 14px; }
   .mission-progress{ text-align:center; color:#666; font-size:13.5px; margin-bottom:10px; min-height:18px; }
   #board{ position:relative; background:#eef3fb; border-radius:16px; height:420px; border:3px dashed #c9d6ea; margin-bottom:14px; }
   svg#lines{ position:absolute; top:0; left:0; width:100%; height:100%; pointer-events:none; z-index:1; }
@@ -38,6 +40,7 @@
   }
   .node:hover{ transform:scale(1.08); }
   .node.dest{ background:var(--primary); width:70px; height:70px; font-size:18px; }
+  .node.entry{ box-shadow:0 0 0 4px rgba(6,214,160,0.5), 0 5px 12px rgba(0,0,0,0.2); }
   .node.current{ outline:4px solid var(--accent); transform:scale(1.1); }
   .node.visited{ background:#7c8ae0; }
   .node.wrong-flash{ animation:wrongFlash .4s ease; }
@@ -95,6 +98,7 @@
     <div>Score: <span class="big" id="score">0</span></div>
   </div>
   <div class="mission-banner" id="missionBanner">Loading mission...</div>
+  <div class="start-hint" id="startHint"></div>
   <div class="mission-progress" id="missionProgress"></div>
 
   <div id="board"><svg id="lines"></svg></div>
@@ -104,6 +108,7 @@
   </div>
   <div class="routes-found" id="routesFound"></div>
   <div class="legend">
+    <span><i style="background:var(--secondary); box-shadow:0 0 0 3px rgba(6,214,160,0.5);"></i> Entry router (1, 2 or 3 — start here)</span>
     <span><i style="background:var(--secondary);"></i> Router</span>
     <span><i style="background:var(--primary);"></i> Destination computer</span>
     <span><i style="background:var(--accent); outline:3px solid var(--accent);"></i> Your current position</span>
@@ -140,10 +145,10 @@ function bfsMinHops(starts, goal){
 }
 
 const MISSIONS = [
-  { text: "🎯 Mission 1: Find 3 DIFFERENT routes to B!", type:'multi-route', goal:'B', target:3, allowedStarts: ENTRY_POINTS },
-  { text: "⚡ Mission 2: What's the QUICKEST way to A? (fewest hops)", type:'shortest', goal:'A', allowedStarts: ENTRY_POINTS },
-  { text: "🔍 Mission 3: How could you get from Router 3 to Router 4?", type:'specific', goal:'4', allowedStarts: ['3'] },
-  { text: "🚧 Mission 4: Reach C — but don't go through Router 9!", type:'avoid', goal:'C', avoid:'9', allowedStarts: ENTRY_POINTS },
+  { text: "🎯 Mission 1: Find 3 DIFFERENT routes to B!", startHint: "🏁 Start at Router 1, 2, or 3 — any of the three green entry routers.", type:'multi-route', goal:'B', target:3, allowedStarts: ENTRY_POINTS },
+  { text: "⚡ Mission 2: What's the QUICKEST way to A? (fewest hops)", startHint: "🏁 Start at Router 1, 2, or 3 — any of the three green entry routers.", type:'shortest', goal:'A', allowedStarts: ENTRY_POINTS },
+  { text: "🔍 Mission 3: How could you get from Router 3 to Router 4?", startHint: "🏁 This mission always starts at Router 3.", type:'specific', goal:'4', allowedStarts: ['3'] },
+  { text: "🚧 Mission 4: Reach C — but don't go through Router 9!", startHint: "🏁 Start at Router 1, 2, or 3 — any of the three green entry routers.", type:'avoid', goal:'C', avoid:'9', allowedStarts: ENTRY_POINTS },
 ];
 
 let studentName = "";
@@ -166,6 +171,9 @@ function drawGraph(){
       <marker id="arrow" viewBox="0 0 10 10" refX="9" refY="5" markerWidth="7" markerHeight="7" orient="auto-start-reverse">
         <path d="M0,0 L10,5 L0,10 z" fill="#98a8c9"></path>
       </marker>
+      <marker id="entryArrow" viewBox="0 0 10 10" refX="9" refY="5" markerWidth="7" markerHeight="7" orient="auto-start-reverse">
+        <path d="M0,0 L10,5 L0,10 z" fill="#06D6A0"></path>
+      </marker>
     </defs>`;
   EDGES.forEach(([a,b]) => {
     const ca = centerOf(a), cb = centerOf(b);
@@ -181,9 +189,19 @@ function drawGraph(){
     line.setAttribute('marker-end','url(#arrow)');
     linesSvg.appendChild(line);
   });
+  // Visual "entry" arrows feeding into the 3 starting routers, echoing the original worksheet's sender icon.
+  ENTRY_POINTS.forEach(key => {
+    const c = centerOf(key);
+    const line = document.createElementNS('http://www.w3.org/2000/svg','line');
+    line.setAttribute('x1', 0); line.setAttribute('y1', c.y);
+    line.setAttribute('x2', c.x-34); line.setAttribute('y2', c.y);
+    line.setAttribute('stroke', '#06D6A0'); line.setAttribute('stroke-width','4');
+    line.setAttribute('marker-end','url(#entryArrow)');
+    linesSvg.appendChild(line);
+  });
   Object.entries(NODES).forEach(([key,n]) => {
     const div = document.createElement('div');
-    div.className = 'node' + (n.type==='dest' ? ' dest' : '');
+    div.className = 'node' + (n.type==='dest' ? ' dest' : '') + (ENTRY_POINTS.includes(key) ? ' entry' : '');
     div.style.left = n.x+'px'; div.style.top = n.y+'px';
     div.textContent = key;
     div.dataset.key = key;
@@ -329,6 +347,7 @@ function loadMission(){
   const mission = MISSIONS[missionIdx];
   document.getElementById('missionNum').textContent = missionIdx+1;
   document.getElementById('missionBanner').textContent = mission.text;
+  document.getElementById('startHint').textContent = mission.startHint;
   document.getElementById('routesFound').innerHTML = '';
   currentPath = [];
   foundRoutesForMission1 = [];

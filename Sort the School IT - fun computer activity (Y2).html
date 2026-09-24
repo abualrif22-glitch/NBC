@@ -39,17 +39,17 @@
 
   .bins{ display:grid; grid-template-columns:repeat(3,1fr); gap:16px; }
   .bin{
-    border-radius:20px; padding:18px 10px; text-align:center; min-height:150px; border:4px dashed transparent;
+    border-radius:20px; padding:18px 10px; text-align:center; min-height:220px; border:4px dashed transparent;
     display:flex; flex-direction:column; align-items:center; justify-content:flex-start;
   }
   .bin.work{ background:#E4EFFF; }
   .bin.talk{ background:#FFF0E0; }
   .bin.play{ background:#E4FBF6; }
   .bin-icon{ font-size:40px; margin-bottom:6px; }
-  .bin-title{ font-weight:bold; font-size:16px; color:var(--dark); margin-bottom:10px; }
-  .bin-slots{ display:flex; flex-wrap:wrap; gap:8px; justify-content:center; }
-  .bin-slots .item{ width:50px; height:50px; box-shadow:0 3px 8px rgba(0,0,0,0.15); cursor:default; }
-  .bin-slots .item .item-emoji{ font-size:22px; }
+  .bin-title{ font-weight:bold; font-size:16px; color:var(--dark); margin-bottom:14px; }
+  .bin-slots{ display:flex; flex-wrap:wrap; gap:12px; justify-content:center; }
+  .bin-slots .item{ width:64px; height:64px; box-shadow:0 3px 8px rgba(0,0,0,0.15); cursor:default; }
+  .bin-slots .item .item-emoji{ font-size:28px; }
   .bin-slots .item .item-label{ display:none; }
 
   .msg{ text-align:center; margin-top:16px; min-height:34px; font-size:clamp(15px,2.3vw,18px); font-weight:bold; color:var(--primary); }
@@ -132,12 +132,12 @@ const ITEMS = [
   {emoji:"\uD83D\uDDA5\uFE0F", label:"Computer", cat:"work"},
   {emoji:"\uD83D\uDDA8\uFE0F", label:"Printer", cat:"work"},
   {emoji:"\u2328\uFE0F", label:"Keyboard", cat:"work"},
-  {emoji:"\u260E\uFE0F", label:"Telephone", cat:"talk"},
   {emoji:"\uD83D\uDCF1", label:"Smartphone", cat:"talk"},
-  {emoji:"\uD83D\uDCFB", label:"Walkie-Talkie", cat:"talk"},
-  {emoji:"\uD83C\uDFAE", label:"Games Console", cat:"play"},
-  {emoji:"\uD83D\uDCF7", label:"Camera", cat:"play"},
-  {emoji:"\uD83C\uDFA7", label:"Headphones", cat:"play"},
+  {emoji:"\uD83D\uDD0A", label:"Smart Speaker", cat:"talk"},
+  {emoji:"\uD83D\uDCF9", label:"Webcam", cat:"talk"},
+  {emoji:"\uD83C\uDFAE", label:"PlayStation", cat:"play"},
+  {emoji:"\uD83D\uDD79\uFE0F", label:"Nintendo Switch", cat:"play"},
+  {emoji:"\uD83E\uDD7D", label:"VR Headset", cat:"play"},
 ];
 
 let studentName = "", tries = 0, wrongAttempts = 0, sortedCount = 0;

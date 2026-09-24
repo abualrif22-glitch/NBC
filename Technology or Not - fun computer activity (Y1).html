@@ -62,6 +62,10 @@
   .gate-card input{ width:100%; font-size:18px; padding:12px 14px; border-radius:10px; border:2px solid var(--secondary);
     text-align:center; font-weight:bold; color:var(--dark); margin-bottom:14px; box-sizing:border-box; }
   .gate-card button{ width:100%; padding:13px; font-size:16px; border:none; border-radius:10px; background:var(--primary); color:white; font-weight:bold; cursor:pointer; }
+  .name-picker{ display:flex; flex-wrap:wrap; gap:10px; justify-content:center; max-height:320px; overflow-y:auto; margin-bottom:6px; }
+  .name-picker .class-heading{ width:100%; font-size:12.5px; font-weight:bold; color:#999; margin-top:10px; text-transform:uppercase; letter-spacing:0.4px; }
+  .name-btn{ padding:13px 22px; border-radius:12px; border:2px solid var(--secondary); background:white; color:var(--dark); font-weight:bold; font-size:16px; cursor:pointer; }
+  .name-btn:hover{ background:#eef8fd; }
   .gate-error{ color:var(--red); font-size:13px; min-height:18px; margin-bottom:6px; font-weight:bold; }
   #resultsPanel{ display:none; background:white; border-radius:14px; padding:18px 20px; margin-top:16px; box-shadow:0 2px 8px rgba(0,0,0,0.08); text-align:center; }
   #resultsPanel h3{ margin:0 0 4px; color:var(--primary); font-size:18px; }
@@ -81,10 +85,8 @@
 <div class="gate-overlay" id="gateOverlay">
   <div class="gate-card">
     <h2>🔎 Technology or Not!</h2>
-    <p>Type your name to start.</p>
-    <input type="text" id="nameInput" placeholder="Your name" maxlength="24" autocomplete="off">
-    <div class="gate-error" id="nameError"></div>
-    <button id="startBtn">Start ▶</button>
+    <p id="gateSubtext">Loading...</p>
+    <div id="nameButtonsArea"></div>
   </div>
 </div>
 
@@ -290,19 +292,46 @@ function onDownloadAll(){
 }
 
 const gateOverlay = document.getElementById('gateOverlay');
-const nameInput = document.getElementById('nameInput');
-const nameError = document.getElementById('nameError');
-function startGame(){
-  const val = nameInput.value.trim();
-  if(!val){ nameError.textContent = "Please type your name to start."; nameInput.focus(); return; }
-  studentName = val.slice(0,24);
+
+function readClassesFromLocalStorage(){
+  try{ return JSON.parse(localStorage.getItem('classroomDashboardClasses') || '[]'); }catch(e){ return []; }
+}
+
+function initNameGate(){
+  const classes = readClassesFromLocalStorage();
+  const area = document.getElementById('nameButtonsArea');
+  const subtext = document.getElementById('gateSubtext');
+  const hasAnyStudents = classes.some(c => (c.students||[]).length > 0);
+
+  if(hasAnyStudents){
+    subtext.textContent = "Tap your name to start!";
+    let html = '<div class="name-picker">';
+    classes.forEach(c => {
+      if(!(c.students||[]).length) return;
+      if(classes.length > 1) html += `<div class="class-heading">${c.name}</div>`;
+      c.students.forEach(s => {
+        html += `<button class="name-btn" data-name="${s.name}">${s.name}</button>`;
+      });
+    });
+    html += '</div>';
+    area.innerHTML = html;
+    area.querySelectorAll('.name-btn').forEach(btn => {
+      btn.addEventListener('click', () => startGameWithName(btn.dataset.name));
+    });
+  } else {
+    subtext.textContent = "Just tap below to play!";
+    area.innerHTML = `<button id="tapStartBtn">Tap to Start! ▶</button>`;
+    document.getElementById('tapStartBtn').addEventListener('click', () => startGameWithName('Player'));
+  }
+}
+
+function startGameWithName(name){
+  studentName = name.slice(0,24);
   document.getElementById('playerName').textContent = studentName;
   gateOverlay.style.display = 'none';
   startRound();
 }
-document.getElementById('startBtn').addEventListener('click', startGame);
-nameInput.addEventListener('keydown', e=>{ if(e.key==='Enter') startGame(); });
-nameInput.focus();
+initNameGate();
 </script>
 
 <!-- ===== Cloud sync: sends each result to the shared Firestore database ===== -->

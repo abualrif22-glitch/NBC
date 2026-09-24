@@ -120,14 +120,19 @@ const ITEMS = [
   {emoji:"\u23F0", label:"Alarm Clock", tech:true},
   {emoji:"\uD83D\uDD26", label:"Torch", tech:true},
   {emoji:"\uD83D\uDDA8\uFE0F", label:"Printer", tech:true},
+  {emoji:"\uD83D\uDCD6", label:"Book", tech:true},
+  {emoji:"\uD83E\uDE91", label:"Chair", tech:true},
+  {emoji:"\u270F\uFE0F", label:"Pencil", tech:true},
+  {emoji:"\u26BD", label:"Football", tech:true},
+  {emoji:"\uD83E\uDDF8", label:"Teddy Bear", tech:true},
   {emoji:"\uD83C\uDF33", label:"Tree", tech:false},
-  {emoji:"\uD83D\uDCD6", label:"Book", tech:false},
-  {emoji:"\uD83E\uDE91", label:"Chair", tech:false},
   {emoji:"\uD83C\uDF4E", label:"Apple", tech:false},
-  {emoji:"\u270F\uFE0F", label:"Pencil", tech:false},
   {emoji:"\uD83D\uDC36", label:"Dog", tech:false},
-  {emoji:"\u26BD", label:"Ball", tech:false},
-  {emoji:"\uD83E\uDDF8", label:"Teddy Bear", tech:false},
+  {emoji:"\uD83C\uDF38", label:"Flower", tech:false},
+  {emoji:"\u2601\uFE0F", label:"Cloud", tech:false},
+  {emoji:"\uD83E\uDEA8", label:"Rock", tech:false},
+  {emoji:"\uD83D\uDC26", label:"Bird", tech:false},
+  {emoji:"\uD83C\uDF43", label:"Leaf", tech:false},
 ];
 
 let sequence = [], idx = 0, score = 0, tries = 0, studentName = "", answered = false;
@@ -138,7 +143,11 @@ const msg = document.getElementById('msg');
 function shuffle(arr){ const a=[...arr]; for(let i=a.length-1;i>0;i--){ const j=Math.floor(Math.random()*(i+1)); [a[i],a[j]]=[a[j],a[i]]; } return a; }
 
 function startRound(){
-  sequence = shuffle(ITEMS).slice(0, 12);
+  // Draw an even mix (6 technology + 6 natural) so every round is fairly balanced,
+  // even though the two pools aren't the same size.
+  const techItems = shuffle(ITEMS.filter(i => i.tech)).slice(0, 6);
+  const notTechItems = shuffle(ITEMS.filter(i => !i.tech)).slice(0, 6);
+  sequence = shuffle([...techItems, ...notTechItems]);
   document.getElementById('roundTotal').textContent = sequence.length;
   idx = 0; score = 0; tries = 0;
   document.getElementById('score').textContent = 0;

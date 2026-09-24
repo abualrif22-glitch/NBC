@@ -108,7 +108,7 @@
   </div>
   <div class="routes-found" id="routesFound"></div>
   <div class="legend">
-    <span><i style="background:var(--secondary); box-shadow:0 0 0 3px rgba(6,214,160,0.5);"></i> Entry router (1, 2 or 3 — start here)</span>
+    <span><i style="background:var(--secondary); box-shadow:0 0 0 3px rgba(6,214,160,0.5);"></i> This mission's starting router</span>
     <span><i style="background:var(--secondary);"></i> Router</span>
     <span><i style="background:var(--primary);"></i> Destination computer</span>
     <span><i style="background:var(--accent); outline:3px solid var(--accent);"></i> Your current position</span>
@@ -145,10 +145,10 @@ function bfsMinHops(starts, goal){
 }
 
 const MISSIONS = [
-  { text: "🎯 Mission 1: Find 3 DIFFERENT routes to B!", startHint: "🏁 Start at Router 1, 2, or 3 — any of the three green entry routers.", type:'multi-route', goal:'B', target:3, allowedStarts: ENTRY_POINTS },
-  { text: "⚡ Mission 2: What's the QUICKEST way to A? (fewest hops)", startHint: "🏁 Start at Router 1, 2, or 3 — any of the three green entry routers.", type:'shortest', goal:'A', allowedStarts: ENTRY_POINTS },
-  { text: "🔍 Mission 3: How could you get from Router 3 to Router 4?", startHint: "🏁 This mission always starts at Router 3.", type:'specific', goal:'4', allowedStarts: ['3'] },
-  { text: "🚧 Mission 4: Reach C — but don't go through Router 9!", startHint: "🏁 Start at Router 1, 2, or 3 — any of the three green entry routers.", type:'avoid', goal:'C', avoid:'9', allowedStarts: ENTRY_POINTS },
+  { text: "🎯 Mission 1: Find 3 DIFFERENT routes to B!", startHint: "🏁 You must start at Router 2.", type:'multi-route', goal:'B', target:3, allowedStarts: ['2'] },
+  { text: "⚡ Mission 2: What's the QUICKEST way to A? (fewest hops)", startHint: "🏁 You must start at Router 1.", type:'shortest', goal:'A', allowedStarts: ['1'] },
+  { text: "🔍 Mission 3: How could you get from Router 3 to Router 4?", startHint: "🏁 You must start at Router 3.", type:'specific', goal:'4', allowedStarts: ['3'] },
+  { text: "🚧 Mission 4: Reach C — but don't go through Router 9!", startHint: "🏁 You must start at Router 3.", type:'avoid', goal:'C', avoid:'9', allowedStarts: ['3'] },
 ];
 
 let studentName = "";
@@ -189,24 +189,34 @@ function drawGraph(){
     line.setAttribute('marker-end','url(#arrow)');
     linesSvg.appendChild(line);
   });
-  // Visual "entry" arrows feeding into the 3 starting routers, echoing the original worksheet's sender icon.
-  ENTRY_POINTS.forEach(key => {
-    const c = centerOf(key);
-    const line = document.createElementNS('http://www.w3.org/2000/svg','line');
-    line.setAttribute('x1', 0); line.setAttribute('y1', c.y);
-    line.setAttribute('x2', c.x-34); line.setAttribute('y2', c.y);
-    line.setAttribute('stroke', '#06D6A0'); line.setAttribute('stroke-width','4');
-    line.setAttribute('marker-end','url(#entryArrow)');
-    linesSvg.appendChild(line);
-  });
+  // Entry arrows are drawn dynamically per-mission by updateStartMarkers() —
+  // only the router(s) this specific mission requires get highlighted.
   Object.entries(NODES).forEach(([key,n]) => {
     const div = document.createElement('div');
-    div.className = 'node' + (n.type==='dest' ? ' dest' : '') + (ENTRY_POINTS.includes(key) ? ' entry' : '');
+    div.className = 'node' + (n.type==='dest' ? ' dest' : '');
     div.style.left = n.x+'px'; div.style.top = n.y+'px';
     div.textContent = key;
     div.dataset.key = key;
     div.addEventListener('click', () => handleNodeClick(key));
     board.appendChild(div);
+  });
+}
+
+function updateStartMarkers(){
+  linesSvg.querySelectorAll('.entry-arrow-line').forEach(l => l.remove());
+  document.querySelectorAll('.node.entry').forEach(n => n.classList.remove('entry'));
+  const mission = MISSIONS[missionIdx];
+  mission.allowedStarts.forEach(key => {
+    const c = centerOf(key);
+    const line = document.createElementNS('http://www.w3.org/2000/svg','line');
+    line.setAttribute('class','entry-arrow-line');
+    line.setAttribute('x1', 0); line.setAttribute('y1', c.y);
+    line.setAttribute('x2', c.x-34); line.setAttribute('y2', c.y);
+    line.setAttribute('stroke', '#06D6A0'); line.setAttribute('stroke-width','4');
+    line.setAttribute('marker-end','url(#entryArrow)');
+    linesSvg.appendChild(line);
+    const div = document.querySelector(`.node[data-key="${key}"]`);
+    if(div) div.classList.add('entry');
   });
 }
 
@@ -229,9 +239,7 @@ function handleNodeClick(key){
   if(currentPath.length === 0){
     if(!mission.allowedStarts.includes(key)){
       msg.className = 'msg oops';
-      msg.textContent = mission.type === 'specific'
-        ? `This mission must start at Router ${mission.allowedStarts[0]}!`
-        : "That's not a starting router — try 1, 2, or 3!";
+      msg.textContent = `This mission must start at Router ${mission.allowedStarts[0]}!`;
       flashWrong(key);
       return;
     }
@@ -352,11 +360,10 @@ function loadMission(){
   currentPath = [];
   foundRoutesForMission1 = [];
   msg.className = 'msg';
-  msg.textContent = mission.allowedStarts.length === 1
-    ? `Tap Router ${mission.allowedStarts[0]} to begin!`
-    : 'Tap router 1, 2, or 3 to begin your route!';
+  msg.textContent = `Tap Router ${mission.allowedStarts[0]} to begin!`;
   document.getElementById('missionProgress').textContent =
     mission.type === 'multi-route' ? `Routes found: 0 / ${mission.target}` : '';
+  updateStartMarkers();
   refreshNodeStyles();
 }
 

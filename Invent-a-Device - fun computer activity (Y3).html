@@ -43,7 +43,7 @@
   #buildBtn:disabled{ opacity:0.4; cursor:not-allowed; }
   .invention-card{
     background:white; border-radius:20px; padding:22px; margin:18px 0; text-align:center;
-    box-shadow:0 8px 24px rgba(0,0,0,0.12); display:none;
+    box-shadow:0 8px 24px rgba(0,0,0,0.12);
   }
   .invention-flow{ display:flex; align-items:center; justify-content:center; gap:16px; margin-bottom:14px; flex-wrap:wrap; }
   .flow-icon{ font-size:52px; background:#f7f7ff; border-radius:16px; padding:14px 18px; }
@@ -141,7 +141,7 @@
   </div>
   <p class="msg" id="msg"></p>
 
-  <div class="invention-card" id="inventionCard"></div>
+  <div class="invention-list" id="inventionList"></div>
 
   <div class="gallery">
     <h3>🖼️ Your Invention Gallery</h3>
@@ -225,8 +225,8 @@ function checkReady(){
 }
 renderGrids();
 
-function playDemo(outputLabel){
-  const stage = document.getElementById('demoStage');
+function playDemo(outputLabel, stageId){
+  const stage = document.getElementById(stageId);
   if(!stage) return;
   stage.innerHTML = '';
   stage.className = 'demo-stage';
@@ -241,11 +241,12 @@ function playDemo(outputLabel){
     stage.querySelector('.demo-alarm').classList.add('pulsing');
     playAlarmSound();
   } else if(outputLabel === 'Screen Message'){
-    stage.innerHTML = `<div class="demo-phone"><div class="demo-phone-text" id="typewriterText"></div></div>`;
-    typeWriterEffect("It's working! 🎉", document.getElementById('typewriterText'));
+    stage.innerHTML = `<div class="demo-phone"><div class="demo-phone-text"></div></div>`;
+    typeWriterEffect("It's working! 🎉", stage.querySelector('.demo-phone-text'));
   } else if(outputLabel === 'Door Opens'){
-    stage.innerHTML = `<div class="demo-doorframe"><div class="demo-door" id="demoDoor"></div></div>`;
-    setTimeout(()=>{ const d = document.getElementById('demoDoor'); if(d) d.classList.add('open'); }, 150);
+    stage.innerHTML = `<div class="demo-doorframe"><div class="demo-door"></div></div>`;
+    const doorEl = stage.querySelector('.demo-door');
+    setTimeout(()=>{ if(doorEl && doorEl.isConnected) doorEl.classList.add('open'); }, 150);
   } else if(outputLabel === 'Spinning Fan'){
     stage.innerHTML = `<div class="demo-fan">🌀</div>`;
     void stage.offsetWidth;
@@ -257,9 +258,19 @@ function playDemo(outputLabel){
     playMelody();
   }
 }
+let sharedAudioCtx = null;
+function getAudioCtx(){
+  if(!sharedAudioCtx){
+    sharedAudioCtx = new (window.AudioContext || window.webkitAudioContext)();
+  }
+  if(sharedAudioCtx.state === 'suspended'){
+    sharedAudioCtx.resume();
+  }
+  return sharedAudioCtx;
+}
 function playAlarmSound(){
   try{
-    const ctx = new (window.AudioContext || window.webkitAudioContext)();
+    const ctx = getAudioCtx();
     let time = ctx.currentTime;
     for(let i=0;i<4;i++){
       const osc = ctx.createOscillator();
@@ -275,7 +286,7 @@ function playAlarmSound(){
 }
 function playMelody(){
   try{
-    const ctx = new (window.AudioContext || window.webkitAudioContext)();
+    const ctx = getAudioCtx();
     const notes = [523.25, 587.33, 659.25, 783.99];
     let time = ctx.currentTime;
     notes.forEach(freq=>{
@@ -323,9 +334,13 @@ document.getElementById('buildBtn').addEventListener('click', ()=>{
   const nameInput = document.getElementById('inventionNameInput');
   const name = nameInput.value.trim() || `${studentName}'s Invention #${buildCount+1}`;
   const outputForDemo = chosenOutput.label;
+  const cardId = 'invCard-' + buildCount;
+  const testBtnId = 'testItBtn-' + buildCount;
+  const stageId = 'demoStage-' + buildCount;
 
-  const card = document.getElementById('inventionCard');
-  card.style.display = 'block';
+  const card = document.createElement('div');
+  card.className = 'invention-card';
+  card.id = cardId;
   card.innerHTML = `
     <div class="invention-flow">
       <div class="flow-icon">${chosenInput.icon}</div>
@@ -336,12 +351,16 @@ document.getElementById('buildBtn').addEventListener('click', ()=>{
     </div>
     <div class="invention-name">${name}</div>
     <div class="invention-desc">When the <strong>${chosenInput.label}</strong> ${chosenInput.verb}, it <strong>${chosenProcess.verb}</strong>, and then the <strong>${chosenOutput.label}</strong> ${chosenOutput.verb}!</div>
-    <button id="testItBtn" class="test-btn">▶️ Test My Invention!</button>
-    <div class="demo-stage" id="demoStage"><div class="demo-hint">Tap "Test My Invention!" to see it work!</div></div>
+    <button id="${testBtnId}" class="test-btn">▶️ Test My Invention!</button>
+    <div class="demo-stage" id="${stageId}"><div class="demo-hint">Tap "Test My Invention!" to see it work!</div></div>
   `;
+  // Newest invention appears at the top, but every earlier one stays fully visible and testable below it.
+  const list = document.getElementById('inventionList');
+  list.insertBefore(card, list.firstChild);
+
   spawnConfetti(20);
   showCelebrateBanner('🎉 Invention Built!', name);
-  document.getElementById('testItBtn').addEventListener('click', ()=> playDemo(outputForDemo));
+  document.getElementById(testBtnId).addEventListener('click', ()=> playDemo(outputForDemo, stageId));
 
   gallery.push({ name, inputIcon: chosenInput.icon, outputIcon: chosenOutput.icon });
   buildCount++;

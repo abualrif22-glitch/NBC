@@ -127,7 +127,7 @@
   <div class="picker-grid" id="inputGrid"></div>
 
   <div class="section-label">2️⃣ Choose a PROCESS</div>
-  <p class="process-intro">The process is what your invention does with the information before it reacts. Pick how it "thinks"!</p>
+  <p class="process-intro">The process is the instruction in the middle — what should happen to the output?</p>
   <div class="picker-grid" id="processGrid"></div>
 
   <div class="section-label">3️⃣ Choose an OUTPUT</div>
@@ -159,12 +159,12 @@ const INPUTS = [
   { icon: "🌡️", label: "Temperature Sensor", verb: "feels it get hot" },
 ];
 const PROCESSES = [
-  { icon: "⚖️", label: "Measures How Strong It Is", verb: "measures how strong the signal is", example: "e.g. checking how LOUD a sound is" },
-  { icon: "🔢", label: "Counts How Many Times", verb: "counts how many times it happens", example: "e.g. counting how many times a button is pressed" },
-  { icon: "⏱️", label: "Checks How Long It Lasts", verb: "checks how long it lasts", example: "e.g. timing how long a button is held down" },
-  { icon: "🎯", label: "Compares It to a Limit", verb: "compares it to a limit it remembers", example: "e.g. \"is this louder than normal?\"" },
-  { icon: "🔄", label: "Repeats the Action", verb: "repeats the action again and again", example: "e.g. flashing on, then off, then on again" },
-  { icon: "🧠", label: "Decides What to Do Next", verb: "decides what to do next", example: "e.g. \"if it's dark, turn the light on\"" },
+  { icon: "🔛", label: "Turn It On", verb: "turns it on", example: "e.g. a button turns the crossing light red" },
+  { icon: "🔴", label: "Turn It Off", verb: "turns it off", example: "e.g. a sensor turns the light off again" },
+  { icon: "📈", label: "Make It Stronger", verb: "makes it louder, brighter, or faster", example: "e.g. the music gets louder and louder" },
+  { icon: "📉", label: "Make It Weaker", verb: "makes it quieter, dimmer, or slower", example: "e.g. the light gets dimmer and dimmer" },
+  { icon: "1️⃣", label: "Do It Just Once", verb: "does it just one time", example: "e.g. one buzz, then it stops" },
+  { icon: "🔁", label: "Do It Again and Again", verb: "does it again and again, on repeat", example: "e.g. flash, flash, flash, non-stop!" },
 ];
 const OUTPUTS = [
   { icon: "💡", label: "Flashing Lights", verb: "flash in bright colours" },

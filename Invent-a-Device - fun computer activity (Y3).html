@@ -48,6 +48,30 @@
   .flow-arrow{ font-size:28px; color:var(--primary); }
   .invention-name{ font-size:20px; font-weight:bold; color:var(--primary); margin-bottom:6px; }
   .invention-desc{ font-size:15px; color:#555; }
+  .test-btn{ margin-top:16px; background:var(--secondary); color:white; border:none; padding:12px 26px; border-radius:12px; font-size:15px; font-weight:bold; cursor:pointer; }
+  .demo-stage{ min-height:150px; display:flex; align-items:center; justify-content:center; background:#f7f7ff; border-radius:16px; margin-top:16px; padding:20px; position:relative; overflow:hidden; }
+  .demo-hint{ color:#999; font-size:14px; font-style:italic; }
+  .demo-light{ width:70px; height:70px; border-radius:50%; background:#444; }
+  .demo-light.flashing{ animation: flashLight 0.4s ease-in-out 6; }
+  @keyframes flashLight{ 0%,100%{ background:#444; box-shadow:0 0 0 rgba(255,210,50,0);} 50%{ background:#FFD23F; box-shadow:0 0 40px 20px rgba(255,210,50,0.7);} }
+  .demo-alarm{ font-size:60px; }
+  .demo-alarm.pulsing{ animation: pulseAlarm 0.4s ease-in-out 4; }
+  @keyframes pulseAlarm{ 0%,100%{ transform:scale(1);} 50%{ transform:scale(1.3);} }
+  .sound-waves{ position:absolute; display:flex; gap:6px; bottom:24px; }
+  .sound-waves span{ width:6px; height:20px; background:var(--accent); border-radius:4px; animation: soundWave 0.6s ease-in-out infinite; }
+  .sound-waves span:nth-child(2){ animation-delay:0.15s; } .sound-waves span:nth-child(3){ animation-delay:0.3s; }
+  @keyframes soundWave{ 0%,100%{ height:14px;} 50%{ height:34px;} }
+  .demo-phone{ width:140px; height:170px; background:white; border:5px solid #333; border-radius:20px; display:flex; align-items:center; justify-content:center; padding:14px; box-shadow:0 6px 14px rgba(0,0,0,0.15); }
+  .demo-phone-text{ font-size:15px; font-weight:bold; color:var(--primary); text-align:center; }
+  .demo-doorframe{ width:100px; height:130px; border:6px solid #8b5a2b; position:relative; perspective:400px; background:#3a2a1a; }
+  .demo-door{ width:100%; height:100%; background:#c68642; transition:transform 1s ease; transform-origin:left center; }
+  .demo-door.open{ transform:rotateY(-72deg); }
+  .demo-fan{ font-size:70px; display:inline-block; }
+  .demo-fan.spinning{ animation: spinFan 0.6s linear infinite; }
+  @keyframes spinFan{ from{ transform:rotate(0deg);} to{ transform:rotate(360deg);} }
+  .demo-notes{ font-size:40px; }
+  .demo-notes.floating{ animation: floatNotes 1.2s ease-in-out infinite; }
+  @keyframes floatNotes{ 0%,100%{ transform:translateY(0);} 50%{ transform:translateY(-18px);} }
   .gallery{ margin-top:20px; }
   .gallery h3{ text-align:center; color:var(--dark); font-size:16px; margin-bottom:10px; }
   .gallery-grid{ display:grid; grid-template-columns:repeat(auto-fill, minmax(150px,1fr)); gap:10px; }
@@ -100,7 +124,10 @@
   <div class="section-label">1️⃣ Choose an INPUT</div>
   <div class="picker-grid" id="inputGrid"></div>
 
-  <div class="section-label">2️⃣ Choose an OUTPUT</div>
+  <div class="section-label">2️⃣ Choose a PROCESS</div>
+  <div class="picker-grid" id="processGrid"></div>
+
+  <div class="section-label">3️⃣ Choose an OUTPUT</div>
   <div class="picker-grid" id="outputGrid"></div>
 
   <div class="name-row">
@@ -128,6 +155,14 @@ const INPUTS = [
   { icon: "📷", label: "Camera", verb: "sees a picture" },
   { icon: "🌡️", label: "Temperature Sensor", verb: "feels it get hot" },
 ];
+const PROCESSES = [
+  { icon: "⚖️", label: "Measures How Strong It Is", verb: "measures how strong the signal is" },
+  { icon: "🔢", label: "Counts How Many Times", verb: "counts how many times it happens" },
+  { icon: "⏱️", label: "Checks How Long It Lasts", verb: "checks how long it lasts" },
+  { icon: "🎯", label: "Compares It to a Limit", verb: "compares it to a limit it remembers" },
+  { icon: "🔄", label: "Repeats the Action", verb: "repeats the action again and again" },
+  { icon: "🧠", label: "Decides What to Do Next", verb: "decides what to do next" },
+];
 const OUTPUTS = [
   { icon: "💡", label: "Flashing Lights", verb: "flash in bright colours" },
   { icon: "🔊", label: "Alarm Sound", verb: "makes a loud sound" },
@@ -137,7 +172,7 @@ const OUTPUTS = [
   { icon: "🎵", label: "Music", verb: "starts playing" },
 ];
 
-let chosenInput = null, chosenOutput = null, buildCount = 0, studentName = "";
+let chosenInput = null, chosenProcess = null, chosenOutput = null, buildCount = 0, studentName = "";
 const BUILD_TARGET = 5;
 const gallery = [];
 const STORAGE_KEY = "inventADeviceResults";
@@ -146,6 +181,10 @@ const wrap = document.getElementById('wrap');
 function renderGrids(){
   document.getElementById('inputGrid').innerHTML = INPUTS.map((it,i)=>`
     <div class="pick-option" data-type="input" data-idx="${i}">
+      <div class="opt-icon">${it.icon}</div><div class="opt-label">${it.label}</div>
+    </div>`).join('');
+  document.getElementById('processGrid').innerHTML = PROCESSES.map((it,i)=>`
+    <div class="pick-option" data-type="process" data-idx="${i}">
       <div class="opt-icon">${it.icon}</div><div class="opt-label">${it.label}</div>
     </div>`).join('');
   document.getElementById('outputGrid').innerHTML = OUTPUTS.map((it,i)=>`
@@ -161,6 +200,14 @@ function renderGrids(){
       checkReady();
     });
   });
+  document.querySelectorAll('.pick-option[data-type="process"]').forEach(el=>{
+    el.addEventListener('click', ()=>{
+      document.querySelectorAll('.pick-option[data-type="process"]').forEach(o=>o.classList.remove('active'));
+      el.classList.add('active');
+      chosenProcess = PROCESSES[parseInt(el.dataset.idx,10)];
+      checkReady();
+    });
+  });
   document.querySelectorAll('.pick-option[data-type="output"]').forEach(el=>{
     el.addEventListener('click', ()=>{
       document.querySelectorAll('.pick-option[data-type="output"]').forEach(o=>o.classList.remove('active'));
@@ -171,9 +218,86 @@ function renderGrids(){
   });
 }
 function checkReady(){
-  document.getElementById('buildBtn').disabled = !(chosenInput && chosenOutput);
+  document.getElementById('buildBtn').disabled = !(chosenInput && chosenProcess && chosenOutput);
 }
 renderGrids();
+
+function playDemo(outputLabel){
+  const stage = document.getElementById('demoStage');
+  if(!stage) return;
+  stage.innerHTML = '';
+  stage.className = 'demo-stage';
+
+  if(outputLabel === 'Flashing Lights'){
+    stage.innerHTML = `<div class="demo-light"></div>`;
+    void stage.offsetWidth;
+    stage.querySelector('.demo-light').classList.add('flashing');
+  } else if(outputLabel === 'Alarm Sound'){
+    stage.innerHTML = `<div class="demo-alarm">🔊</div><div class="sound-waves"><span></span><span></span><span></span></div>`;
+    void stage.offsetWidth;
+    stage.querySelector('.demo-alarm').classList.add('pulsing');
+    playAlarmSound();
+  } else if(outputLabel === 'Screen Message'){
+    stage.innerHTML = `<div class="demo-phone"><div class="demo-phone-text" id="typewriterText"></div></div>`;
+    typeWriterEffect("It's working! 🎉", document.getElementById('typewriterText'));
+  } else if(outputLabel === 'Door Opens'){
+    stage.innerHTML = `<div class="demo-doorframe"><div class="demo-door" id="demoDoor"></div></div>`;
+    setTimeout(()=>{ const d = document.getElementById('demoDoor'); if(d) d.classList.add('open'); }, 150);
+  } else if(outputLabel === 'Spinning Fan'){
+    stage.innerHTML = `<div class="demo-fan">🌀</div>`;
+    void stage.offsetWidth;
+    stage.querySelector('.demo-fan').classList.add('spinning');
+  } else if(outputLabel === 'Music'){
+    stage.innerHTML = `<div class="demo-notes">🎵 🎶 🎵</div>`;
+    void stage.offsetWidth;
+    stage.querySelector('.demo-notes').classList.add('floating');
+    playMelody();
+  }
+}
+function playAlarmSound(){
+  try{
+    const ctx = new (window.AudioContext || window.webkitAudioContext)();
+    let time = ctx.currentTime;
+    for(let i=0;i<4;i++){
+      const osc = ctx.createOscillator();
+      const gain = ctx.createGain();
+      osc.frequency.value = i%2===0 ? 880 : 660;
+      osc.type = 'square';
+      gain.gain.setValueAtTime(0.12, time);
+      osc.connect(gain); gain.connect(ctx.destination);
+      osc.start(time); osc.stop(time+0.2);
+      time += 0.22;
+    }
+  }catch(e){ console.error('Audio failed', e); }
+}
+function playMelody(){
+  try{
+    const ctx = new (window.AudioContext || window.webkitAudioContext)();
+    const notes = [523.25, 587.33, 659.25, 783.99];
+    let time = ctx.currentTime;
+    notes.forEach(freq=>{
+      const osc = ctx.createOscillator();
+      const gain = ctx.createGain();
+      osc.frequency.value = freq;
+      osc.type = 'sine';
+      gain.gain.setValueAtTime(0.18, time);
+      gain.gain.exponentialRampToValueAtTime(0.01, time+0.3);
+      osc.connect(gain); gain.connect(ctx.destination);
+      osc.start(time); osc.stop(time+0.3);
+      time += 0.25;
+    });
+  }catch(e){ console.error('Audio failed', e); }
+}
+function typeWriterEffect(text, el){
+  if(!el) return;
+  el.textContent = '';
+  let i = 0;
+  const interval = setInterval(()=>{
+    el.textContent += text[i];
+    i++;
+    if(i>=text.length) clearInterval(interval);
+  }, 60);
+}
 
 function spawnConfetti(n){
   const colors=['#3A0CA3','#4CC9F0','#F72585','#06D6A0','#FFD23F','#FFFFFF'];
@@ -192,9 +316,10 @@ function showCelebrateBanner(text, sub){
 }
 
 document.getElementById('buildBtn').addEventListener('click', ()=>{
-  if(!chosenInput || !chosenOutput) return;
+  if(!chosenInput || !chosenProcess || !chosenOutput) return;
   const nameInput = document.getElementById('inventionNameInput');
   const name = nameInput.value.trim() || `${studentName}'s Invention #${buildCount+1}`;
+  const outputForDemo = chosenOutput.label;
 
   const card = document.getElementById('inventionCard');
   card.style.display = 'block';
@@ -202,15 +327,18 @@ document.getElementById('buildBtn').addEventListener('click', ()=>{
     <div class="invention-flow">
       <div class="flow-icon">${chosenInput.icon}</div>
       <div class="flow-arrow">➡️</div>
-      <div class="flow-icon">⚙️</div>
+      <div class="flow-icon">${chosenProcess.icon}</div>
       <div class="flow-arrow">➡️</div>
       <div class="flow-icon">${chosenOutput.icon}</div>
     </div>
     <div class="invention-name">${name}</div>
-    <div class="invention-desc">When the <strong>${chosenInput.label}</strong> ${chosenInput.verb}, the <strong>${chosenOutput.label}</strong> ${chosenOutput.verb}!</div>
+    <div class="invention-desc">When the <strong>${chosenInput.label}</strong> ${chosenInput.verb}, it <strong>${chosenProcess.verb}</strong>, and then the <strong>${chosenOutput.label}</strong> ${chosenOutput.verb}!</div>
+    <button id="testItBtn" class="test-btn">▶️ Test My Invention!</button>
+    <div class="demo-stage" id="demoStage"><div class="demo-hint">Tap "Test My Invention!" to see it work!</div></div>
   `;
   spawnConfetti(20);
   showCelebrateBanner('🎉 Invention Built!', name);
+  document.getElementById('testItBtn').addEventListener('click', ()=> playDemo(outputForDemo));
 
   gallery.push({ name, inputIcon: chosenInput.icon, outputIcon: chosenOutput.icon });
   buildCount++;
@@ -219,7 +347,7 @@ document.getElementById('buildBtn').addEventListener('click', ()=>{
 
   // reset pickers for the next invention
   document.querySelectorAll('.pick-option').forEach(o=>o.classList.remove('active'));
-  chosenInput = null; chosenOutput = null;
+  chosenInput = null; chosenProcess = null; chosenOutput = null;
   nameInput.value = '';
   checkReady();
 

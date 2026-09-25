@@ -34,6 +34,8 @@
   .pick-option.active{ border-color:var(--primary); background:#f0ebff; transform:scale(1.05); }
   .pick-option .opt-icon{ font-size:38px; }
   .pick-option .opt-label{ font-size:12.5px; font-weight:bold; color:#444; margin-top:6px; }
+  .pick-option .opt-example{ font-size:10.5px; color:#888; margin-top:4px; font-style:italic; line-height:1.3; }
+  .process-intro{ font-size:13.5px; color:#666; margin:-4px 0 10px; }
   .name-row{ display:flex; gap:10px; justify-content:center; margin:16px 0; }
   .name-row input{ flex:1; max-width:400px; padding:11px 16px; border-radius:12px; border:2px solid #ddd; font-size:15px; }
   .build-btn-row{ display:flex; justify-content:center; margin-bottom:10px; }
@@ -125,6 +127,7 @@
   <div class="picker-grid" id="inputGrid"></div>
 
   <div class="section-label">2️⃣ Choose a PROCESS</div>
+  <p class="process-intro">The process is what your invention does with the information before it reacts. Pick how it "thinks"!</p>
   <div class="picker-grid" id="processGrid"></div>
 
   <div class="section-label">3️⃣ Choose an OUTPUT</div>
@@ -156,12 +159,12 @@ const INPUTS = [
   { icon: "🌡️", label: "Temperature Sensor", verb: "feels it get hot" },
 ];
 const PROCESSES = [
-  { icon: "⚖️", label: "Measures How Strong It Is", verb: "measures how strong the signal is" },
-  { icon: "🔢", label: "Counts How Many Times", verb: "counts how many times it happens" },
-  { icon: "⏱️", label: "Checks How Long It Lasts", verb: "checks how long it lasts" },
-  { icon: "🎯", label: "Compares It to a Limit", verb: "compares it to a limit it remembers" },
-  { icon: "🔄", label: "Repeats the Action", verb: "repeats the action again and again" },
-  { icon: "🧠", label: "Decides What to Do Next", verb: "decides what to do next" },
+  { icon: "⚖️", label: "Measures How Strong It Is", verb: "measures how strong the signal is", example: "e.g. checking how LOUD a sound is" },
+  { icon: "🔢", label: "Counts How Many Times", verb: "counts how many times it happens", example: "e.g. counting how many times a button is pressed" },
+  { icon: "⏱️", label: "Checks How Long It Lasts", verb: "checks how long it lasts", example: "e.g. timing how long a button is held down" },
+  { icon: "🎯", label: "Compares It to a Limit", verb: "compares it to a limit it remembers", example: "e.g. \"is this louder than normal?\"" },
+  { icon: "🔄", label: "Repeats the Action", verb: "repeats the action again and again", example: "e.g. flashing on, then off, then on again" },
+  { icon: "🧠", label: "Decides What to Do Next", verb: "decides what to do next", example: "e.g. \"if it's dark, turn the light on\"" },
 ];
 const OUTPUTS = [
   { icon: "💡", label: "Flashing Lights", verb: "flash in bright colours" },
@@ -185,7 +188,7 @@ function renderGrids(){
     </div>`).join('');
   document.getElementById('processGrid').innerHTML = PROCESSES.map((it,i)=>`
     <div class="pick-option" data-type="process" data-idx="${i}">
-      <div class="opt-icon">${it.icon}</div><div class="opt-label">${it.label}</div>
+      <div class="opt-icon">${it.icon}</div><div class="opt-label">${it.label}</div><div class="opt-example">${it.example}</div>
     </div>`).join('');
   document.getElementById('outputGrid').innerHTML = OUTPUTS.map((it,i)=>`
     <div class="pick-option" data-type="output" data-idx="${i}">

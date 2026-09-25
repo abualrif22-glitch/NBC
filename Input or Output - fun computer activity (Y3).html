@@ -103,25 +103,35 @@
 
 <script>
 const OBJECTS = [
-  {emoji:"\u2328\uFE0F", label:"Keyboard", cat:"input"},
-  {emoji:"\uD83D\uDDB1\uFE0F", label:"Mouse", cat:"input"},
-  {emoji:"\uD83C\uDF99\uFE0F", label:"Microphone", cat:"input"},
-  {emoji:"\uD83D\uDCF7", label:"Camera", cat:"input"},
-  {emoji:"\uD83D\uDD8A\uFE0F", label:"Scanner", cat:"input"},
-  {emoji:"\uD83D\uDDA5\uFE0F", label:"Computer screen", cat:"output"},
-  {emoji:"\uD83D\uDD0A", label:"Speakers", cat:"output"},
-  {emoji:"\uD83D\uDDA8\uFE0F", label:"Printer (print only)", cat:"output"},
-  {emoji:"\uD83D\uDCA1", label:"Light on a device", cat:"output"},
-  {emoji:"\uD83D\uDCFD\uFE0F", label:"Projector", cat:"output"},
-  {emoji:"\uD83D\uDCF1", label:"Touchscreen", cat:"both"},
-  {emoji:"\uD83C\uDFAE", label:"Games controller with rumble", cat:"both"},
-  {emoji:"\u260E\uFE0F", label:"Headset with microphone", cat:"both"},
+  // INPUT — sends information INTO the computer
+  {emoji:"\u2328\uFE0F", label:"Keyboard", cat:"input", reason:"it sends the letters you press INTO the computer"},
+  {emoji:"\uD83D\uDDB1\uFE0F", label:"Mouse", cat:"input", reason:"it sends your clicks and movements INTO the computer"},
+  {emoji:"\uD83C\uDF99\uFE0F", label:"Microphone", cat:"input", reason:"it sends your voice INTO the computer"},
+  {emoji:"\uD83D\uDCF7", label:"Camera", cat:"input", reason:"it sends a photo INTO the computer"},
+  {emoji:"\uD83D\uDD79\uFE0F", label:"Games Controller (buttons)", cat:"input", reason:"it sends your button presses INTO the console"},
+  {emoji:"\uD83D\uDCF9", label:"Webcam", cat:"input", reason:"it sends live video INTO the computer"},
+  {emoji:"\u270B", label:"Motion Sensor", cat:"input", reason:"it sends movement information INTO the device"},
+  // OUTPUT — sends information OUT of the computer
+  {emoji:"\uD83D\uDDA5\uFE0F", label:"Computer Screen", cat:"output", reason:"it shows pictures and words OUT to you"},
+  {emoji:"\uD83D\uDD0A", label:"Speakers", cat:"output", reason:"it sends sound OUT for you to hear"},
+  {emoji:"\uD83D\uDDA8\uFE0F", label:"Printer", cat:"output", reason:"it sends words on paper OUT of the computer"},
+  {emoji:"\uD83D\uDCA1", label:"Light on a Device", cat:"output", reason:"it shows a signal OUT to tell you something"},
+  {emoji:"\uD83D\uDCFD\uFE0F", label:"Projector", cat:"output", reason:"it sends a big picture OUT onto a screen"},
+  {emoji:"\uD83D\uDCF3", label:"Vibration Buzzer", cat:"output", reason:"it sends a buzz OUT to get your attention"},
+  {emoji:"\uD83D\uDEA6", label:"Traffic Light", cat:"output", reason:"it shows colours OUT to tell drivers what to do"},
+  {emoji:"\u23F0", label:"Digital Clock Display", cat:"output", reason:"it shows the time OUT to you"},
+  // BOTH — sends information IN and OUT
+  {emoji:"\uD83D\uDCF1", label:"Touchscreen", cat:"both", reason:"it takes your taps IN, and shows pictures OUT — both!"},
+  {emoji:"\uD83C\uDFAE", label:"Games Controller with Rumble", cat:"both", reason:"it takes button presses IN, and sends vibration OUT — both!"},
+  {emoji:"\uD83C\uDFA7", label:"Headset with Microphone", cat:"both", reason:"it takes your voice IN through the mic, and sends sound OUT through the headphones — both!"},
+  {emoji:"\uD83D\uDDE3\uFE0F", label:"Smart Speaker", cat:"both", reason:"it listens to your voice IN, and talks back OUT — both!"},
+  {emoji:"\uD83D\uDCE0", label:"All-in-One Printer/Scanner", cat:"both", reason:"it scans a document IN, and prints pages OUT — both!"},
 ];
 const CAT_LABEL = {input:"\u2328\uFE0F Input", output:"\uD83D\uDDA5\uFE0F Output", both:"\uD83D\uDD01 Both"};
 
 function shuffle(arr){ const a=[...arr]; for(let i=a.length-1;i>0;i--){ const j=Math.floor(Math.random()*(i+1)); [a[i],a[j]]=[a[j],a[i]]; } return a; }
 
-let sequence = shuffle(OBJECTS).slice(0,10);
+let sequence = shuffle(OBJECTS).slice(0,20);
 let idx=0, score=0, answered=false, studentName="";
 const STORAGE_KEY = "inputOrOutputResults";
 document.getElementById('roundTotal').textContent = sequence.length;
@@ -178,18 +188,18 @@ function handleAnswer(chosenCat){
     score+=10;
     document.getElementById('score').textContent = score;
     msg.className='msg happy';
-    msg.textContent = `\u2705 Yes! ${obj.label} is ${CAT_LABEL[obj.cat]}.`;
+    msg.textContent = `\u2705 Yes! ${obj.label} is ${CAT_LABEL[obj.cat]} — ${obj.reason}.`;
     spawnConfetti(22);
     showCelebrateBanner(PRAISE[Math.floor(Math.random()*PRAISE.length)], "+10 points");
   } else {
     card.classList.add('shake');
     msg.className='msg oops';
-    msg.textContent = `\u274C Not quite \u2014 ${obj.label} is really ${CAT_LABEL[obj.cat]}. Think about whether it puts information in, sends it out, or does both.`;
+    msg.textContent = `\u274C Not quite! You picked ${CAT_LABEL[chosenCat]}, but ${obj.label} is really ${CAT_LABEL[obj.cat]} — ${obj.reason}.`;
   }
   setTimeout(()=>{
     idx++;
     if(idx<sequence.length){ renderRound(); } else { showFinal(); }
-  }, 1800);
+  }, correct ? 1900 : 3400);
 }
 
 function showFinal(){

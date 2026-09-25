@@ -388,7 +388,7 @@
         <button class="ctrl secondary" id="toggleSavedBtn">👀 View Saved Results</button>
       </div>
       <div class="saved-note" id="savedNote"></div>
-      <div style="margin-top:14px;"><a href="index.html" style="display:inline-block; background:#1A1A2E; color:white; text-decoration:none; padding:12px 26px; border-radius:12px; font-weight:bold; font-size:14.5px;">🏠 Back to Hub</a></div>
+      <div style="margin-top:14px;"><a href="index.html" style="display:block; background:#1A1A2E; color:white; text-decoration:none; padding:20px 24px; border-radius:16px; font-weight:bold; font-size:22px; text-align:center; box-shadow:0 6px 18px rgba(0,0,0,0.3);">🏠 Back to Hub</a></div>
       <div id="savedTableWrap">
         <table>
           <thead><tr><th>Name</th><th>Score</th><th>Rounds</th><th>Machines Published</th><th>Date</th></tr></thead>
@@ -444,6 +444,10 @@ const levels = [
   {ex:[[10,5],[8,4]], mystery:6, correct:"half", choices:["half","sub2","add3"]},
   {ex:[[5,3],[9,7]], mystery:12, correct:"sub2", choices:["sub2","half","add2"]},
   {ex:[[3,6],[6,9]], mystery:9, correct:"add3", choices:["add3","double","add1"]},
+  {ex:[[4,5],[7,8]], mystery:10, correct:"add1", choices:["add1","add2","half"]},
+  {ex:[[6,3],[10,5]], mystery:14, correct:"half", choices:["half","sub2","add2"]},
+  {ex:[[7,9],[2,4]], mystery:5, correct:"add2", choices:["add2","add1","double"]},
+  {ex:[[8,16],[3,6]], mystery:7, correct:"double", choices:["double","add3","half"]},
 ];
 
 const PRAISE = ["Brilliant! \uD83C\uDF89","Machine cracked! \uD83E\uDD16","Genius detective! \u2B50","Spot on! \uD83C\uDFC6","You figured it out! \uD83C\uDF1F"];

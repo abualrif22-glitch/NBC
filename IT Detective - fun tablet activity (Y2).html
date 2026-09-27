@@ -542,9 +542,13 @@ function readClassesFromLocalStorage(){
 function initNameGate(){
   const GAME_YEAR = '2';
   const SKIP_NAME_STEP = (GAME_YEAR === '1' || GAME_YEAR === '2');
-  const classes = readClassesFromLocalStorage()
-    .filter(c => (c.students||[]).length > 0)
-    .filter(c => (c.name||'').trim().charAt(0) === GAME_YEAR);
+  // Class/name picker temporarily disabled for all years — flip to true to restore.
+  const CLASS_PICKER_ENABLED = false;
+  const classes = CLASS_PICKER_ENABLED
+    ? readClassesFromLocalStorage()
+        .filter(c => (c.students||[]).length > 0)
+        .filter(c => (c.name||'').trim().charAt(0) === GAME_YEAR)
+    : [];
   const subtext = document.getElementById('gateSubtext');
   const classArea = document.getElementById('classButtonsArea');
   const nameArea = document.getElementById('nameButtonsArea');

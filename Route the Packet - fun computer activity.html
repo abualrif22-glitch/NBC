@@ -782,7 +782,10 @@ function readClassesFromLocalStorage(){
 }
 
 function initNameGate(){
-  const classes = readClassesFromLocalStorage().filter(c => (c.students||[]).length > 0);
+  const GAME_YEAR = '4';
+  const classes = readClassesFromLocalStorage()
+    .filter(c => (c.students||[]).length > 0)
+    .filter(c => (c.name||'').trim().charAt(0) === GAME_YEAR);
   const subtext = document.getElementById('gateSubtext');
   const classArea = document.getElementById('classButtonsArea');
   const nameArea = document.getElementById('nameButtonsArea');

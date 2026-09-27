@@ -508,6 +508,7 @@
       <button class="cs-add" id="addClassBtn">➕ New Class</button>
       <button class="cs-rename" id="renameClassBtn">✏️ Rename</button>
       <button class="cs-delete" id="deleteClassBtn">🗑️ Delete</button>
+      <button class="cs-add" id="importDojoBtn" title="Import all classes and students from ClassDojo">📥 Import ClassDojo Classes</button>
     </div>
 
   <!-- HOME -->
@@ -826,6 +827,34 @@ const PICK_POOL_PREFIX = "classroomDashboardPickPool_"; // + classId
 
 function uid(){ return 'c_' + Date.now().toString(36) + '_' + Math.random().toString(36).slice(2,8); }
 
+// Real class rosters imported from ClassDojo (teach.classdojo.com), Necat British School.
+// Used to (a) auto-seed the dashboard the very first time it's opened, and
+// (b) let the teacher re-import at any time via the "Import ClassDojo Classes" button.
+const DEFAULT_CLASSDOJO_CLASSES = [
+  { name: "1B - Miss Gözdem", students: ["Armin","Ata","Ayda","Bora","Duru","Karan","Mehmet","Nare","Nilay","Nur","Toprak","Uraz","Yasin","Yusuf","Ziynet"] },
+  { name: "1B - Miss Hannah's Class", students: ["Arel","Aren","Arya","Asel","Asya","Ege","Elisa","Gökay","Irmak","Kayra","Lena","Lisa","Loren","Mila","Milan","Nikol","Nil","Pembe"] },
+  { name: "1C - Mrs. Havva", students: ["Ahmet","Asmin","Çağıl","Çınar","Eftalya","Fikret","Hülya","İsmail","Kuzey","Leon","Luna","Nehir","Pera","Poyraz","Uras","Yaz"] },
+  { name: "1C - Ms. Mine", students: ["Ada","Derin","Duru","Ela","Joel","Lila","Lilli","Marsel","Mira","Necla","Ödül","Özgü","Sarp","Sır","Sophia","Taha","Timur","Yamaç"] },
+  { name: "1L - Miss Hani", students: ["Amirah","Aral","Aras","Ares","Ateş","Aylis","Doǧa","Doǧu","Elvin","Havva","Karel","Karen","Kartal","Marsel","Masal","Talat","Ufuk"] },
+  { name: "1N - Miss Tanyel", students: ["Alaşya","Almila","Atlas","Aypars","Bartu","Dalga","Gülay","Hasan","Hatice","Işın","Mehmet","Nora","Osman","Roma","Togan","Tuan","Uraz","Yasemin"] },
+  { name: "1N - Miss Tezcan", students: ["Ada","Adem","Ali","Alya","Azra","Can","Daren","Demir","Deniz","Florence","Karan","Kayra","Keziban","Leo","Masal","Metehan","Nil","Nira","Salih","Yağmur"] },
+  { name: "2B - Mrs. Suna", students: ["Ahmet","Araf","Arel","Cemal","Çınar","Derviş","Edis","Eran","Erde","Erol","Ezra","Kai","Karen","Liya","Mavera","Nil","Pars","Polen","Raha","Sofi"] },
+  { name: "2B - Miss Dilber's Class", students: ["Alp","Aymina","Can","Deniz","Doruk","Efe","Emilia","Emrehan","Esil","Eyla","Kaan","Kumsal","Mert","Miran","Osman","Poyraz","Sezgin","Talu","Valerie","Vera","Yaz"] },
+  { name: "2L - Miss İpek", students: ["Alis","Almir","Alpin","Ata","Atlas","Cemil","Derin","Fethi","Hüseyin B","Hüseyin Ö","Ilya","İz","Kaan","Lila","Marin","Nil","Nora","Rüzgar","Suzan","Teo"] },
+  { name: "2N - Miss Pervin", students: ["Ada","Aysa","Doğa","Emir","Hasan","Hayal","Hazel","Kenan","Makbel","Melisa","Mert","Özgün","Özlem","Poyraz","Ryan","Su","Taylan","Yaz","Zehra"] },
+  { name: "2N - Miss Deger", students: ["Ada","Almina","Alp","Arkın","Asya","Atlas","Burak","Can","Eda","Eva","Hayal","Luna","Nilgün","Safiye","Süheyla","Tan","Toprak","Vienna","Yamaç","Zehra","Zeynep"] },
+  { name: "3B - Mrs. Seniz", students: ["Alaz","Aycan","Ayza","Barın","Bryan","Damla","Daren","Dora","Engin Ahmet","Erin","Eylül","Kaya","Meyra","Nehir","Sarp","Serhan","Toprak","Ulaş","Yaz"] },
+  { name: "3C - Miss Alix", students: ["Ahmet M","Ahmet U","Aren","Ayra","Ayşe","Baran","Çağan","Defne","Denız","Deren","Ediz Topc","Ediz Topç","Emir B","Emir E","İdil","Kayra","Kuzey","Liva","Masal","Mila","Mirabelle Katanji","Mirabelle Katanjı","Mustafa","Naya","Poyraz","Sadem","Şeril","Sibel"] },
+  { name: "4C - Miss Aycan", students: ["Ahmet","Arya","Ay","Beren","Bilgin","Dalga","Derin","Dünya","Erim","Ervin","Hayat","Karmin","Mars","Nil","Sahil","Tobel","Toprak"] }
+];
+function buildDojoClasses(){
+  return DEFAULT_CLASSDOJO_CLASSES.map(c => ({
+    id: uid(),
+    name: c.name,
+    students: c.students.map(n => ({ name: n, stars: 0, reminders: 0 }))
+  }));
+}
+
 function readClasses(){ try{ return JSON.parse(localStorage.getItem(STORAGE_CLASSES) || "null"); }catch(e){ return null; } }
 function writeClasses(classes){ try{ localStorage.setItem(STORAGE_CLASSES, JSON.stringify(classes)); }catch(e){} }
 function getActiveClassId(){ try{ return localStorage.getItem(STORAGE_ACTIVE_CLASS); }catch(e){ return null; } }
@@ -841,11 +870,12 @@ function ensureClassesInitialized(){
   if(!classes || classes.length === 0){
     let oldRoster = [];
     try{ oldRoster = JSON.parse(localStorage.getItem(STORAGE_ROSTER) || "[]"); }catch(e){}
-    classes = [{
-      id: uid(),
-      name: oldRoster.length ? "My Class" : "Class 1",
-      students: normalizeStudents(oldRoster)
-    }];
+    if(oldRoster.length){
+      classes = [{ id: uid(), name: "My Class", students: normalizeStudents(oldRoster) }];
+    } else {
+      // Brand-new dashboard, nothing saved yet: seed with the real ClassDojo classes.
+      classes = buildDojoClasses();
+    }
     writeClasses(classes);
   }
   let activeId = getActiveClassId();
@@ -910,6 +940,25 @@ document.getElementById('addClassBtn').addEventListener('click', ()=>{
   classes.push(newClass);
   writeClasses(classes);
   switchToClass(newClass.id);
+});
+document.getElementById('importDojoBtn').addEventListener('click', ()=>{
+  const classes = readClasses() || [];
+  const existingNames = new Set(classes.map(c => c.name.trim().toLowerCase()));
+  const toAdd = DEFAULT_CLASSDOJO_CLASSES.filter(c => !existingNames.has(c.name.trim().toLowerCase()));
+  if(toAdd.length === 0){
+    alert("All ClassDojo classes are already in your dashboard — nothing new to import.");
+    return;
+  }
+  if(!confirm(`Import ${toAdd.length} class${toAdd.length===1?'':'es'} from ClassDojo (${toAdd.map(c=>c.name).join(', ')})? Classes already in your dashboard won't be touched.`)) return;
+  const newClasses = toAdd.map(c => ({
+    id: uid(),
+    name: c.name,
+    students: c.students.map(n => ({ name: n, stars: 0, reminders: 0 }))
+  }));
+  const updated = classes.concat(newClasses);
+  writeClasses(updated);
+  switchToClass(newClasses[0].id);
+  alert(`Imported ${newClasses.length} class${newClasses.length===1?'':'es'} from ClassDojo!`);
 });
 document.getElementById('renameClassBtn').addEventListener('click', ()=>{
   const classes = readClasses();

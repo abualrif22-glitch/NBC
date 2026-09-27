@@ -333,6 +333,7 @@ function readClassesFromLocalStorage(){
 
 function initNameGate(){
   const GAME_YEAR = '2';
+  const SKIP_NAME_STEP = (GAME_YEAR === '1' || GAME_YEAR === '2');
   const classes = readClassesFromLocalStorage()
     .filter(c => (c.students||[]).length > 0)
     .filter(c => (c.name||'').trim().charAt(0) === GAME_YEAR);
@@ -370,7 +371,7 @@ function initNameGate(){
   }
 
   if(classes.length === 1){
-    showNamesFor(classes[0], false);
+    if(SKIP_NAME_STEP){ startGameWithName('Player'); } else { showNamesFor(classes[0], false); }
     return;
   }
 
@@ -381,7 +382,7 @@ function initNameGate(){
   classArea.querySelectorAll('.class-btn').forEach(btn => {
     btn.addEventListener('click', () => {
       const cls = classes.find(c => c.id === btn.dataset.id);
-      showNamesFor(cls, true);
+      if(SKIP_NAME_STEP){ startGameWithName('Player'); } else { showNamesFor(cls, true); }
     });
   });
 }

@@ -78,6 +78,14 @@
   .celebrate-banner.show{ animation: bannerPop .6s cubic-bezier(.34,1.56,.64,1) forwards; }
   @keyframes bannerPop{ 0%{opacity:0; transform:translate(-50%,-50%) scale(0.4) rotate(-6deg);} 60%{opacity:1; transform:translate(-50%,-50%) scale(1.08) rotate(2deg);} 100%{opacity:1; transform:translate(-50%,-50%) scale(1) rotate(0);} }
   .celebrate-banner .big{ font-size:22px; font-weight:bold; color:var(--primary); }
+
+  .class-picker{ display:flex; flex-wrap:wrap; gap:10px; justify-content:center; max-height:320px; overflow-y:auto; margin-bottom:6px; }
+  .class-btn{ padding:13px 24px; border-radius:12px; border:none; background:var(--primary); color:white; font-weight:bold; font-size:16px; cursor:pointer; }
+  .class-btn:hover{ opacity:0.88; }
+  .name-picker{ display:flex; flex-wrap:wrap; gap:10px; justify-content:center; max-height:320px; overflow-y:auto; margin-bottom:6px; }
+  .name-btn{ padding:13px 22px; border-radius:12px; border:2px solid var(--secondary); background:white; color:var(--dark); font-weight:bold; font-size:16px; cursor:pointer; }
+  .name-btn:hover{ background:#eef8fd; }
+  .back-to-classes{ background:none; border:none; color:#888; text-decoration:underline; cursor:pointer; font-size:13px; margin-top:10px; display:inline-block; }
 </style>
 </head>
 <body>
@@ -86,7 +94,8 @@
   <div class="gate-card">
     <h2>🔎 Technology or Not!</h2>
     <p id="gateSubtext">Loading...</p>
-    <div id="nameButtonsArea"></div>
+    <div id="classButtonsArea"></div>
+    <div id="nameButtonsArea" style="display:none;"></div>
   </div>
 </div>
 
@@ -298,31 +307,55 @@ function readClassesFromLocalStorage(){
 }
 
 function initNameGate(){
-  const classes = readClassesFromLocalStorage();
-  const area = document.getElementById('nameButtonsArea');
+  const classes = readClassesFromLocalStorage().filter(c => (c.students||[]).length > 0);
   const subtext = document.getElementById('gateSubtext');
-  const hasAnyStudents = classes.some(c => (c.students||[]).length > 0);
+  const classArea = document.getElementById('classButtonsArea');
+  const nameArea = document.getElementById('nameButtonsArea');
 
-  if(hasAnyStudents){
+  if(classes.length === 0){
+    subtext.textContent = "Just tap below to play!";
+    classArea.innerHTML = '<button id="tapStartBtn">Tap to Start! ▶</button>';
+    document.getElementById('tapStartBtn').addEventListener('click', () => startGameWithName('Player'));
+    return;
+  }
+
+  function showNamesFor(cls, showBack){
+    classArea.style.display = 'none';
+    nameArea.style.display = 'block';
     subtext.textContent = "Tap your name to start!";
     let html = '<div class="name-picker">';
-    classes.forEach(c => {
-      if(!(c.students||[]).length) return;
-      if(classes.length > 1) html += `<div class="class-heading">${c.name}</div>`;
-      c.students.forEach(s => {
-        html += `<button class="name-btn" data-name="${s.name}">${s.name}</button>`;
-      });
+    cls.students.forEach(s => {
+      html += `<button class="name-btn" data-name="${s.name}">${s.name}</button>`;
     });
     html += '</div>';
-    area.innerHTML = html;
-    area.querySelectorAll('.name-btn').forEach(btn => {
+    if(showBack) html += '<button class="back-to-classes" id="backToClassesBtn">◀ Back to classes</button>';
+    nameArea.innerHTML = html;
+    nameArea.querySelectorAll('.name-btn').forEach(btn => {
       btn.addEventListener('click', () => startGameWithName(btn.dataset.name));
     });
-  } else {
-    subtext.textContent = "Just tap below to play!";
-    area.innerHTML = `<button id="tapStartBtn">Tap to Start! ▶</button>`;
-    document.getElementById('tapStartBtn').addEventListener('click', () => startGameWithName('Player'));
+    const backBtn = document.getElementById('backToClassesBtn');
+    if(backBtn) backBtn.addEventListener('click', () => {
+      nameArea.style.display = 'none';
+      classArea.style.display = 'block';
+      subtext.textContent = "Tap your class!";
+    });
   }
+
+  if(classes.length === 1){
+    showNamesFor(classes[0], false);
+    return;
+  }
+
+  subtext.textContent = "Tap your class!";
+  classArea.innerHTML = '<div class="class-picker">' +
+    classes.map(c => `<button class="class-btn" data-id="${c.id}">${c.name}</button>`).join('') +
+    '</div>';
+  classArea.querySelectorAll('.class-btn').forEach(btn => {
+    btn.addEventListener('click', () => {
+      const cls = classes.find(c => c.id === btn.dataset.id);
+      showNamesFor(cls, true);
+    });
+  });
 }
 
 function startGameWithName(name){

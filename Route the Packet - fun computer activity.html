@@ -278,6 +278,14 @@
     font-size:14px;
     color:#555;
   }
+
+  .class-picker{ display:flex; flex-wrap:wrap; gap:10px; justify-content:center; max-height:320px; overflow-y:auto; margin-bottom:6px; }
+  .class-btn{ padding:13px 24px; border-radius:12px; border:none; background:var(--primary); color:white; font-weight:bold; font-size:16px; cursor:pointer; }
+  .class-btn:hover{ opacity:0.88; }
+  .name-picker{ display:flex; flex-wrap:wrap; gap:10px; justify-content:center; max-height:320px; overflow-y:auto; margin-bottom:6px; }
+  .name-btn{ padding:13px 22px; border-radius:12px; border:2px solid var(--secondary); background:white; color:var(--dark); font-weight:bold; font-size:16px; cursor:pointer; }
+  .name-btn:hover{ background:#eef8fd; }
+  .back-to-classes{ background:none; border:none; color:#888; text-decoration:underline; cursor:pointer; font-size:13px; margin-top:10px; display:inline-block; }
 </style>
 </head>
 <body>
@@ -285,10 +293,9 @@
 <div class="gate-overlay" id="gateOverlay">
   <div class="gate-card">
     <h2>📨 Route the Packet!</h2>
-    <p>Type your name to start the challenge.</p>
-    <input type="text" id="nameInput" placeholder="Your name" maxlength="24" autocomplete="off">
-    <div class="gate-error" id="nameError"></div>
-    <button id="startBtn">Start ▶</button>
+    <p id="gateSubtext">Loading...</p>
+    <div id="classButtonsArea"></div>
+    <div id="nameButtonsArea" style="display:none;"></div>
   </div>
 </div>
 
@@ -767,28 +774,74 @@ document.getElementById('toggleSavedBtn').addEventListener('click', ()=>{
   if(!showing) renderSavedTable();
 });
 
-/* ================= NAME GATE ================= */
+/* ================= NAME GATE (class + name picker) ================= */
 const gateOverlay = document.getElementById('gateOverlay');
-const nameInput = document.getElementById('nameInput');
-const nameError = document.getElementById('nameError');
 
-function startGame(){
-  const val = nameInput.value.trim();
-  if(!val){
-    nameError.textContent = "Please type your name to start.";
-    nameInput.focus();
+function readClassesFromLocalStorage(){
+  try{ return JSON.parse(localStorage.getItem('classroomDashboardClasses') || '[]'); }catch(e){ return []; }
+}
+
+function initNameGate(){
+  const classes = readClassesFromLocalStorage().filter(c => (c.students||[]).length > 0);
+  const subtext = document.getElementById('gateSubtext');
+  const classArea = document.getElementById('classButtonsArea');
+  const nameArea = document.getElementById('nameButtonsArea');
+
+  if(classes.length === 0){
+    subtext.textContent = "Just tap below to play!";
+    classArea.innerHTML = '<button id="tapStartBtn">Tap to Start! ▶</button>';
+    document.getElementById('tapStartBtn').addEventListener('click', () => startGameWithName('Player'));
     return;
   }
-  studentName = val.slice(0,24);
+
+  function showNamesFor(cls, showBack){
+    classArea.style.display = 'none';
+    nameArea.style.display = 'block';
+    subtext.textContent = "Tap your name to start!";
+    let html = '<div class="name-picker">';
+    cls.students.forEach(s => {
+      html += `<button class="name-btn" data-name="${s.name}">${s.name}</button>`;
+    });
+    html += '</div>';
+    if(showBack) html += '<button class="back-to-classes" id="backToClassesBtn">◀ Back to classes</button>';
+    nameArea.innerHTML = html;
+    nameArea.querySelectorAll('.name-btn').forEach(btn => {
+      btn.addEventListener('click', () => startGameWithName(btn.dataset.name));
+    });
+    const backBtn = document.getElementById('backToClassesBtn');
+    if(backBtn) backBtn.addEventListener('click', () => {
+      nameArea.style.display = 'none';
+      classArea.style.display = 'block';
+      subtext.textContent = "Tap your class!";
+    });
+  }
+
+  if(classes.length === 1){
+    showNamesFor(classes[0], false);
+    return;
+  }
+
+  subtext.textContent = "Tap your class!";
+  classArea.innerHTML = '<div class="class-picker">' +
+    classes.map(c => `<button class="class-btn" data-id="${c.id}">${c.name}</button>`).join('') +
+    '</div>';
+  classArea.querySelectorAll('.class-btn').forEach(btn => {
+    btn.addEventListener('click', () => {
+      const cls = classes.find(c => c.id === btn.dataset.id);
+      showNamesFor(cls, true);
+    });
+  });
+}
+
+function startGameWithName(name){
+  studentName = name.slice(0,24);
   document.getElementById('playerName').textContent = studentName;
   document.getElementById('subline').textContent =
     `Nice to meet you, ${studentName}! Help each message travel across the network of networks — tap the switches and router in the right order.`;
   gateOverlay.style.display = 'none';
   buildLevel(0);
 }
-document.getElementById('startBtn').addEventListener('click', startGame);
-nameInput.addEventListener('keydown', (e)=>{ if(e.key === 'Enter') startGame(); });
-nameInput.focus();
+initNameGate();
 
 // Game no longer auto-starts — it begins once the player enters their name above.
 </script>

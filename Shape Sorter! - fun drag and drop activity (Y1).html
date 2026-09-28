@@ -74,6 +74,11 @@
   .celebrate-banner.show{ animation: bannerPop .6s cubic-bezier(.34,1.56,.64,1) forwards; }
   @keyframes bannerPop{ 0%{opacity:0; transform:translate(-50%,-50%) scale(0.4) rotate(-6deg);} 60%{opacity:1; transform:translate(-50%,-50%) scale(1.08) rotate(2deg);} 100%{opacity:1; transform:translate(-50%,-50%) scale(1) rotate(0);} }
   .celebrate-banner .big{ font-size:24px; font-weight:bold; color:var(--primary); }
+  .top-bar{ display:flex; justify-content:flex-start; margin-bottom:8px; }
+  .hub-top-btn{ display:inline-flex; align-items:center; gap:6px; background:#1A1A2E; color:white;
+    text-decoration:none; font-weight:bold; font-size:clamp(12px,2.2vw,14px); padding:8px 16px 8px 12px;
+    border-radius:20px; box-shadow:0 3px 8px rgba(0,0,0,0.25); }
+  .hub-top-btn:hover{ opacity:0.85; }
 </style>
 </head>
 <body>
@@ -88,6 +93,7 @@
 </div>
 
 <div class="wrap" id="wrap">
+  <div class="top-bar"><a href="index.html" class="hub-top-btn">🏠 Back to Hub</a></div>
   <h1>🟢 Shape Sorter!</h1>
   <p class="sub" id="subline">Click and hold a shape, drag it to the matching space, then let go!</p>
   <div class="hud">

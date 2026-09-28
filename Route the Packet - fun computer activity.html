@@ -278,6 +278,11 @@
     font-size:14px;
     color:#555;
   }
+  .top-bar{ display:flex; justify-content:flex-start; margin-bottom:8px; }
+  .hub-top-btn{ display:inline-flex; align-items:center; gap:6px; background:#1A1A2E; color:white;
+    text-decoration:none; font-weight:bold; font-size:clamp(12px,2.2vw,14px); padding:8px 16px 8px 12px;
+    border-radius:20px; box-shadow:0 3px 8px rgba(0,0,0,0.25); }
+  .hub-top-btn:hover{ opacity:0.85; }
 </style>
 </head>
 <body>
@@ -293,6 +298,7 @@
 </div>
 
 <div class="wrap" id="wrap">
+  <div class="top-bar"><a href="index.html" class="hub-top-btn">🏠 Back to Hub</a></div>
   <h1>📨 Route the Packet!</h1>
   <p class="sub" id="subline">Help each message travel across the network of networks — tap the switches and router in the right order.</p>
 

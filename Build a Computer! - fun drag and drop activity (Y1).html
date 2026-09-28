@@ -24,19 +24,20 @@
     padding:12px 20px; margin-bottom:16px; box-shadow:0 2px 8px rgba(0,0,0,0.08); font-weight:bold; color:var(--primary);
     flex-wrap:wrap; gap:8px; font-size:clamp(13px,2vw,16px); }
   .hud span.big{ color:var(--red); font-size:1.2em; }
-  .stage{ background:#E9D7B8; border-radius:22px; padding:28px 20px; border:3px dashed #D8B27C; position:relative; min-height:420px; }
-  .desk{ display:grid; grid-template-columns:repeat(3,1fr); grid-template-rows:auto auto auto; gap:16px;
-    max-width:520px; margin:0 auto 30px; justify-items:center; align-items:center; }
+  .stage{ background:#E9D7B8; border-radius:22px; padding:28px 20px 20px; border:3px dashed #D8B27C; position:relative; min-height:420px; }
+  .desk{ position:relative; width:100%; max-width:520px; aspect-ratio:520/330; margin:0 auto 26px; }
+  .desk-deco{ position:absolute; background:#c9a877; border-radius:4px; pointer-events:none; }
+  .desk-surface{ position:absolute; left:2%; right:2%; bottom:-6px; height:14px; background:#c9a877; border-radius:6px; pointer-events:none; box-shadow:0 4px 6px rgba(0,0,0,0.12); }
   .slot{
-    width:96px; height:96px; border-radius:20px; border:4px dashed #b98a4a; background:rgba(255,255,255,0.65);
-    display:flex; align-items:center; justify-content:center; font-size:48px;
+    position:absolute; border-radius:14px; border:4px dashed #b98a4a; background:rgba(255,255,255,0.65);
+    display:flex; align-items:center; justify-content:center;
   }
   .slot .ghost{ opacity:0.28; filter:grayscale(60%); }
   .slot.filled{ border-style:solid; border-color:var(--green); background:white; }
-  .pieces-row{ display:flex; justify-content:center; gap:18px; flex-wrap:wrap; }
+  .pieces-row{ display:flex; justify-content:center; align-items:flex-end; gap:16px; flex-wrap:wrap; }
   .piece{
-    width:86px; height:86px; border-radius:18px; background:white; box-shadow:0 6px 16px rgba(0,0,0,0.18);
-    display:flex; align-items:center; justify-content:center; font-size:44px; cursor:grab;
+    border-radius:16px; background:white; box-shadow:0 6px 16px rgba(0,0,0,0.18);
+    display:flex; align-items:center; justify-content:center; cursor:grab;
     user-select:none; touch-action:none; transition:transform .1s ease;
   }
   .piece:active{ cursor:grabbing; }
@@ -103,30 +104,57 @@
 </div>
 
 <script>
-// Each level: a list of parts, each with an emoji and a grid position on the desk.
+// Each level: a list of parts. posKey drives where the slot sits on the desk
+// (so the finished computer looks properly assembled); matchKey is what has to
+// match between a piece and its slot (two speakers share one matchKey but sit
+// in two different spots).
 const LEVELS = [
   [
-    {id:'monitor', emoji:'🖥️', area:'2 / 1 / 3 / 4'},
-    {id:'keyboard', emoji:'⌨️', area:'3 / 1 / 4 / 3'},
-    {id:'mouse', emoji:'🖱️', area:'3 / 3 / 4 / 4'},
+    {matchKey:'monitor', posKey:'monitor', emoji:'🖥️'},
+    {matchKey:'keyboard', posKey:'keyboard', emoji:'⌨️'},
+    {matchKey:'mouse', posKey:'mouse', emoji:'🖱️'},
   ],
   [
-    {id:'monitor', emoji:'🖥️', area:'2 / 1 / 3 / 4'},
-    {id:'spkL', emoji:'🔊', area:'1 / 1 / 2 / 2'},
-    {id:'spkR', emoji:'🔊', area:'1 / 3 / 2 / 4'},
-    {id:'keyboard', emoji:'⌨️', area:'3 / 1 / 4 / 3'},
-    {id:'mouse', emoji:'🖱️', area:'3 / 3 / 4 / 4'},
+    {matchKey:'monitor', posKey:'monitor', emoji:'🖥️'},
+    {matchKey:'speaker', posKey:'speakerL', emoji:'🔊'},
+    {matchKey:'speaker', posKey:'speakerR', emoji:'🔊'},
+    {matchKey:'keyboard', posKey:'keyboard', emoji:'⌨️'},
+    {matchKey:'mouse', posKey:'mouse', emoji:'🖱️'},
   ],
   [
-    {id:'monitor', emoji:'🖥️', area:'2 / 1 / 3 / 4'},
-    {id:'spkL', emoji:'🔊', area:'1 / 1 / 2 / 2'},
-    {id:'spkR', emoji:'🔊', area:'1 / 3 / 2 / 4'},
-    {id:'keyboard', emoji:'⌨️', area:'3 / 1 / 4 / 3'},
-    {id:'mouse', emoji:'🖱️', area:'3 / 3 / 4 / 4'},
-    {id:'printer', emoji:'🖨️', area:'4 / 1 / 5 / 2'},
-    {id:'headphones', emoji:'🎧', area:'4 / 3 / 5 / 4'},
+    {matchKey:'monitor', posKey:'monitor', emoji:'🖥️'},
+    {matchKey:'speaker', posKey:'speakerL', emoji:'🔊'},
+    {matchKey:'speaker', posKey:'speakerR', emoji:'🔊'},
+    {matchKey:'keyboard', posKey:'keyboard', emoji:'⌨️'},
+    {matchKey:'mouse', posKey:'mouse', emoji:'🖱️'},
+    {matchKey:'printer', posKey:'printer', emoji:'🖨️'},
+    {matchKey:'headphones', posKey:'headphones', emoji:'🎧'},
   ],
 ];
+
+// Where each part's slot sits on the desk (percent of the desk box), laid out
+// so the finished result looks like a real computer setup: monitor centered
+// on top with speakers either side, keyboard directly under the screen, mouse
+// beside the keyboard, printer and headphones tucked in the front corners.
+const PART_CONFIG = {
+  monitor:    {left:32, top:4,  width:36, height:38, font:'clamp(30px,7vw,44px)'},
+  speakerL:   {left:14, top:15, width:12, height:24, font:'clamp(18px,4vw,26px)'},
+  speakerR:   {left:74, top:15, width:12, height:24, font:'clamp(18px,4vw,26px)'},
+  keyboard:   {left:32, top:46, width:36, height:18, font:'clamp(24px,5.5vw,34px)'},
+  mouse:      {left:70, top:46, width:13, height:18, font:'clamp(20px,4.5vw,30px)'},
+  printer:    {left:7,  top:68, width:22, height:20, font:'clamp(22px,5vw,32px)'},
+  headphones: {left:71, top:68, width:18, height:22, font:'clamp(22px,5vw,32px)'},
+};
+// Fixed sizes for the draggable pieces waiting below the desk.
+const PIECE_SIZE = {
+  monitor:    {w:98,  h:68, font:'42px'},
+  speakerL:   {w:50,  h:66, font:'26px'},
+  speakerR:   {w:50,  h:66, font:'26px'},
+  keyboard:   {w:104, h:46, font:'32px'},
+  mouse:      {w:54,  h:54, font:'28px'},
+  printer:    {w:72,  h:46, font:'30px'},
+  headphones: {w:60,  h:60, font:'30px'},
+};
 let levelIdx = 0, tries = 0, placedCount = 0, wrongAttempts = 0, studentName = "";
 const STORAGE_KEY = "buildAComputerResults";
 document.getElementById('levelTotal').textContent = LEVELS.length;
@@ -143,13 +171,21 @@ function buildLevel(idx){
   msg.textContent = 'Drag each piece to the space that matches!';
 
   const deskGrid = document.getElementById('deskGrid');
-  deskGrid.innerHTML = parts.map((p,i)=>
-    `<div class="slot" data-target="${p.id}" id="slot-${i}" style="grid-area:${p.area};"><span class="ghost">${p.emoji}</span></div>`
-  ).join('');
+  const deco = `<div class="desk-deco" style="left:45%; top:41%; width:10%; height:6%; border-radius:6px 6px 0 0;"></div>` +
+    `<div class="desk-deco" style="left:37%; top:46.5%; width:26%; height:2%; border-radius:4px;"></div>` +
+    `<div class="desk-surface"></div>`;
+  const slots = parts.map((p,i)=>{
+    const c = PART_CONFIG[p.posKey];
+    return `<div class="slot" data-target="${p.matchKey}" id="slot-${i}" style="left:${c.left}%; top:${c.top}%; width:${c.width}%; height:${c.height}%; font-size:${c.font};"><span class="ghost">${p.emoji}</span></div>`;
+  }).join('');
+  deskGrid.innerHTML = deco + slots;
 
   const piecesRow = document.getElementById('piecesRow');
   const shuffled = shuffle(parts);
-  piecesRow.innerHTML = shuffled.map((p,i)=>`<div class="piece" data-emoji="${p.id}" id="piece-${i}">${p.emoji}</div>`).join('');
+  piecesRow.innerHTML = shuffled.map((p,i)=>{
+    const s = PIECE_SIZE[p.posKey];
+    return `<div class="piece" data-emoji="${p.matchKey}" id="piece-${i}" style="width:${s.w}px; height:${s.h}px; font-size:${s.font};">${p.emoji}</div>`;
+  }).join('');
 
   attachDragHandlers();
 }

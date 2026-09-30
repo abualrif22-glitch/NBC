@@ -3,53 +3,64 @@
 <head>
 <meta charset="UTF-8">
 <meta name="viewport" content="width=device-width, initial-scale=1">
-<title>Match the Pairs! - Year 1 Computing Game</title>
+<title>Letter Rain! - Year 2 Computing Game</title>
 <style>
   :root{
-    --primary:#7C4DFF; --secondary:#4FC3F7; --accent:#FFD54F; --green:#8BC34A;
-    --light:#F5F3FF; --dark:#241B4E; --red:#E85C4A;
+    --primary:#3A86FF; --secondary:#06D6A0; --accent:#FFD166; --green:#06D6A0;
+    --light:#F0FAF8; --dark:#1B2A4A; --red:#E85C4A;
   }
   *{box-sizing:border-box; -webkit-tap-highlight-color: transparent;}
-  html,body{ margin:0; height:100%; touch-action:none; }
+  html,body{ margin:0; height:100%; }
   body{
     font-family:'Segoe UI', Calibri, Arial, sans-serif;
-    background:linear-gradient(135deg,#7C4DFF 0%,#4FC3F7 100%);
+    background:linear-gradient(135deg,#3A86FF 0%,#06D6A0 100%);
     min-height:100vh; display:flex; align-items:center; justify-content:center; padding:20px;
   }
   .wrap{ background:var(--light); border-radius:26px; max-width:900px; width:100%; padding:26px 30px 34px;
     box-shadow:0 20px 50px rgba(0,0,0,0.3); position:relative; overflow:hidden; }
   h1{ color:var(--primary); text-align:center; margin:0 0 4px; font-size:clamp(24px,4vw,32px); }
-  .sub{ text-align:center; color:#5B5470; margin:0 0 16px; font-size:clamp(13px,2vw,15px); }
+  .sub{ text-align:center; color:#6B5B4A; margin:0 0 16px; font-size:clamp(13px,2vw,15px); }
   .hud{ display:flex; justify-content:space-between; align-items:center; background:white; border-radius:16px;
     padding:12px 20px; margin-bottom:16px; box-shadow:0 2px 8px rgba(0,0,0,0.08); font-weight:bold; color:var(--primary);
-    flex-wrap:wrap; gap:8px; font-size:clamp(13px,2vw,16px); }
+    flex-wrap:wrap; gap:8px; font-size:clamp(12px,2vw,15px); }
   .hud span.big{ color:var(--red); font-size:1.2em; }
-  .stage{ background:#EDE7FF; border-radius:22px; padding:20px; border:3px dashed #C9B8FF; position:relative; min-height:420px; }
-  .slots-row{ display:grid; grid-template-columns:repeat(auto-fit,minmax(96px,1fr)); gap:18px; max-width:620px; margin:0 auto 30px; }
-  .slot{
-    width:100%; aspect-ratio:1/1; max-width:110px; margin:0 auto; border-radius:50%; border:4px dashed #b3a3e6; background:rgba(255,255,255,0.7);
-    display:flex; align-items:center; justify-content:center; font-size:52px;
-  }
-  .slot .ghost{ opacity:0.28; filter:grayscale(60%); }
-  .slot.filled{ border-style:solid; border-color:var(--green); background:white; }
-  .pieces-row{ display:flex; justify-content:center; gap:18px; flex-wrap:wrap; }
-  .piece{
-    width:86px; height:86px; border-radius:50%; background:white; box-shadow:0 6px 16px rgba(0,0,0,0.18);
-    display:flex; align-items:center; justify-content:center; font-size:44px; cursor:grab;
-    user-select:none; touch-action:none; transition:transform .1s ease;
-  }
-  .piece:active{ cursor:grabbing; }
-  .piece.dragging{ opacity:0.4; }
-  .piece.placed{ visibility:hidden; }
-  .msg{ text-align:center; margin-top:18px; min-height:34px; font-size:clamp(15px,2.3vw,18px); font-weight:bold; color:var(--primary); }
+  .stage{ background:#FDF3E7; border-radius:22px; padding:20px; border:3px dashed #F3C98B; position:relative; }
+  .sky{ position:relative; height:230px; background:linear-gradient(180deg, #90E0D8 0%, #E0F7F4 100%);
+    border-radius:18px; overflow:hidden; border:3px solid #4EC5B8; margin-bottom:14px; }
+  .sky::after{ content:'⚡'; position:absolute; top:8px; left:14px; font-size:24px; opacity:0.7; }
+  .sky::before{ content:'⚡'; position:absolute; top:20px; right:30px; font-size:18px; opacity:0.5; }
+  .falling-letter{ position:absolute; width:50px; height:50px; border-radius:14px; background:var(--primary);
+    color:white; display:flex; align-items:center; justify-content:center; font-size:26px; font-weight:bold;
+    box-shadow:0 6px 14px rgba(0,0,0,0.25); }
+  .falling-letter.caught{ animation: popAway .22s ease forwards; }
+  .falling-letter.miss{ background:#E57373; animation: shakeMiss .26s ease; }
+  @keyframes popAway{ to{ transform:scale(1.7); opacity:0; } }
+  @keyframes shakeMiss{ 0%,100%{transform:translateX(0);} 25%{transform:translateX(-6px);} 75%{transform:translateX(6px);} }
+  .keyboard{ user-select:none; }
+  .kb-row{ display:flex; justify-content:center; gap:6px; margin-bottom:7px; }
+  .kb-row-1{ padding-left:22px; }
+  .kb-row-2{ padding-left:44px; }
+  .kb-key{ flex:1 1 0; max-width:64px; min-width:30px; height:52px; border:none; border-radius:10px;
+    background:#37474F; color:white; font-size:clamp(13px,3vw,19px); font-weight:bold;
+    box-shadow:0 3px 0 #20282b, 0 4px 8px rgba(0,0,0,0.25); cursor:pointer; touch-action:manipulation;
+    transition:transform .06s ease, background .15s ease; }
+  .kb-key:active, .kb-key.pressed{ transform:translateY(2px); box-shadow:0 1px 0 #20282b, 0 2px 4px rgba(0,0,0,0.25); }
+  .kb-key.target-key{ background:var(--accent); color:#3a2a00; animation:pulseKey 1s ease-in-out infinite; }
+  .kb-key.correct{ background:var(--green); }
+  .kb-key.nomatch{ background:#90A4AE; }
+  @keyframes pulseKey{
+    0%,100%{ box-shadow:0 3px 0 #20282b, 0 4px 8px rgba(0,0,0,0.25), 0 0 0 0 rgba(255,213,79,0.7);}
+    50%{ box-shadow:0 3px 0 #20282b, 0 4px 8px rgba(0,0,0,0.25), 0 0 0 12px rgba(255,213,79,0);} }
+  .msg{ text-align:center; margin-top:16px; min-height:30px; font-size:clamp(14px,2.3vw,17px); font-weight:bold; color:var(--primary); }
   .msg.happy{ color:#1a9e6b; } .msg.oops{ color:var(--red); }
-  .controls{ display:flex; justify-content:center; margin-top:16px; gap:12px; }
+  .controls{ display:flex; justify-content:center; margin-top:14px; gap:12px; }
   button.ctrl{ background:var(--primary); color:white; border:none; padding:13px 28px; border-radius:12px; font-size:16px; font-weight:bold; cursor:pointer; }
   button.ctrl.secondary{ background:white; color:var(--primary); border:2px solid var(--primary); }
-  .gate-overlay{ position:fixed; inset:0; background:rgba(36,27,78,0.75); display:flex; align-items:center; justify-content:center; z-index:100; padding:20px; }
+  .gate-overlay{ position:fixed; inset:0; background:rgba(43,34,80,0.75); display:flex; align-items:center; justify-content:center; z-index:100; padding:20px; }
   .gate-card{ background:white; border-radius:20px; padding:34px 36px; max-width:420px; width:100%; text-align:center; box-shadow:0 20px 50px rgba(0,0,0,0.4); }
   .gate-card h2{ color:var(--primary); margin:0 0 8px; font-size:24px; }
   .gate-card p{ color:#555; margin:0 0 18px; font-size:14.5px; }
+  .gate-card button{ width:100%; padding:13px; font-size:16px; border:none; border-radius:10px; background:var(--primary); color:white; font-weight:bold; cursor:pointer; }
   #tapStartBtn{ width:100%; padding:13px; font-size:16px; border:none; border-radius:10px; background:var(--primary); color:white; font-weight:bold; cursor:pointer; }
   .class-picker{ display:flex; flex-wrap:wrap; gap:10px; justify-content:center; max-height:320px; overflow-y:auto; margin-bottom:6px; }
   .class-btn{ padding:13px 24px; border-radius:12px; border:none; background:var(--primary); color:white; font-weight:bold; font-size:16px; cursor:pointer; }
@@ -82,7 +93,7 @@
 
 <div class="gate-overlay" id="gateOverlay">
   <div class="gate-card">
-    <h2>🔵 Match the Pairs!</h2>
+    <h2>⚡ Letter Rain!</h2>
     <p id="gateSubtext">Loading...</p>
     <div id="classButtonsArea"></div>
     <div id="nameButtonsArea" style="display:none;"></div>
@@ -91,144 +102,206 @@
 
 <div class="wrap" id="wrap">
   <div class="top-bar"><a href="index.html" class="hub-top-btn">🏠 Back to Hub</a></div>
-  <h1>🔵 Match the Pairs!</h1>
-  <p class="sub" id="subline">Click and hold a picture, drag it onto its matching twin, then let go!</p>
+  <h1>⚡ Letter Rain!</h1>
+  <p class="sub" id="subline">Type fast! Tap the matching letter before it hits the ground!</p>
   <div class="hud">
     <div>Player: <span class="big" id="playerName">—</span></div>
-    <div>Level <span class="big" id="levelNum">1</span> / <span id="levelTotal">3</span></div>
-    <div>Tries: <span class="big" id="tryCount">0</span></div>
+    <div>Level <span class="big" id="levelNum">1</span>/<span id="levelTotal">5</span> (<span id="levelProgress">0</span>/<span id="levelTarget">6</span>)</div>
+    <div>Score: <span class="big" id="scoreCount">0</span> ⭐</div>
+    <div>Streak: <span class="big" id="streakCount">0</span> 🔥</div>
   </div>
   <div class="stage" id="stage">
-    <div class="slots-row" id="slotsRow"></div>
-    <div class="pieces-row" id="piecesRow"></div>
+    <div class="sky" id="sky"></div>
+    <div class="keyboard" id="keyboard"></div>
   </div>
-  <p class="msg" id="msg">Drag each picture to its matching twin!</p>
+  <p class="msg" id="msg">Tap the matching letter before it lands!</p>
   <div class="controls">
     <button class="ctrl secondary" id="resetLevelBtn">⟲ Restart Level</button>
   </div>
 </div>
 
 <script>
+// Year 2: quicker falls from the start, the full alphabet arrives sooner, and levels lean on
+// independent typing rather than the guiding glow (only a short reminder in level 1).
 const LEVELS = [
-  ["🐶","🐱","🐰"],
-  ["🐶","🐱","🐰","🐢"],
-  ["🐶","🐱","🐰","🐢","🦋","🐠"],
+  { pool:"ASDFJKL",                     duration:7000, spawnGap:1100, maxConcurrent:1, target:8,  guide:true  },
+  { pool:"QWERTYUIOPASDFGHJKL",         duration:6000, spawnGap:1000, maxConcurrent:1, target:10, guide:false },
+  { pool:"QWERTYUIOPASDFGHJKLZXCVBNM",  duration:5200, spawnGap:1000, maxConcurrent:2, target:12, guide:false },
+  { pool:"QWERTYUIOPASDFGHJKLZXCVBNM",  duration:4400, spawnGap:900,  maxConcurrent:2, target:14, guide:false },
+  { pool:"QWERTYUIOPASDFGHJKLZXCVBNM",  duration:3800, spawnGap:800,  maxConcurrent:3, target:16, guide:false },
+  { pool:"QWERTYUIOPASDFGHJKLZXCVBNM",  duration:3200, spawnGap:700,  maxConcurrent:3, target:18, guide:false },
 ];
-let levelIdx = 0, tries = 0, placedCount = 0, wrongAttempts = 0, studentName = "";
-const STORAGE_KEY = "matchThePairsResults";
+const STORAGE_KEY = "letterRainY2Results";
+const GAME_LABEL = "Letter Rain! (Y2)";
+
+let levelIdx = 0, totalCorrect = 0, totalMisses = 0, correctThisLevel = 0, streak = 0, bestStreak = 0, studentName = "";
+let activeLetters = [], letterIdCounter = 0, lastSpawnTime = 0, levelActive = false, spawnTimerId = null;
+
 document.getElementById('levelTotal').textContent = LEVELS.length;
 const wrap = document.getElementById('wrap');
 const msg = document.getElementById('msg');
+const STAGE_TEMPLATE = document.getElementById('stage').innerHTML;
 
-function shuffle(arr){ const a=[...arr]; for(let i=a.length-1;i>0;i--){ const j=Math.floor(Math.random()*(i+1)); [a[i],a[j]]=[a[j],a[i]]; } return a; }
+function pickRandom(str){ return str[Math.floor(Math.random()*str.length)]; }
+const PRAISE = ['⭐ Great catch!','✅ Nice typing!','🎯 Perfect!','👏 Well done!','💪 Keep going!','🌟 Superstar!'];
+function pickPraise(){ return PRAISE[Math.floor(Math.random()*PRAISE.length)]; }
 
-function buildLevel(idx){
-  const items = LEVELS[idx];
-  placedCount = 0;
-  document.getElementById('levelNum').textContent = idx+1;
-  msg.className = 'msg';
-  msg.textContent = 'Drag each picture to its matching twin!';
-
-  const slotsRow = document.getElementById('slotsRow');
-  slotsRow.innerHTML = items.map((emoji,i)=>`<div class="slot" data-target="${emoji}" id="slot-${i}"><span class="ghost">${emoji}</span></div>`).join('');
-
-  const piecesRow = document.getElementById('piecesRow');
-  const shuffled = shuffle(items);
-  piecesRow.innerHTML = shuffled.map((emoji,i)=>`<div class="piece" data-emoji="${emoji}" id="piece-${i}">${emoji}</div>`).join('');
-
-  attachDragHandlers();
+function keyboardRowsHTML(){
+  const rows = ["QWERTYUIOP","ASDFGHJKL","ZXCVBNM"];
+  return rows.map((row,ri)=>`<div class="kb-row kb-row-${ri}">${row.split('').map(ch=>`<button class="kb-key" data-key="${ch}" type="button">${ch}</button>`).join('')}</div>`).join('');
 }
 
-function attachDragHandlers(){
-  const pieces = document.querySelectorAll('.piece');
-  pieces.forEach(piece=>{
-    let dragging = false;
-    let offsetX = 0, offsetY = 0;
-
-    function pointerDown(e){
-      if(piece.classList.contains('placed')) return;
-      dragging = true;
-      piece.classList.add('dragging');
-      const rect = piece.getBoundingClientRect();
-      const point = e.touches ? e.touches[0] : e;
-      offsetX = point.clientX - rect.left;
-      offsetY = point.clientY - rect.top;
-      piece.style.position = 'fixed';
-      piece.style.zIndex = 1000;
-      piece.style.width = rect.width+'px';
-      piece.style.height = rect.height+'px';
-      movePiece(point);
-      document.addEventListener('mousemove', pointerMove);
-      document.addEventListener('touchmove', pointerMove, {passive:false});
-      document.addEventListener('mouseup', pointerUp);
-      document.addEventListener('touchend', pointerUp);
-      e.preventDefault();
-    }
-    function movePiece(point){
-      piece.style.left = (point.clientX - offsetX) + 'px';
-      piece.style.top = (point.clientY - offsetY) + 'px';
-    }
-    function pointerMove(e){
-      if(!dragging) return;
-      const point = e.touches ? e.touches[0] : e;
-      movePiece(point);
-      e.preventDefault();
-    }
-    function pointerUp(e){
-      if(!dragging) return;
-      dragging = false;
-      piece.classList.remove('dragging');
-      document.removeEventListener('mousemove', pointerMove);
-      document.removeEventListener('touchmove', pointerMove);
-      document.removeEventListener('mouseup', pointerUp);
-      document.removeEventListener('touchend', pointerUp);
-
-      const point = e.changedTouches ? e.changedTouches[0] : e;
-      const pieceRect = piece.getBoundingClientRect();
-      const pieceCenterX = pieceRect.left + pieceRect.width/2;
-      const pieceCenterY = pieceRect.top + pieceRect.height/2;
-
-      let landed = null;
-      document.querySelectorAll('.slot').forEach(slot=>{
-        const r = slot.getBoundingClientRect();
-        if(pieceCenterX >= r.left && pieceCenterX <= r.right && pieceCenterY >= r.top && pieceCenterY <= r.bottom){
-          landed = slot;
-        }
-      });
-
-      tries++;
-      document.getElementById('tryCount').textContent = tries;
-
-      if(landed && !landed.classList.contains('filled') && landed.dataset.target === piece.dataset.emoji){
-        landed.classList.add('filled');
-        landed.textContent = piece.dataset.emoji;
-        piece.classList.add('placed');
-        piece.style.position = '';
-        piece.style.left = ''; piece.style.top = ''; piece.style.zIndex = '';
-        placedCount++;
-        spawnConfetti(14);
-        msg.className = 'msg happy';
-        msg.textContent = '✅ Perfect match!';
-        if(placedCount === LEVELS[levelIdx].length){
-          setTimeout(levelComplete, 500);
-        }
-      } else {
-        wrongAttempts++;
-        piece.style.position = '';
-        piece.style.left = ''; piece.style.top = ''; piece.style.zIndex = '';
-        if(landed){
-          msg.className = 'msg oops';
-          msg.textContent = "❌ Not quite — try a different twin!";
-        }
-      }
-    }
-    piece.addEventListener('mousedown', pointerDown);
-    piece.addEventListener('touchstart', pointerDown, {passive:false});
+function initKeyboard(){
+  document.getElementById('keyboard').innerHTML = keyboardRowsHTML();
+  document.querySelectorAll('.kb-key').forEach(btn=>{
+    btn.addEventListener('click', ()=>handleKeyPress(btn.dataset.key, btn));
   });
 }
 
+document.addEventListener('keydown', (e)=>{
+  const k = (e.key||'').toUpperCase();
+  if(/^[A-Z]$/.test(k)){
+    const btn = document.querySelector(`.kb-key[data-key="${k}"]`);
+    handleKeyPress(k, btn);
+  }
+});
+
+function updateHUD(){
+  document.getElementById('scoreCount').textContent = totalCorrect;
+  document.getElementById('streakCount').textContent = streak;
+  document.getElementById('levelProgress').textContent = correctThisLevel;
+}
+
+function clearSky(){
+  activeLetters.forEach(l=>l.el.remove());
+  activeLetters = [];
+  document.querySelectorAll('.kb-key.target-key').forEach(k=>k.classList.remove('target-key'));
+}
+
+function startLevel(idx){
+  levelIdx = idx;
+  const cfg = LEVELS[idx];
+  correctThisLevel = 0;
+  levelActive = true;
+  document.getElementById('levelNum').textContent = idx+1;
+  document.getElementById('levelTarget').textContent = cfg.target;
+  document.getElementById('levelProgress').textContent = '0';
+  msg.className = 'msg';
+  msg.textContent = 'Tap the matching letter before it lands!';
+  clearSky();
+  lastSpawnTime = 0;
+  if(spawnTimerId) clearInterval(spawnTimerId);
+  spawnTimerId = setInterval(tick, 250);
+}
+
+function tick(){
+  if(!levelActive) return;
+  const cfg = LEVELS[levelIdx];
+  const now = Date.now();
+  if(activeLetters.length < cfg.maxConcurrent && now - lastSpawnTime >= cfg.spawnGap){
+    spawnLetter(cfg);
+    lastSpawnTime = now;
+  }
+}
+
+function spawnLetter(cfg){
+  const sky = document.getElementById('sky');
+  const skyRect = sky.getBoundingClientRect();
+  const letter = pickRandom(cfg.pool);
+  const el = document.createElement('div');
+  el.className = 'falling-letter';
+  el.textContent = letter;
+  const size = 50;
+  const maxLeft = Math.max(0, skyRect.width - size);
+  const left = Math.random()*maxLeft;
+  el.style.left = left+'px';
+  el.style.top = '-60px';
+  sky.appendChild(el);
+  const id = ++letterIdCounter;
+  const record = { id, el, letter, resolved:false };
+  activeLetters.push(record);
+
+  if(cfg.guide){
+    const keyBtn = document.querySelector(`.kb-key[data-key="${letter}"]`);
+    if(keyBtn) keyBtn.classList.add('target-key');
+  }
+
+  requestAnimationFrame(()=>{
+    requestAnimationFrame(()=>{
+      if(!el.isConnected) return;
+      el.style.transition = `top ${cfg.duration}ms linear`;
+      const bottom = Math.max(0, skyRect.height - size);
+      el.style.top = bottom+'px';
+    });
+  });
+
+  el.addEventListener('transitionend', ()=> onLetterMissed(record));
+}
+
+function removeActive(record){
+  activeLetters = activeLetters.filter(l=>l.id!==record.id);
+  const stillNeeded = activeLetters.some(l=>l.letter===record.letter && !l.resolved);
+  if(!stillNeeded){
+    const keyBtn = document.querySelector(`.kb-key[data-key="${record.letter}"]`);
+    if(keyBtn) keyBtn.classList.remove('target-key');
+  }
+}
+
+function onLetterMissed(record){
+  if(record.resolved) return;
+  record.resolved = true;
+  removeActive(record);
+  totalMisses++;
+  streak = 0;
+  record.el.classList.add('miss');
+  setTimeout(()=>record.el.remove(), 260);
+  msg.className = 'msg oops';
+  msg.textContent = "That one got away — try to catch the next one!";
+  updateHUD();
+}
+
+function handleKeyPress(letter, btnEl){
+  if(!letter) return;
+  if(btnEl){
+    btnEl.classList.add('pressed');
+    setTimeout(()=>btnEl.classList.remove('pressed'),120);
+  }
+  if(!levelActive) return;
+  const match = activeLetters.find(l=>l.letter===letter && !l.resolved);
+  if(match){
+    match.resolved = true;
+    removeActive(match);
+    catchLetter(match, btnEl);
+  } else if(btnEl){
+    btnEl.classList.add('nomatch');
+    setTimeout(()=>btnEl.classList.remove('nomatch'),150);
+  }
+}
+
+function catchLetter(record, btnEl){
+  totalCorrect++;
+  correctThisLevel++;
+  streak++;
+  if(streak>bestStreak) bestStreak = streak;
+  record.el.classList.add('caught');
+  setTimeout(()=>record.el.remove(), 220);
+  spawnConfetti(10);
+  if(btnEl){ btnEl.classList.add('correct'); setTimeout(()=>btnEl.classList.remove('correct'),200); }
+  msg.className = 'msg happy';
+  msg.textContent = pickPraise();
+  updateHUD();
+  if(streak>0 && streak%5===0){
+    showCelebrateBanner(`🔥 ${streak} in a row!`, 'Amazing typing streak!');
+  }
+  if(correctThisLevel >= LEVELS[levelIdx].target){
+    levelActive = false;
+    clearInterval(spawnTimerId);
+    setTimeout(levelComplete, 500);
+  }
+}
+
 function spawnConfetti(n){
-  const colors=['#7C4DFF','#4FC3F7','#FFD54F','#8BC34A','#241B4E','#FFFFFF'];
+  const colors=['#3A86FF','#06D6A0','#FFD166','#8338EC','#1B2A4A','#FFFFFF'];
   for(let i=0;i<n;i++){
     const p=document.createElement('div'); p.className='confetti-piece';
     p.style.left=Math.random()*100+'%'; p.style.background=colors[Math.floor(Math.random()*colors.length)];
@@ -246,35 +319,38 @@ function showCelebrateBanner(text, sub){
 function levelComplete(){
   spawnConfetti(30);
   showCelebrateBanner('🎉 Level Complete!', `You did it, ${studentName}!`);
+  clearSky();
   levelIdx++;
   if(levelIdx < LEVELS.length){
-    setTimeout(()=>buildLevel(levelIdx), 1400);
+    setTimeout(()=>startLevel(levelIdx), 1400);
   } else {
     setTimeout(showFinal, 1400);
   }
 }
 
 function showFinal(){
-  const accuracy = Math.max(0, Math.round(100 * (tries - wrongAttempts) / Math.max(tries,1)));
+  const accuracy = Math.max(0, Math.round(100 * totalCorrect / Math.max(totalCorrect+totalMisses,1)));
   document.getElementById('stage').innerHTML = `
     <div style="text-align:center; padding:30px 10px;">
       <div style="font-size:76px;">🏆</div>
-      <div style="font-size:22px;font-weight:bold;color:var(--primary);margin-bottom:8px;">You're a Matching Champion!</div>
-      <div style="font-size:17px;color:#555;margin-bottom:18px;">Accuracy: ${accuracy}% (${tries} tries for ${LEVELS.flat().length} pieces)</div>
+      <div style="font-size:22px;font-weight:bold;color:var(--primary);margin-bottom:8px;">You finished Letter Rain!</div>
+      <div style="font-size:17px;color:#555;margin-bottom:6px;">Accuracy: ${accuracy}% (${totalCorrect} caught, ${totalMisses} missed)</div>
+      <div style="font-size:15px;color:#777;margin-bottom:18px;">Best streak: ${bestStreak} 🔥</div>
       <button class="ctrl secondary" id="playAgainBtn">Play Again 🔄</button>
     </div>`;
   msg.textContent = '';
   document.getElementById('playAgainBtn').addEventListener('click', ()=>{
-    levelIdx = 0; tries = 0; wrongAttempts = 0;
-    document.getElementById('tryCount').textContent = 0;
-    buildLevel(0);
+    levelIdx = 0; totalCorrect = 0; totalMisses = 0; streak = 0; bestStreak = 0;
+    document.getElementById('stage').innerHTML = STAGE_TEMPLATE;
+    initKeyboard();
+    startLevel(0);
   });
   showResultsPanel(accuracy);
 
   if(window.__submitResultToCloud){
     window.__submitResultToCloud({
       name: studentName,
-      game: "Match the Pairs! (Y1)",
+      game: GAME_LABEL,
       score: accuracy,
       total: 100,
       date: new Date().toLocaleDateString() + ' ' + new Date().toLocaleTimeString([], {hour:'2-digit', minute:'2-digit'})
@@ -315,24 +391,24 @@ function downloadCSV(filename, rows){
   setTimeout(()=>URL.revokeObjectURL(url),1000);
 }
 function onSaveResult(){
-  const accuracy = Math.max(0, Math.round(100 * (tries - wrongAttempts) / Math.max(tries,1)));
+  const accuracy = Math.max(0, Math.round(100 * totalCorrect / Math.max(totalCorrect+totalMisses,1)));
   const now = new Date();
   const record = { name:studentName, score:accuracy, total:100, date: now.toLocaleDateString()+' '+now.toLocaleTimeString([], {hour:'2-digit',minute:'2-digit'}) };
   const list = readSavedResults(); list.push(record); writeSavedResults(list);
   const safeName = (studentName||'student').replace(/[^a-z0-9]+/gi,'_');
-  downloadCSV(`MatchThePairs_${safeName}_${now.toISOString().slice(0,10)}.csv`, [["Name","Score","Total","Date"],[record.name,record.score,record.total,record.date]]);
+  downloadCSV(`LetterRainY2_${safeName}_${now.toISOString().slice(0,10)}.csv`, [["Name","Score","Total","Date"],[record.name,record.score,record.total,record.date]]);
   document.getElementById('savedNote').textContent = '✅ Saved! A results file was downloaded, and your score was stored on this computer.';
 }
 function onDownloadAll(){
   const list = readSavedResults();
   if(list.length===0){ document.getElementById('savedNote').textContent='No saved results yet on this computer.'; return; }
   const rows=[["Name","Score","Total","Date"], ...list.map(r=>[r.name,r.score,r.total,r.date])];
-  downloadCSV(`MatchThePairs_AllResults_${new Date().toISOString().slice(0,10)}.csv`, rows);
+  downloadCSV(`LetterRainY2_AllResults_${new Date().toISOString().slice(0,10)}.csv`, rows);
 }
 
 document.getElementById('resetLevelBtn').addEventListener('click', ()=>{
-  tries = 0; document.getElementById('tryCount').textContent = 0;
-  buildLevel(levelIdx);
+  correctThisLevel = 0;
+  startLevel(levelIdx);
 });
 
 const gateOverlay=document.getElementById('gateOverlay');
@@ -342,7 +418,7 @@ function readClassesFromLocalStorage(){
 }
 
 function initNameGate(){
-  const GAME_YEAR = '1';
+  const GAME_YEAR = '2';
   const SKIP_NAME_STEP = (GAME_YEAR === '1' || GAME_YEAR === '2');
   // Class/name picker temporarily disabled for all years — flip to true to restore.
   const CLASS_PICKER_ENABLED = false;
@@ -405,7 +481,8 @@ function startGameWithName(name){
   studentName = name.slice(0,24);
   document.getElementById('playerName').textContent = studentName;
   gateOverlay.style.display='none';
-  buildLevel(0);
+  initKeyboard();
+  startLevel(0);
 }
 initNameGate();
 </script>

@@ -1,0 +1,564 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>Web Wordsmith! - Year 4 Computing Game</title>
+<style>
+  :root{
+    --primary:#7C3AED; --secondary:#38BDF8; --accent:#FB923C;
+    --light:#F7F5FE; --dark:#241C3D; --red:#E74C3C; --green:#06D6A0;
+  }
+  *{box-sizing:border-box; -webkit-tap-highlight-color: transparent;}
+  html, body{ margin:0; height:100%; }
+  body{
+    font-family:'Segoe UI', Calibri, Arial, sans-serif;
+    background:linear-gradient(135deg,#7C3AED 0%,#38BDF8 100%);
+    min-height:100vh; display:flex; align-items:center; justify-content:center; padding:24px;
+  }
+  .wrap{ background:var(--light); border-radius:24px; max-width:860px; width:100%; padding:26px 30px 34px;
+    box-shadow:0 20px 50px rgba(0,0,0,0.35); position:relative; overflow:hidden; }
+  h1{ color:var(--primary); text-align:center; margin:0 0 4px; font-size:clamp(24px,4vw,32px); }
+  .sub{ text-align:center; color:#555; margin:0 0 16px; font-size:clamp(13px,2vw,15px); }
+  .hud{ display:flex; justify-content:space-between; align-items:center; background:white; border-radius:16px;
+    padding:13px 20px; margin-bottom:16px; box-shadow:0 2px 8px rgba(0,0,0,0.08); font-weight:bold; color:var(--primary);
+    flex-wrap:wrap; gap:8px; font-size:clamp(12px,2vw,15px); }
+  .hud span.big{ color:var(--accent); font-size:1.2em; }
+
+  .stage{ background:#f0eafd; border-radius:22px; padding:28px 24px; text-align:left; border:3px dashed #d8c9f7;
+    min-height:340px; display:flex; flex-direction:column; justify-content:center; }
+
+  .sec-intro{ text-align:center; }
+  .sec-intro .sicon{ font-size:56px; margin-bottom:6px; }
+  .sec-intro h2{ color:var(--primary); margin:0 0 10px; font-size:clamp(20px,3.4vw,26px); }
+  .sec-intro p{ color:#444; max-width:520px; margin:0 auto 20px; font-size:15px; line-height:1.5; }
+
+  .addr-demo{ background:white; border-radius:14px; padding:14px 18px; box-shadow:0 8px 24px rgba(0,0,0,0.12);
+    display:inline-flex; align-items:center; gap:2px; margin:0 auto 18px; font-family:'Consolas','Courier New',monospace;
+    font-size:clamp(14px,2.6vw,19px); font-weight:bold; flex-wrap:wrap; justify-content:center; }
+  .addr-demo span{ padding:4px 6px; border-radius:6px; }
+  .addr-demo .p1{ background:#dbeafe; color:#1d4ed8; }
+  .addr-demo .p2{ background:#fef3c7; color:#92400e; }
+  .addr-demo .p3{ background:#dcfce7; color:#166534; }
+
+  .prompt-block{ background:white; border-radius:18px; padding:18px 20px; box-shadow:0 6px 18px rgba(0,0,0,0.1); margin-bottom:16px; }
+  .prompt-block .q{ font-weight:bold; color:var(--dark); font-size:clamp(14.5px,2.3vw,16.5px); margin-bottom:10px; line-height:1.4; }
+  .prompt-block textarea{ width:100%; min-height:78px; border-radius:12px; border:2px solid #d8c9f7; padding:12px 14px;
+    font-family:inherit; font-size:15px; color:var(--dark); resize:vertical; }
+  .prompt-block textarea:focus{ outline:none; border-color:var(--primary); }
+  .word-count{ text-align:right; font-size:12.5px; color:#888; margin-top:4px; }
+  .word-count.ok{ color:#0e9e6f; font-weight:bold; }
+
+  .controls{ display:flex; justify-content:center; margin-top:8px; gap:12px; flex-wrap:wrap; }
+  button.ctrl{ background:var(--primary); color:white; border:none; padding:13px 28px; border-radius:12px; font-size:16px; font-weight:bold; cursor:pointer; }
+  button.ctrl.secondary{ background:white; color:var(--primary); border:2px solid var(--primary); }
+  button.ctrl:disabled{ opacity:0.45; cursor:not-allowed; }
+
+  .msg{ text-align:center; margin-top:12px; min-height:24px; font-size:clamp(13px,2.1vw,15px); font-weight:bold; color:var(--primary); }
+  .msg.happy{ color:#0e9e6f; }
+
+  .stars-earned{ text-align:center; font-size:34px; margin:4px 0 2px; }
+
+  .gate-overlay{ position:fixed; inset:0; background:rgba(36,28,61,0.72); display:flex; align-items:center; justify-content:center; z-index:100; padding:20px; }
+  .gate-card{ background:white; border-radius:20px; padding:34px 36px; max-width:420px; width:100%; text-align:center; box-shadow:0 20px 50px rgba(0,0,0,0.4); }
+  .gate-card h2{ color:var(--primary); margin:0 0 8px; font-size:24px; }
+  .gate-card p{ color:#555; margin:0 0 18px; font-size:14.5px; }
+  .gate-card input{ width:100%; font-size:18px; padding:12px 14px; border-radius:10px; border:2px solid var(--secondary);
+    text-align:center; font-weight:bold; color:var(--dark); margin-bottom:14px; box-sizing:border-box; }
+  .gate-card input:focus{ outline:none; border-color:var(--primary); }
+  .gate-card button{ width:100%; padding:13px; font-size:16px; border:none; border-radius:10px; background:var(--primary); color:white; font-weight:bold; cursor:pointer; }
+  .gate-error{ color:var(--red); font-size:13px; min-height:18px; margin-bottom:6px; font-weight:bold; }
+
+  #resultsPanel{ display:none; background:white; border-radius:14px; padding:18px 20px; margin-top:16px; box-shadow:0 2px 8px rgba(0,0,0,0.08); text-align:center; }
+  #resultsPanel h3{ margin:0 0 4px; color:var(--primary); font-size:18px; }
+  #resultsPanel .save-row{ display:flex; gap:12px; justify-content:center; flex-wrap:wrap; margin-top:12px; }
+  #resultsPanel .saved-note{ font-size:13px; color:#0e9e6f; font-weight:bold; min-height:18px; margin-top:8px; }
+  #savedTableWrap{ margin-top:14px; max-height:220px; overflow:auto; display:none; }
+  #savedTableWrap table{ width:100%; border-collapse:collapse; font-size:13px; }
+  #savedTableWrap th, #savedTableWrap td{ padding:6px 8px; border-bottom:1px solid #e3e6f0; text-align:left; }
+  #savedTableWrap th{ color:var(--primary); }
+
+  .guide-page{ background:white; border-radius:18px; padding:20px 24px; box-shadow:0 6px 18px rgba(0,0,0,0.1); text-align:left; margin-bottom:6px; }
+  .guide-page h4{ color:var(--primary); margin:14px 0 4px; font-size:15.5px; }
+  .guide-page h4:first-child{ margin-top:0; }
+  .guide-page p{ margin:0 0 6px; color:#333; font-size:14.5px; line-height:1.45; white-space:pre-wrap; }
+
+  .confetti-piece{ position:absolute; top:-20px; width:12px; height:16px; z-index:20; pointer-events:none; animation: fall linear forwards; }
+  @keyframes fall{ to{ transform: translateY(600px) rotate(540deg); opacity:0.2; } }
+  .celebrate-banner{ position:absolute; left:50%; top:45%; transform:translate(-50%,-50%) scale(0.5); background:white; border-radius:22px;
+    padding:24px 36px; box-shadow:0 12px 40px rgba(0,0,0,0.35); text-align:center; z-index:30; opacity:0; pointer-events:none; }
+  .celebrate-banner.show{ animation: bannerPop .6s cubic-bezier(.34,1.56,.64,1) forwards; }
+  @keyframes bannerPop{ 0%{opacity:0; transform:translate(-50%,-50%) scale(0.4) rotate(-6deg);} 60%{opacity:1; transform:translate(-50%,-50%) scale(1.08) rotate(2deg);} 100%{opacity:1; transform:translate(-50%,-50%) scale(1) rotate(0);} }
+  .celebrate-banner .big{ font-size:26px; font-weight:bold; color:var(--primary); margin-bottom:4px; }
+  .celebrate-banner .small{ font-size:14px; color:#555; }
+  .final-screen{ text-align:center; }
+  .final-screen .trophy{ font-size:76px; }
+  .top-bar{ margin:0; }
+  .hub-top-btn{ position:fixed; top:12px; left:12px; z-index:300;
+    display:inline-flex; align-items:center; gap:6px; background:#1A1A2E; color:white;
+    text-decoration:none; font-weight:bold; font-size:clamp(12px,2.2vw,14px); padding:8px 16px 8px 12px;
+    border-radius:20px; box-shadow:0 3px 10px rgba(0,0,0,0.35); }
+  .hub-top-btn:hover{ opacity:0.85; }
+  .hub-top-btn:active{ transform:scale(0.96); }
+</style>
+</head>
+<body>
+
+<div class="gate-overlay" id="gateOverlay">
+  <div class="gate-card">
+    <h2>✍️ Web Wordsmith!</h2>
+    <p>Type your name to start writing your Web Guide.</p>
+    <input type="text" id="nameInput" placeholder="Your name" maxlength="24" autocomplete="off">
+    <div class="gate-error" id="nameError"></div>
+    <button id="startBtn">Start ▶</button>
+  </div>
+</div>
+
+<div class="wrap" id="wrap">
+  <div class="top-bar"><a href="index.html" class="hub-top-btn">🏠 Back to Hub</a></div>
+  <h1>✍️ Web Wordsmith!</h1>
+  <p class="sub" id="subline">Write your very own guide to the World Wide Web, one section at a time!</p>
+
+  <div class="hud">
+    <div>Player: <span class="big" id="playerName">—</span></div>
+    <div>Section <span class="big" id="secNum">1</span>/<span id="secTotal">4</span></div>
+    <div>Stars: <span class="big" id="starsTotal">0</span> ⭐</div>
+  </div>
+
+  <div class="stage" id="stage"><!-- filled by JS --></div>
+
+  <p class="msg" id="msg">Get ready to become a Web Wordsmith!</p>
+</div>
+
+<script>
+// ===================== CONTENT =====================
+// Matches NCCE Year 4 Lesson 3 "Sharing information": what can be shared on the
+// WWW, reading domain names, browsers vs search engines. This version asks
+// learners to WRITE their own explanations and examples, rather than choosing
+// from options — real typing/writing practice, tied to the same lesson.
+const SECTIONS = [
+  {
+    key:'share', icon:'📤', title:'Sharing on the Web',
+    intro:"Some things can be shared on the World Wide Web — photos, videos, sounds and eBooks are all media, so they can be sent online. But real, physical things (like your actual pet or a sandwich!) can't be sent through the internet. Time to write your own examples!",
+    minWords:4,
+    prompts:[
+      { id:'shareYes', label:"Write about ONE thing you could share on the internet (like a photo, video, or message). What is it, and why is it OK to share?",
+        placeholder:"e.g. I could share a video of my football goal because it's just a digital file..." },
+      { id:'shareNo', label:"Now write about ONE real, physical thing that you could NOT actually send through the internet. Why not?",
+        placeholder:"e.g. I could not send my pet dog because..." }
+    ]
+  },
+  {
+    key:'address', icon:'🌍', title:'Decoding a Web Address',
+    intro:"A web address is made of parts. Look at the example below, then write what you think each part tells us.",
+    minWords:3,
+    demo:true,
+    prompts:[
+      { id:'addrWWW', label:"What does the 'www' part of a web address stand for?",
+        placeholder:"e.g. It stands for..." },
+      { id:'addrMiddle', label:"The middle part is usually the website's name or organisation. Invent your own website name and say what it would be for!",
+        placeholder:"e.g. www.myfootballclub..." },
+      { id:'addrEnd', label:"The ending (like .co.uk or .fr) can be a clue about a website. What do you think .co.uk tells us? What about .fr?",
+        placeholder:"e.g. .co.uk might mean the website is from..." }
+    ]
+  },
+  {
+    key:'browser', icon:'🧭', title:'Browser or Website?',
+    intro:"To visit websites, you need a web browser. Remember: Google is a search engine, not a browser — Chrome, Safari, Firefox and Edge are all browsers! Now explain it in your own words.",
+    minWords:8,
+    prompts:[
+      { id:'browserExplain', label:"Imagine you're teaching a younger student. Write 2-3 sentences explaining what a web browser is, and name one real example.",
+        placeholder:"e.g. A web browser is..." }
+    ]
+  },
+  {
+    key:'tip', icon:'💡', title:'My Top Tip',
+    intro:"You've learned a lot about the World Wide Web today! Finish your guide with one great tip for a friend.",
+    minWords:6,
+    prompts:[
+      { id:'topTip', label:"Write one 'Top Tip' sentence to help a friend understand something important about the internet or the World Wide Web.",
+        placeholder:"e.g. My top tip is..." }
+    ]
+  },
+];
+
+function countWords(s){ const t = (s||'').trim(); return t ? t.split(/\s+/).length : 0; }
+
+let secIdx = 0, starsTotal = 0, studentName = "";
+const answers = {};
+const STORAGE_KEY = "webWordsmithResults";
+
+const stage = document.getElementById('stage');
+const msg = document.getElementById('msg');
+const wrap = document.getElementById('wrap');
+document.getElementById('secTotal').textContent = SECTIONS.length;
+
+function updateHUD(){
+  document.getElementById('secNum').textContent = secIdx+1;
+  document.getElementById('starsTotal').textContent = starsTotal;
+}
+
+function showSectionIntro(idx){
+  const s = SECTIONS[idx];
+  msg.className = 'msg';
+  msg.textContent = '';
+  stage.innerHTML = `
+    <div class="sec-intro">
+      <div class="sicon">${s.icon}</div>
+      <h2>Section ${idx+1}: ${s.title}</h2>
+      <p>${s.intro}</p>
+      ${s.demo ? `<div class="addr-demo"><span class="p1">www</span>.<span class="p2">bonjourmusique</span><span class="p3">.fr</span></div>` : ''}
+      <button class="ctrl" id="beginSecBtn">Start Writing ▶</button>
+    </div>`;
+  document.getElementById('beginSecBtn').addEventListener('click', ()=> renderSection());
+  updateHUD();
+}
+
+function renderSection(){
+  const s = SECTIONS[secIdx];
+  updateHUD();
+  msg.className = 'msg';
+  msg.textContent = 'Write your answers below, then tap Continue!';
+
+  const blocksHTML = s.prompts.map(p => `
+    <div class="prompt-block">
+      <div class="q">${p.label}</div>
+      <textarea id="ta_${p.id}" placeholder="${p.placeholder||''}">${answers[p.id]||''}</textarea>
+      <div class="word-count" id="wc_${p.id}">0 words</div>
+    </div>`).join('');
+
+  stage.innerHTML = `
+    ${s.demo ? `<div style="text-align:center;"><div class="addr-demo"><span class="p1">www</span>.<span class="p2">bonjourmusique</span><span class="p3">.fr</span></div></div>` : ''}
+    ${blocksHTML}
+    <div class="controls"><button class="ctrl" id="continueBtn" disabled>Continue ▶</button></div>`;
+
+  function checkReady(){
+    let allOk = true;
+    s.prompts.forEach(p=>{
+      const val = document.getElementById('ta_'+p.id).value;
+      const words = countWords(val);
+      const wc = document.getElementById('wc_'+p.id);
+      wc.textContent = words + (words===1?' word':' words');
+      wc.className = 'word-count' + (words >= s.minWords ? ' ok' : '');
+      if(words < s.minWords) allOk = false;
+    });
+    document.getElementById('continueBtn').disabled = !allOk;
+  }
+  s.prompts.forEach(p=>{
+    const ta = document.getElementById('ta_'+p.id);
+    ta.addEventListener('input', ()=>{ answers[p.id] = ta.value; checkReady(); });
+  });
+  checkReady();
+
+  document.getElementById('continueBtn').addEventListener('click', finishSection);
+}
+
+const PRAISE = ["Great writing! 🧠","Lovely explanation! ⭐","Brilliant work! 🎉","Super thinking! 🏆","Nice sentences! 👍","Well written! ✍️"];
+
+function finishSection(){
+  const s = SECTIONS[secIdx];
+  let totalWords = 0;
+  s.prompts.forEach(p=>{ totalWords += countWords(answers[p.id]); });
+  const target = s.minWords * s.prompts.length;
+  let stars = 1;
+  if(totalWords >= target*3) stars = 3;
+  else if(totalWords >= target*1.7) stars = 2;
+  starsTotal += stars;
+  document.getElementById('starsTotal').textContent = starsTotal;
+
+  stage.innerHTML = `
+    <div class="sec-intro">
+      <div class="stars-earned">${'⭐'.repeat(stars)}</div>
+      <h2>Section Complete!</h2>
+      <p>${PRAISE[Math.floor(Math.random()*PRAISE.length)]} You wrote ${totalWords} words in this section.</p>
+    </div>`;
+  msg.className = 'msg happy';
+  msg.textContent = '';
+  spawnConfetti(20);
+  showCelebrateBanner(PRAISE[Math.floor(Math.random()*PRAISE.length)], `+${stars} star${stars>1?'s':''}`);
+
+  setTimeout(()=>{
+    secIdx++;
+    if(secIdx < SECTIONS.length){
+      showSectionIntro(secIdx);
+    } else {
+      showFinal();
+    }
+  }, 1700);
+}
+
+function spawnConfetti(n){
+  const colors = ['#7C3AED','#38BDF8','#FB923C','#06D6A0','#FFD23F','#FFFFFF'];
+  for(let i=0;i<n;i++){
+    const p = document.createElement('div');
+    p.className = 'confetti-piece';
+    p.style.left = Math.random()*100 + '%';
+    p.style.background = colors[Math.floor(Math.random()*colors.length)];
+    p.style.animationDuration = (1.2 + Math.random()*1.1) + 's';
+    p.style.transform = `rotate(${Math.random()*360}deg)`;
+    wrap.appendChild(p);
+    setTimeout(()=>p.remove(), 2500);
+  }
+}
+function showCelebrateBanner(text, sub){
+  const b = document.createElement('div');
+  b.className = 'celebrate-banner';
+  b.innerHTML = `<div class="big">${text}</div><div class="small">${sub}</div>`;
+  wrap.appendChild(b);
+  requestAnimationFrame(()=> b.classList.add('show'));
+  setTimeout(()=>{ b.style.transition='opacity .3s'; b.style.opacity='0'; setTimeout(()=>b.remove(),320); }, 1200);
+}
+
+function labelFor(id){
+  for(const s of SECTIONS){ for(const p of s.prompts){ if(p.id===id) return p.label; } }
+  return id;
+}
+
+function showFinal(){
+  let maxStars = SECTIONS.length*3;
+  let trophy = "🏆";
+
+  let guideHTML = SECTIONS.map(s => {
+    const items = s.prompts.map(p => `<h4>${p.label}</h4><p>${(answers[p.id]||'').trim()}</p>`).join('');
+    return `<div class="guide-page"><div style="font-weight:bold;color:var(--primary);font-size:15px;margin-bottom:2px;">${s.icon} ${s.title}</div>${items}</div>`;
+  }).join('');
+
+  stage.innerHTML = `
+    <div class="final-screen">
+      <div class="trophy">${trophy}</div>
+      <div class="stars-earned">${'⭐'.repeat(Math.min(starsTotal, maxStars))}</div>
+      <div style="font-size:22px;font-weight:bold;color:var(--primary);margin-bottom:8px;">You wrote your own Web Guide!</div>
+      <div style="font-size:17px;color:#555;margin-bottom:18px;">Total stars: ${starsTotal} / ${maxStars}</div>
+    </div>
+    <div id="guideOutput">${guideHTML}</div>
+    <div class="controls"><button class="ctrl secondary" id="playAgainBtn">Write Again 🔄</button></div>`;
+  msg.textContent = "";
+  spawnConfetti(50);
+  document.getElementById('playAgainBtn').addEventListener('click', ()=>{
+    secIdx = 0; starsTotal = 0;
+    Object.keys(answers).forEach(k=> delete answers[k]);
+    document.getElementById('starsTotal').textContent = starsTotal;
+    showSectionIntro(0);
+  });
+  showResultsPanel();
+}
+
+/* ================= RESULTS PANEL ================= */
+function buildGuideText(){
+  const lines = [];
+  lines.push(`MY WEB GUIDE`);
+  lines.push(`By ${studentName}`);
+  lines.push('');
+  SECTIONS.forEach(s=>{
+    lines.push(`== ${s.title} ==`);
+    s.prompts.forEach(p=>{
+      lines.push(p.label);
+      lines.push((answers[p.id]||'').trim());
+      lines.push('');
+    });
+  });
+  lines.push(`Stars earned: ${starsTotal} / ${SECTIONS.length*3}`);
+  return lines.join('\n');
+}
+
+function showResultsPanel(){
+  let panel = document.getElementById('resultsPanel');
+  if(!panel){
+    panel = document.createElement('div');
+    panel.id = 'resultsPanel';
+    panel.innerHTML = `
+      <h3>🏁 Well done!</h3>
+      <div id="resultsSummary" style="font-size:14.5px;color:#444;"></div>
+      <div class="saved-note" id="cloudSyncNote" style="color:#7C3AED;">☁️ Sending your guide to your teacher...</div>
+      <div class="save-row">
+        <button class="ctrl" id="saveResultBtn">💾 Save My Web Guide</button>
+        <button class="ctrl secondary" id="downloadAllBtn">📋 Download Class Results</button>
+        <button class="ctrl secondary" id="toggleSavedBtn">👀 View Saved Guides</button>
+      </div>
+      <div class="saved-note" id="savedNote"></div>
+      <div style="margin-top:14px;"><a href="index.html" style="display:block; background:#1A1A2E; color:white; text-decoration:none; padding:20px 24px; border-radius:16px; font-weight:bold; font-size:22px; text-align:center; box-shadow:0 6px 18px rgba(0,0,0,0.3);">🏠 Back to Hub</a></div>
+      <div id="savedTableWrap">
+        <table>
+          <thead><tr><th>Name</th><th>Stars</th><th>Words Written</th><th>Date</th></tr></thead>
+          <tbody id="savedTableBody"></tbody>
+        </table>
+      </div>`;
+    wrap.appendChild(panel);
+    document.getElementById('saveResultBtn').addEventListener('click', onSaveResult);
+    document.getElementById('downloadAllBtn').addEventListener('click', onDownloadAll);
+    document.getElementById('toggleSavedBtn').addEventListener('click', onToggleSaved);
+  }
+  panel.style.display = 'block';
+  const totalWords = SECTIONS.reduce((n,s)=> n + s.prompts.reduce((m,p)=> m + countWords(answers[p.id]), 0), 0);
+  document.getElementById('resultsSummary').textContent = `${studentName} earned ${starsTotal} stars and wrote ${totalWords} words in their Web Guide.`;
+  document.getElementById('savedNote').textContent = '';
+  panel.scrollIntoView({ behavior:'smooth', block:'nearest' });
+
+  const cloudNote = document.getElementById('cloudSyncNote');
+  if(window.__submitResultToCloud){
+    window.__submitResultToCloud({
+      name: studentName,
+      game: "Web Wordsmith! (Y4)",
+      score: starsTotal,
+      total: SECTIONS.length*3,
+      wordsWritten: totalWords,
+      guideText: buildGuideText(),
+      date: new Date().toLocaleDateString() + ' ' + new Date().toLocaleTimeString([], {hour:'2-digit', minute:'2-digit'})
+    }).then(ok => {
+      if(cloudNote) cloudNote.textContent = ok
+        ? '☁️ Sent to your teacher automatically!'
+        : '⚠️ Could not connect to sync automatically — use "Save My Web Guide" below as a backup.';
+    });
+  } else if(cloudNote){
+    cloudNote.textContent = '⚠️ Cloud sync unavailable — use "Save My Web Guide" below as a backup.';
+  }
+}
+
+function readSavedResults(){ try{ return JSON.parse(localStorage.getItem(STORAGE_KEY) || "[]"); }catch(e){ return []; } }
+function writeSavedResults(list){ try{ localStorage.setItem(STORAGE_KEY, JSON.stringify(list)); }catch(e){} }
+function csvEscape(v){ const s = String(v); return /[",\n]/.test(s) ? '"' + s.replace(/"/g,'""') + '"' : s; }
+function downloadCSV(filename, rows){
+  const csv = rows.map(r=>r.map(csvEscape).join(",")).join("\r\n");
+  const blob = new Blob([csv], {type:"text/csv;charset=utf-8;"});
+  const url = URL.createObjectURL(blob);
+  const a = document.createElement('a');
+  a.href = url; a.download = filename;
+  document.body.appendChild(a); a.click(); document.body.removeChild(a);
+  setTimeout(()=>URL.revokeObjectURL(url), 1000);
+}
+function downloadText(filename, text){
+  const blob = new Blob([text], {type:"text/plain;charset=utf-8;"});
+  const url = URL.createObjectURL(blob);
+  const a = document.createElement('a');
+  a.href = url; a.download = filename;
+  document.body.appendChild(a); a.click(); document.body.removeChild(a);
+  setTimeout(()=>URL.revokeObjectURL(url), 1000);
+}
+function renderSavedTable(){
+  const list = readSavedResults();
+  const body = document.getElementById('savedTableBody');
+  body.innerHTML = list.map(r=>`<tr><td>${r.name}</td><td>${r.stars}</td><td>${r.words}</td><td>${r.date}</td></tr>`).join('') ||
+    '<tr><td colspan="4" style="color:#999;">No saved guides yet on this computer.</td></tr>';
+}
+async function saveTextWithPicker(filename, text, noteElId, chosenMsg, fallbackMsg, cancelMsg){
+  if(window.showSaveFilePicker){
+    try{
+      const handle = await window.showSaveFilePicker({
+        suggestedName: filename,
+        types: [{ description: 'Text file', accept: {'text/plain': ['.txt']} }]
+      });
+      const writable = await handle.createWritable();
+      await writable.write(text);
+      await writable.close();
+      document.getElementById(noteElId).textContent = chosenMsg;
+      return;
+    }catch(err){
+      if(err && err.name === 'AbortError'){
+        document.getElementById(noteElId).textContent = cancelMsg;
+        return;
+      }
+    }
+  }
+  downloadText(filename, text);
+  document.getElementById(noteElId).textContent = fallbackMsg;
+}
+async function onSaveResult(){
+  const now = new Date();
+  const totalWords = SECTIONS.reduce((n,s)=> n + s.prompts.reduce((m,p)=> m + countWords(answers[p.id]), 0), 0);
+  const record = {
+    name: studentName, stars: starsTotal, words: totalWords,
+    date: now.toLocaleDateString() + ' ' + now.toLocaleTimeString([], {hour:'2-digit', minute:'2-digit'})
+  };
+  const list = readSavedResults();
+  list.push(record);
+  writeSavedResults(list);
+  const safeName = (studentName || 'student').replace(/[^a-z0-9]+/gi,'_');
+  const filename = `WebWordsmith_${safeName}_${now.toISOString().slice(0,10)}.txt`;
+  await saveTextWithPicker(filename, buildGuideText(), 'savedNote',
+    '✅ Saved! Your Web Guide was saved where you chose, and your score was stored on this computer.',
+    '✅ Saved! Your Web Guide was downloaded (this browser doesn’t support choosing a save location), and your score was stored on this computer.',
+    'Save cancelled — your score is still stored on this computer, so you can still download the class results later.');
+  renderSavedTable();
+}
+async function onDownloadAll(){
+  const list = readSavedResults();
+  if(list.length === 0){
+    document.getElementById('savedNote').textContent = 'No saved guides yet on this computer.';
+    return;
+  }
+  const rows = [["Name","Stars","Words Written","Date"], ...list.map(r=>[r.name, r.stars, r.words, r.date])];
+  const csv = rows.map(r=>r.map(csvEscape).join(",")).join("\r\n");
+  const filename = `WebWordsmith_AllResults_${new Date().toISOString().slice(0,10)}.csv`;
+  if(window.showSaveFilePicker){
+    try{
+      const handle = await window.showSaveFilePicker({ suggestedName: filename, types: [{ description: 'CSV file', accept: {'text/csv': ['.csv']} }] });
+      const writable = await handle.createWritable();
+      await writable.write(csv);
+      await writable.close();
+      document.getElementById('savedNote').textContent = '✅ Class results saved where you chose.';
+      return;
+    }catch(err){
+      if(err && err.name === 'AbortError'){ document.getElementById('savedNote').textContent = 'Save cancelled.'; return; }
+    }
+  }
+  downloadCSV(filename, rows);
+  document.getElementById('savedNote').textContent = '✅ Class results file downloaded (this browser doesn’t support choosing a save location).';
+}
+function onToggleSaved(){
+  const t = document.getElementById('savedTableWrap');
+  const showing = t.style.display === 'block';
+  t.style.display = showing ? 'none' : 'block';
+  if(!showing) renderSavedTable();
+}
+
+/* ================= NAME GATE ================= */
+const gateOverlay = document.getElementById('gateOverlay');
+const nameInput = document.getElementById('nameInput');
+const nameError = document.getElementById('nameError');
+
+function startGame(){
+  const val = nameInput.value.trim();
+  if(!val){
+    nameError.textContent = "Please type your name to start.";
+    nameInput.focus();
+    return;
+  }
+  studentName = val.slice(0,24);
+  document.getElementById('playerName').textContent = studentName;
+  document.getElementById('subline').textContent =
+    `Nice to meet you, ${studentName}! Write your own guide to the World Wide Web, one section at a time!`;
+  gateOverlay.style.display = 'none';
+  showSectionIntro(0);
+}
+document.getElementById('startBtn').addEventListener('click', startGame);
+nameInput.addEventListener('keydown', (e)=>{ if(e.key === 'Enter') startGame(); });
+nameInput.focus();
+</script>
+
+<!-- ===== Cloud sync: sends each result to the shared Firestore database ===== -->
+<script src="https://www.gstatic.com/firebasejs/10.13.0/firebase-app-compat.js"></script>
+<script src="https://www.gstatic.com/firebasejs/10.13.0/firebase-firestore-compat.js"></script>
+<script>
+  const firebaseConfig = {
+    apiKey: "AIzaSyCEJtHd802MyuZUlwt6OfGkl9IitHaSOaA",
+    authDomain: "tasks-results.firebaseapp.com",
+    projectId: "tasks-results",
+    storageBucket: "tasks-results.firebasestorage.app",
+    messagingSenderId: "1014525306500",
+    appId: "1:1014525306500:web:3ffe2e6f5554e9140e04d1"
+  };
+  try{
+    firebase.initializeApp(firebaseConfig);
+    const db = firebase.firestore();
+    window.__submitResultToCloud = function(record){
+      return db.collection("results").add({
+        ...record,
+        createdAt: firebase.firestore.FieldValue.serverTimestamp()
+      }).then(() => true).catch((err) => { console.error("Cloud sync failed:", err); return false; });
+    };
+  }catch(err){
+    console.error("Firebase init failed:", err);
+  }
+</script>
+</body>
+</html>

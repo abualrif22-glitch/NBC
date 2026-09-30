@@ -104,15 +104,15 @@
 </div>
 
 <script>
-// Year 3: no on-screen keyboard (real keyboard only) and noticeably faster than Y1/Y2,
-// since Year 3 have already practiced letter recognition on the keyboard.
+// Year 3: no on-screen keyboard (real keyboard only) — a gentler pace than the numbers
+// might suggest, easing in slowly since there's no visual key to guide them this time.
 const LEVELS = [
-  { pool:"QWERTYUIOPASDFGHJKLZXCVBNM".split(''), duration:4600, spawnGap:900, maxConcurrent:1, target:10 },
-  { pool:"QWERTYUIOPASDFGHJKLZXCVBNM".split(''), duration:4000, spawnGap:800, maxConcurrent:2, target:12 },
-  { pool:"QWERTYUIOPASDFGHJKLZXCVBNM".split(''), duration:3400, spawnGap:700, maxConcurrent:2, target:14 },
-  { pool:"QWERTYUIOPASDFGHJKLZXCVBNM".split(''), duration:3000, spawnGap:620, maxConcurrent:3, target:16 },
-  { pool:"QWERTYUIOPASDFGHJKLZXCVBNM".split(''), duration:2600, spawnGap:550, maxConcurrent:3, target:18 },
-  { pool:"QWERTYUIOPASDFGHJKLZXCVBNM".split(''), duration:2200, spawnGap:480, maxConcurrent:4, target:20 },
+  { pool:"QWERTYUIOPASDFGHJKLZXCVBNM".split(''), duration:6400, spawnGap:1050, maxConcurrent:1, target:8 },
+  { pool:"QWERTYUIOPASDFGHJKLZXCVBNM".split(''), duration:5600, spawnGap:950,  maxConcurrent:1, target:10 },
+  { pool:"QWERTYUIOPASDFGHJKLZXCVBNM".split(''), duration:4800, spawnGap:900,  maxConcurrent:2, target:12 },
+  { pool:"QWERTYUIOPASDFGHJKLZXCVBNM".split(''), duration:4100, spawnGap:800,  maxConcurrent:2, target:14 },
+  { pool:"QWERTYUIOPASDFGHJKLZXCVBNM".split(''), duration:3500, spawnGap:700,  maxConcurrent:3, target:16 },
+  { pool:"QWERTYUIOPASDFGHJKLZXCVBNM".split(''), duration:3000, spawnGap:600,  maxConcurrent:3, target:18 },
 ];
 const STORAGE_KEY = "letterRainY3Results";
 const GAME_LABEL = "Letter Rain! (Y3)";

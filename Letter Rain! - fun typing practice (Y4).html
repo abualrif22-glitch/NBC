@@ -105,16 +105,16 @@
 </div>
 
 <script>
-// Year 4: no on-screen keyboard, fastest single-letter pace of the whole set, and the final
-// three levels drop two- and three-letter blends that must be typed in full, in order —
-// real word-building practice for confident keyboard users.
+// Year 4: no on-screen keyboard, a calm pace on single letters, then the final three
+// levels ease into two- and three-letter blends that must be typed in full, in order —
+// real word-building practice, with plenty of time to read and type each one.
 const LEVELS = [
-  { pool:"QWERTYUIOPASDFGHJKLZXCVBNM".split(''), duration:4200, spawnGap:850, maxConcurrent:2, target:10 },
-  { pool:"QWERTYUIOPASDFGHJKLZXCVBNM".split(''), duration:3600, spawnGap:750, maxConcurrent:2, target:12 },
-  { pool:"QWERTYUIOPASDFGHJKLZXCVBNM".split(''), duration:3000, spawnGap:650, maxConcurrent:3, target:14 },
-  { pool:["TH","ER","ON","AN","IN","RE","ES","EN","AT","OU","A","E","S","T"], duration:3600, spawnGap:750, maxConcurrent:2, target:14 },
-  { pool:["ING","AND","THE","FOR","YOU","TH","ER","ON","AN","IN"], duration:3200, spawnGap:680, maxConcurrent:3, target:16 },
-  { pool:["ING","AND","THE","FOR","YOU","PLAY","WORD","TYPE","FAST"], duration:2900, spawnGap:620, maxConcurrent:3, target:18 },
+  { pool:"QWERTYUIOPASDFGHJKLZXCVBNM".split(''), duration:5800, spawnGap:1000, maxConcurrent:1, target:8 },
+  { pool:"QWERTYUIOPASDFGHJKLZXCVBNM".split(''), duration:5000, spawnGap:900,  maxConcurrent:2, target:10 },
+  { pool:"QWERTYUIOPASDFGHJKLZXCVBNM".split(''), duration:4300, spawnGap:800,  maxConcurrent:2, target:12 },
+  { pool:["TH","ER","ON","AN","IN","RE","ES","EN","AT","OU","A","E","S","T"], duration:5600, spawnGap:1000, maxConcurrent:1, target:10 },
+  { pool:["ING","AND","THE","FOR","YOU","TH","ER","ON","AN","IN"], duration:5000, spawnGap:900, maxConcurrent:2, target:12 },
+  { pool:["ING","AND","THE","FOR","YOU","PLAY","WORD","TYPE","FAST"], duration:4600, spawnGap:850, maxConcurrent:2, target:14 },
 ];
 const STORAGE_KEY = "letterRainY4Results";
 const GAME_LABEL = "Letter Rain! (Y4)";

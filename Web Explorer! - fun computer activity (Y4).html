@@ -1,0 +1,634 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>Web Explorer! - Year 4 Computing Game</title>
+<style>
+  :root{
+    --primary:#0F766E; --secondary:#38BDF8; --accent:#FB923C;
+    --light:#F4FBFA; --dark:#0F2A28; --red:#E74C3C; --green:#06D6A0;
+  }
+  *{box-sizing:border-box; -webkit-tap-highlight-color: transparent;}
+  html, body{ margin:0; height:100%; }
+  body{
+    font-family:'Segoe UI', Calibri, Arial, sans-serif;
+    background:linear-gradient(135deg,#0F766E 0%,#38BDF8 100%);
+    min-height:100vh; display:flex; align-items:center; justify-content:center; padding:24px;
+  }
+  .wrap{ background:var(--light); border-radius:24px; max-width:860px; width:100%; padding:26px 30px 34px;
+    box-shadow:0 20px 50px rgba(0,0,0,0.35); position:relative; overflow:hidden; }
+  h1{ color:var(--primary); text-align:center; margin:0 0 4px; font-size:clamp(24px,4vw,32px); }
+  .sub{ text-align:center; color:#555; margin:0 0 16px; font-size:clamp(13px,2vw,15px); }
+  .hud{ display:flex; justify-content:space-between; align-items:center; background:white; border-radius:16px;
+    padding:13px 20px; margin-bottom:16px; box-shadow:0 2px 8px rgba(0,0,0,0.08); font-weight:bold; color:var(--primary);
+    flex-wrap:wrap; gap:8px; font-size:clamp(12px,2vw,15px); }
+  .hud span.big{ color:var(--accent); font-size:1.2em; }
+
+  .stage{ background:#eaf7f5; border-radius:22px; padding:28px 20px; text-align:center; border:3px dashed #bfe6e0;
+    min-height:340px; display:flex; flex-direction:column; align-items:center; justify-content:center; }
+
+  /* ---- Round intro ---- */
+  .round-intro .ricon{ font-size:56px; margin-bottom:6px; }
+  .round-intro h2{ color:var(--primary); margin:0 0 10px; font-size:clamp(20px,3.4vw,26px); }
+  .round-intro p{ color:#444; max-width:480px; margin:0 auto 20px; font-size:15px; line-height:1.5; }
+
+  /* ---- Classify item (round 1 & 3) ---- */
+  .object-card{ background:white; border-radius:24px; padding:26px 40px; box-shadow:0 8px 24px rgba(0,0,0,0.15);
+    margin-bottom:22px; transition: transform .2s ease; }
+  .object-card.shake{ animation: shakeRed .5s ease; }
+  .object-card.pop{ animation: popGood .5s ease; }
+  @keyframes shakeRed{ 0%,100%{transform:translateX(0) scale(1);} 20%{transform:translateX(-10px) scale(1);}
+    40%{transform:translateX(10px) scale(1);} 60%{transform:translateX(-8px) scale(1);} 80%{transform:translateX(8px) scale(1);} }
+  @keyframes popGood{ 0%{transform:scale(1);} 40%{transform:scale(1.15);} 100%{transform:scale(1);} }
+  .object-emoji{ font-size:clamp(54px,11vw,84px); line-height:1; }
+  .object-label{ font-size:clamp(16px,2.6vw,21px); font-weight:bold; color:var(--dark); margin-top:6px; }
+
+  /* ---- Domain URL bar (round 2) ---- */
+  .url-bar{ background:white; border-radius:14px; padding:14px 20px; box-shadow:0 8px 24px rgba(0,0,0,0.15);
+    display:inline-flex; align-items:center; gap:10px; margin-bottom:18px; max-width:100%; }
+  .url-bar .globe{ font-size:22px; }
+  .url-bar .addr{ font-family:'Consolas','Courier New',monospace; font-size:clamp(14px,2.6vw,19px); font-weight:bold; color:var(--dark);
+    word-break:break-all; }
+  .domain-q{ font-size:clamp(15px,2.4vw,18px); color:#444; margin-bottom:20px; font-weight:600; }
+
+  /* ---- Quiz question (round 4) ---- */
+  .question-bubble{ background:white; border-radius:20px; padding:22px 28px; box-shadow:0 8px 24px rgba(0,0,0,0.15);
+    margin-bottom:22px; max-width:560px; }
+  .question-bubble .qmark{ font-size:34px; margin-bottom:6px; }
+  .question-bubble .qtext{ font-size:clamp(16px,2.6vw,20px); font-weight:bold; color:var(--dark); }
+
+  /* ---- Answer layouts ---- */
+  .btn-row{ display:flex; gap:18px; width:100%; max-width:560px; flex-wrap:wrap; justify-content:center; }
+  .btn-grid{ display:grid; grid-template-columns:1fr 1fr; gap:14px; width:100%; max-width:520px; }
+  .btn-stack{ display:flex; flex-direction:column; gap:12px; width:100%; max-width:480px; }
+  .btn-stack .tap-btn, .btn-grid .tap-btn{ flex:0 1 auto; min-height:58px; }
+
+  .tap-btn{ flex:1 1 220px; min-height:78px; border:none; border-radius:18px; font-size:clamp(15px,2.6vw,19px);
+    font-weight:bold; color:white; cursor:pointer; display:flex; align-items:center; justify-content:center;
+    gap:8px; padding:10px 14px; box-shadow:0 7px 0 rgba(0,0,0,0.15); transition: transform .08s ease, box-shadow .08s ease;
+    background:var(--secondary); }
+  .tap-btn:active{ transform: translateY(5px); box-shadow:0 2px 0 rgba(0,0,0,0.15); }
+  .tap-btn.positive{ background:var(--green); }
+  .tap-btn.negative{ background:var(--red); }
+  .tap-btn.neutral{ background:var(--primary); }
+  .tap-btn:disabled{ opacity:0.55; }
+
+  .msg{ text-align:center; margin-top:16px; min-height:40px; font-size:clamp(14px,2.3vw,17px); font-weight:bold; color:var(--primary); }
+  .msg.happy{ color:#0e9e6f; } .msg.oops{ color:var(--red); }
+
+  .controls{ display:flex; justify-content:center; margin-top:14px; gap:12px; }
+  button.ctrl{ background:var(--primary); color:white; border:none; padding:13px 28px; border-radius:12px; font-size:16px; font-weight:bold; cursor:pointer; }
+  button.ctrl.secondary{ background:white; color:var(--primary); border:2px solid var(--primary); }
+
+  .stars{ text-align:center; font-size:42px; margin:6px 0 10px; }
+
+  .gate-overlay{ position:fixed; inset:0; background:rgba(15,42,40,0.72); display:flex; align-items:center; justify-content:center; z-index:100; padding:20px; }
+  .gate-card{ background:white; border-radius:20px; padding:34px 36px; max-width:420px; width:100%; text-align:center; box-shadow:0 20px 50px rgba(0,0,0,0.4); }
+  .gate-card h2{ color:var(--primary); margin:0 0 8px; font-size:24px; }
+  .gate-card p{ color:#555; margin:0 0 18px; font-size:14.5px; }
+  .gate-card input{ width:100%; font-size:18px; padding:12px 14px; border-radius:10px; border:2px solid var(--secondary);
+    text-align:center; font-weight:bold; color:var(--dark); margin-bottom:14px; box-sizing:border-box; }
+  .gate-card input:focus{ outline:none; border-color:var(--primary); }
+  .gate-card button{ width:100%; padding:13px; font-size:16px; border:none; border-radius:10px; background:var(--primary); color:white; font-weight:bold; cursor:pointer; }
+  .gate-error{ color:var(--red); font-size:13px; min-height:18px; margin-bottom:6px; font-weight:bold; }
+
+  #resultsPanel{ display:none; background:white; border-radius:14px; padding:18px 20px; margin-top:16px; box-shadow:0 2px 8px rgba(0,0,0,0.08); text-align:center; }
+  #resultsPanel h3{ margin:0 0 4px; color:var(--primary); font-size:18px; }
+  #resultsPanel .save-row{ display:flex; gap:12px; justify-content:center; flex-wrap:wrap; margin-top:12px; }
+  #resultsPanel .saved-note{ font-size:13px; color:#0e9e6f; font-weight:bold; min-height:18px; margin-top:8px; }
+  #savedTableWrap{ margin-top:14px; max-height:220px; overflow:auto; display:none; }
+  #savedTableWrap table{ width:100%; border-collapse:collapse; font-size:13px; }
+  #savedTableWrap th, #savedTableWrap td{ padding:6px 8px; border-bottom:1px solid #e3e6f0; text-align:left; }
+  #savedTableWrap th{ color:var(--primary); }
+
+  .confetti-piece{ position:absolute; top:-20px; width:12px; height:16px; z-index:20; pointer-events:none; animation: fall linear forwards; }
+  @keyframes fall{ to{ transform: translateY(600px) rotate(540deg); opacity:0.2; } }
+  .celebrate-banner{ position:absolute; left:50%; top:45%; transform:translate(-50%,-50%) scale(0.5); background:white; border-radius:22px;
+    padding:24px 36px; box-shadow:0 12px 40px rgba(0,0,0,0.35); text-align:center; z-index:30; opacity:0; pointer-events:none; }
+  .celebrate-banner.show{ animation: bannerPop .6s cubic-bezier(.34,1.56,.64,1) forwards; }
+  @keyframes bannerPop{ 0%{opacity:0; transform:translate(-50%,-50%) scale(0.4) rotate(-6deg);} 60%{opacity:1; transform:translate(-50%,-50%) scale(1.08) rotate(2deg);} 100%{opacity:1; transform:translate(-50%,-50%) scale(1) rotate(0);} }
+  .celebrate-banner .big{ font-size:26px; font-weight:bold; color:var(--primary); margin-bottom:4px; }
+  .celebrate-banner .small{ font-size:14px; color:#555; }
+  .final-screen{ text-align:center; }
+  .final-screen .trophy{ font-size:76px; }
+  .top-bar{ margin:0; }
+  .hub-top-btn{ position:fixed; top:12px; left:12px; z-index:300;
+    display:inline-flex; align-items:center; gap:6px; background:#1A1A2E; color:white;
+    text-decoration:none; font-weight:bold; font-size:clamp(12px,2.2vw,14px); padding:8px 16px 8px 12px;
+    border-radius:20px; box-shadow:0 3px 10px rgba(0,0,0,0.35); }
+  .hub-top-btn:hover{ opacity:0.85; }
+  .hub-top-btn:active{ transform:scale(0.96); }
+</style>
+</head>
+<body>
+
+<div class="gate-overlay" id="gateOverlay">
+  <div class="gate-card">
+    <h2>🌐 Web Explorer!</h2>
+    <p>Type your name to start the challenge.</p>
+    <input type="text" id="nameInput" placeholder="Your name" maxlength="24" autocomplete="off">
+    <div class="gate-error" id="nameError"></div>
+    <button id="startBtn">Start ▶</button>
+  </div>
+</div>
+
+<div class="wrap" id="wrap">
+  <div class="top-bar"><a href="index.html" class="hub-top-btn">🏠 Back to Hub</a></div>
+  <h1>🌐 Web Explorer!</h1>
+  <p class="sub" id="subline">Explore how the World Wide Web works across 4 fun rounds!</p>
+
+  <div class="hud">
+    <div>Player: <span class="big" id="playerName">—</span></div>
+    <div>Round <span class="big" id="roundNum">1</span>/<span id="roundTotal">4</span> (Item <span id="itemNum">1</span>/<span id="itemTotal">8</span>)</div>
+    <div>Score: <span class="big" id="score">0</span> ⭐</div>
+  </div>
+
+  <div class="stage" id="stage"><!-- filled by JS --></div>
+
+  <p class="msg" id="msg">Get ready to explore the World Wide Web!</p>
+</div>
+
+<script>
+// ===================== CONTENT =====================
+// Matches NCCE Year 4 Lesson 3 "Sharing information": what can be shared on the
+// WWW, reading domain names, browsers vs search engines, and the plenary quiz.
+const ROUNDS = [
+  {
+    key:'share', icon:'📤', title:'Can We Share It?', layout:'binary',
+    intro:"Some things can be shared on the World Wide Web — others can't! Look at each thing and decide: is it something you could share online, or is it a real, physical thing?",
+    items:[
+      { emoji:'📷', label:'A photo of your dog', options:[
+          {label:'✅ Can Share', correct:true, kind:'positive'},
+          {label:"❌ Can't Share", correct:false, kind:'negative'}],
+        explain:"Yes! A photo is media — a digital picture — so it can easily be shared on the WWW." },
+      { emoji:'🐶', label:'Your actual pet dog', options:[
+          {label:'✅ Can Share', correct:false, kind:'positive'},
+          {label:"❌ Can't Share", correct:true, kind:'negative'}],
+        explain:"Right — your real dog is a physical, living animal. You can't send it down the internet!" },
+      { emoji:'🎥', label:'A video of a football match', options:[
+          {label:'✅ Can Share', correct:true, kind:'positive'},
+          {label:"❌ Can't Share", correct:false, kind:'negative'}],
+        explain:"Yes! Videos are media, so they can be shared and watched online." },
+      { emoji:'🥪', label:'A real sandwich', options:[
+          {label:'✅ Can Share', correct:false, kind:'positive'},
+          {label:"❌ Can't Share", correct:true, kind:'negative'}],
+        explain:"Correct — a real sandwich is a physical object. You definitely can't email a sandwich!" },
+      { emoji:'🎵', label:'A song (an MP3 file)', options:[
+          {label:'✅ Can Share', correct:true, kind:'positive'},
+          {label:"❌ Can't Share", correct:false, kind:'negative'}],
+        explain:"Yes! Music files are media and can be shared on the WWW." },
+      { emoji:'🪑', label:'A wooden chair', options:[
+          {label:'✅ Can Share', correct:false, kind:'positive'},
+          {label:"❌ Can't Share", correct:true, kind:'negative'}],
+        explain:"Right — a chair is a physical object, so it can't be shared online." },
+      { emoji:'📖', label:'An eBook', options:[
+          {label:'✅ Can Share', correct:true, kind:'positive'},
+          {label:"❌ Can't Share", correct:false, kind:'negative'}],
+        explain:"Yes! An eBook is a digital copy of a book, so it can be shared on the WWW." },
+      { emoji:'📚', label:'A paperback book from the shelf', options:[
+          {label:'✅ Can Share', correct:false, kind:'positive'},
+          {label:"❌ Can't Share", correct:true, kind:'negative'}],
+        explain:"Correct — a real paperback can't be shared as a physical object... but you could share it as an eBook instead!" },
+    ]
+  },
+  {
+    key:'domain', icon:'🌍', title:"What's in a Name?", layout:'grid',
+    intro:"A web address is made of parts. The ending often gives a clue about where a website is from — like .co.uk for the United Kingdom or .fr for France. Can you work out where each website might be from?",
+    items:[
+      { url:'www.bonjourmusique.fr', prompt:'Where might this website be from?', options:[
+          {label:'France', correct:true},{label:'Japan', correct:false},
+          {label:'United Kingdom', correct:false},{label:'Could be anywhere!', correct:false}],
+        explain:"The .fr ending is the country code for France!" },
+      { url:'www.footballfun.co.uk', prompt:'Where might this website be from?', options:[
+          {label:'United Kingdom', correct:true},{label:'Italy', correct:false},
+          {label:'Australia', correct:false},{label:'Could be anywhere!', correct:false}],
+        explain:".co.uk is the country code for the United Kingdom!" },
+      { url:'www.sakuragarden.jp', prompt:'Where might this website be from?', options:[
+          {label:'Japan', correct:true},{label:'France', correct:false},
+          {label:'United Kingdom', correct:false},{label:'Could be anywhere!', correct:false}],
+        explain:".jp is the country code for Japan!" },
+      { url:'www.pizzapalace.it', prompt:'Where might this website be from?', options:[
+          {label:'Italy', correct:true},{label:'Japan', correct:false},
+          {label:'Australia', correct:false},{label:'Could be anywhere!', correct:false}],
+        explain:".it is the country code for Italy!" },
+      { url:'www.kangaroofun.com.au', prompt:'Where might this website be from?', options:[
+          {label:'Australia', correct:true},{label:'United Kingdom', correct:false},
+          {label:'Italy', correct:false},{label:'Could be anywhere!', correct:false}],
+        explain:".com.au is used by websites in Australia!" },
+      { url:'www.techworldwide.com', prompt:'Where might this website be from?', options:[
+          {label:'Could be anywhere!', correct:true},{label:'United Kingdom', correct:false},
+          {label:'Japan', correct:false},{label:'France', correct:false}],
+        explain:".com doesn't tell you a country — it's used by websites and companies all over the world!" },
+    ]
+  },
+  {
+    key:'browser', icon:'🧭', title:'Browser or Not?', layout:'binary',
+    intro:"To visit websites, you need a web browser — but not everything you use online is a browser! Decide whether each one is a web browser, or something else.",
+    items:[
+      { emoji:'🌐', label:'Chrome', options:[
+          {label:"✅ It's a Browser", correct:true, kind:'positive'},
+          {label:'❌ Not a Browser', correct:false, kind:'negative'}],
+        explain:"Yes! Chrome is a web browser made by Google." },
+      { emoji:'🧭', label:'Safari', options:[
+          {label:"✅ It's a Browser", correct:true, kind:'positive'},
+          {label:'❌ Not a Browser', correct:false, kind:'negative'}],
+        explain:"Yes! Safari is Apple's web browser." },
+      { emoji:'🦊', label:'Firefox', options:[
+          {label:"✅ It's a Browser", correct:true, kind:'positive'},
+          {label:'❌ Not a Browser', correct:false, kind:'negative'}],
+        explain:"Yes! Firefox is a popular web browser." },
+      { emoji:'🔷', label:'Edge', options:[
+          {label:"✅ It's a Browser", correct:true, kind:'positive'},
+          {label:'❌ Not a Browser', correct:false, kind:'negative'}],
+        explain:"Yes! Edge is Microsoft's web browser." },
+      { emoji:'🔴', label:'Opera', options:[
+          {label:"✅ It's a Browser", correct:true, kind:'positive'},
+          {label:'❌ Not a Browser', correct:false, kind:'negative'}],
+        explain:"Yes! Opera is a web browser too." },
+      { emoji:'🔍', label:'Google', options:[
+          {label:"✅ It's a Browser", correct:false, kind:'positive'},
+          {label:'❌ Not a Browser', correct:true, kind:'negative'}],
+        explain:"Careful! Google is a search engine, not a browser. You'd open a browser like Chrome to use it." },
+      { emoji:'📘', label:'Facebook', options:[
+          {label:"✅ It's a Browser", correct:false, kind:'positive'},
+          {label:'❌ Not a Browser', correct:true, kind:'negative'}],
+        explain:"Facebook is a social media website — you'd need a browser to visit it!" },
+      { emoji:'▶️', label:'YouTube', options:[
+          {label:"✅ It's a Browser", correct:false, kind:'positive'},
+          {label:'❌ Not a Browser', correct:true, kind:'negative'}],
+        explain:"YouTube is a video website — you visit it using a browser like Chrome or Safari." },
+    ]
+  },
+  {
+    key:'quiz', icon:'🏁', title:'Final Quiz!', layout:'stack',
+    intro:"Time for the final challenge! Answer these questions to show what you've learned about the internet and the World Wide Web.",
+    items:[
+      { question:'Which of these is correct?', options:[
+          {label:'The internet is part of the World Wide Web', correct:false},
+          {label:'The World Wide Web is part of the internet', correct:true},
+          {label:'The World Wide Web and the internet are the same thing', correct:false}],
+        explain:"The internet is the huge network of connected devices — the World Wide Web is just one of the services that runs on it!" },
+      { question:'What is a router?', options:[
+          {label:'A device which directs information around the internet', correct:true},
+          {label:'A place where websites are stored', correct:false},
+          {label:'A device used for viewing websites', correct:false}],
+        explain:"A router directs information to the right place as it travels around the internet." },
+      { question:'A device needs to have a ______ in order for you to be able to access the World Wide Web.', options:[
+          {label:'Router', correct:false},
+          {label:'Search engine', correct:false},
+          {label:'Web browser', correct:true}],
+        explain:"You need a web browser (like Chrome, Safari or Firefox) to view websites." },
+      { question:'Which of these is a web browser?', options:[
+          {label:'Facebook', correct:false},
+          {label:'Google', correct:false},
+          {label:'Chrome', correct:true}],
+        explain:"Chrome is a web browser. Google is a search engine, and Facebook is a social media website." },
+    ]
+  },
+];
+
+function shuffle(arr){ const a=[...arr]; for(let i=a.length-1;i>0;i--){ const j=Math.floor(Math.random()*(i+1)); [a[i],a[j]]=[a[j],a[i]]; } return a; }
+
+let roundIdx = 0, itemIdx = 0, score = 0, answered = false, studentName = "";
+let totalItems = ROUNDS.reduce((n,r)=>n+r.items.length, 0);
+const STORAGE_KEY = "webExplorerResults";
+
+const stage = document.getElementById('stage');
+const msg = document.getElementById('msg');
+const wrap = document.getElementById('wrap');
+document.getElementById('roundTotal').textContent = ROUNDS.length;
+
+function updateHUD(){
+  document.getElementById('roundNum').textContent = roundIdx+1;
+  document.getElementById('itemNum').textContent = itemIdx+1;
+  document.getElementById('itemTotal').textContent = ROUNDS[roundIdx].items.length;
+  document.getElementById('score').textContent = score;
+}
+
+function showRoundIntro(idx){
+  const r = ROUNDS[idx];
+  msg.className = 'msg';
+  msg.textContent = '';
+  stage.innerHTML = `
+    <div class="round-intro">
+      <div class="ricon">${r.icon}</div>
+      <h2>Round ${idx+1}: ${r.title}</h2>
+      <p>${r.intro}</p>
+      <button class="ctrl" id="beginRoundBtn">Let's go! ▶</button>
+    </div>`;
+  document.getElementById('beginRoundBtn').addEventListener('click', ()=>{
+    itemIdx = 0;
+    updateHUD();
+    renderItem();
+  });
+  updateHUD();
+}
+
+function renderItem(){
+  answered = false;
+  const round = ROUNDS[roundIdx];
+  const item = round.items[itemIdx];
+  updateHUD();
+  msg.className = 'msg';
+  msg.textContent = 'Have a think, then tap your answer!';
+
+  const opts = shuffle(item.options);
+  let mediaHTML = '';
+  if(round.layout === 'binary'){
+    mediaHTML = `<div class="object-card" id="itemCard">
+        <div class="object-emoji">${item.emoji}</div>
+        <div class="object-label">${item.label}</div>
+      </div>`;
+  } else if(round.layout === 'grid'){
+    mediaHTML = `<div class="url-bar" id="itemCard"><span class="globe">🌐</span><span class="addr">${item.url}</span></div>
+      <div class="domain-q">${item.prompt}</div>`;
+  } else if(round.layout === 'stack'){
+    mediaHTML = `<div class="question-bubble" id="itemCard">
+        <div class="qmark">🤔</div>
+        <div class="qtext">${item.question}</div>
+      </div>`;
+  }
+
+  const rowClass = round.layout === 'grid' ? 'btn-grid' : (round.layout === 'stack' ? 'btn-stack' : 'btn-row');
+  const btnsHTML = opts.map((o,i)=>{
+    const kindClass = o.kind ? o.kind : 'neutral';
+    return `<button class="tap-btn ${kindClass}" data-i="${i}">${o.label}</button>`;
+  }).join('');
+
+  stage.innerHTML = `${mediaHTML}<div class="${rowClass}">${btnsHTML}</div>`;
+
+  stage.querySelectorAll('.tap-btn').forEach((btn,i)=>{
+    btn.addEventListener('click', ()=>handleAnswer(opts[i], btn));
+  });
+}
+
+const PRAISE = ["Great thinking! 🧠","You spotted it! ⭐","Brilliant! 🎉","Correct! 🏆","Nice one! 👍","Well explored! 🌐"];
+
+function handleAnswer(chosenOption, btnEl){
+  if(answered) return;
+  answered = true;
+  const round = ROUNDS[roundIdx];
+  const item = round.items[itemIdx];
+  const card = document.getElementById('itemCard');
+  stage.querySelectorAll('.tap-btn').forEach(b=>b.disabled = true);
+
+  if(chosenOption.correct){
+    if(card) card.classList.add('pop');
+    score += 10;
+    document.getElementById('score').textContent = score;
+    msg.className = 'msg happy';
+    msg.textContent = '✅ ' + item.explain;
+    spawnConfetti(22);
+    showCelebrateBanner(PRAISE[Math.floor(Math.random()*PRAISE.length)], '+10 points');
+  } else {
+    if(card) card.classList.add('shake');
+    msg.className = 'msg oops';
+    msg.textContent = '❌ ' + item.explain;
+  }
+
+  setTimeout(()=>{
+    itemIdx++;
+    if(itemIdx < round.items.length){
+      renderItem();
+    } else {
+      roundIdx++;
+      if(roundIdx < ROUNDS.length){
+        showRoundIntro(roundIdx);
+      } else {
+        showFinal();
+      }
+    }
+  }, 2000);
+}
+
+function spawnConfetti(n){
+  const colors = ['#0F766E','#38BDF8','#FB923C','#06D6A0','#FFD23F','#FFFFFF'];
+  for(let i=0;i<n;i++){
+    const p = document.createElement('div');
+    p.className = 'confetti-piece';
+    p.style.left = Math.random()*100 + '%';
+    p.style.background = colors[Math.floor(Math.random()*colors.length)];
+    p.style.animationDuration = (1.2 + Math.random()*1.1) + 's';
+    p.style.transform = `rotate(${Math.random()*360}deg)`;
+    wrap.appendChild(p);
+    setTimeout(()=>p.remove(), 2500);
+  }
+}
+function showCelebrateBanner(text, sub){
+  const b = document.createElement('div');
+  b.className = 'celebrate-banner';
+  b.innerHTML = `<div class="big">${text}</div><div class="small">${sub}</div>`;
+  wrap.appendChild(b);
+  requestAnimationFrame(()=> b.classList.add('show'));
+  setTimeout(()=>{ b.style.transition='opacity .3s'; b.style.opacity='0'; setTimeout(()=>b.remove(),320); }, 1200);
+}
+
+function showFinal(){
+  const total = totalItems*10;
+  const pct = score/total;
+  let stars = "⭐";
+  if(pct>=0.9) stars="⭐⭐⭐";
+  else if(pct>=0.6) stars="⭐⭐";
+
+  stage.innerHTML = `
+    <div class="final-screen">
+      <div class="trophy">🏆</div>
+      <div class="stars">${stars}</div>
+      <div style="font-size:22px;font-weight:bold;color:var(--primary);margin-bottom:8px;">You're a Web Explorer!</div>
+      <div style="font-size:17px;color:#555;margin-bottom:18px;">Final score: ${score} / ${total}</div>
+      <div class="controls">
+        <button class="ctrl secondary" id="playAgainBtn">Play Again 🔄</button>
+      </div>
+    </div>`;
+  msg.textContent = "";
+  spawnConfetti(50);
+  document.getElementById('playAgainBtn').addEventListener('click', ()=>{
+    roundIdx = 0; itemIdx = 0; score = 0;
+    document.getElementById('score').textContent = score;
+    showRoundIntro(0);
+  });
+  showResultsPanel();
+}
+
+/* ================= RESULTS PANEL ================= */
+function showResultsPanel(){
+  let panel = document.getElementById('resultsPanel');
+  if(!panel){
+    panel = document.createElement('div');
+    panel.id = 'resultsPanel';
+    panel.innerHTML = `
+      <h3>🏁 Well done!</h3>
+      <div id="resultsSummary" style="font-size:14.5px;color:#444;"></div>
+      <div class="saved-note" id="cloudSyncNote" style="color:#0F766E;">☁️ Sending your result to your teacher...</div>
+      <div class="save-row">
+        <button class="ctrl" id="saveResultBtn">💾 Save My Results</button>
+        <button class="ctrl secondary" id="downloadAllBtn">📋 Download Class Results</button>
+        <button class="ctrl secondary" id="toggleSavedBtn">👀 View Saved Results</button>
+      </div>
+      <div class="saved-note" id="savedNote"></div>
+      <div style="margin-top:14px;"><a href="index.html" style="display:block; background:#1A1A2E; color:white; text-decoration:none; padding:20px 24px; border-radius:16px; font-weight:bold; font-size:22px; text-align:center; box-shadow:0 6px 18px rgba(0,0,0,0.3);">🏠 Back to Hub</a></div>
+      <div id="savedTableWrap">
+        <table>
+          <thead><tr><th>Name</th><th>Score</th><th>Total</th><th>Date</th></tr></thead>
+          <tbody id="savedTableBody"></tbody>
+        </table>
+      </div>`;
+    wrap.appendChild(panel);
+    document.getElementById('saveResultBtn').addEventListener('click', onSaveResult);
+    document.getElementById('downloadAllBtn').addEventListener('click', onDownloadAll);
+    document.getElementById('toggleSavedBtn').addEventListener('click', onToggleSaved);
+  }
+  panel.style.display = 'block';
+  document.getElementById('resultsSummary').textContent = `${studentName} scored ${score} out of ${totalItems*10}.`;
+  document.getElementById('savedNote').textContent = '';
+  panel.scrollIntoView({ behavior:'smooth', block:'nearest' });
+
+  const cloudNote = document.getElementById('cloudSyncNote');
+  if(window.__submitResultToCloud){
+    window.__submitResultToCloud({
+      name: studentName,
+      game: "Web Explorer! (Y4)",
+      score: score,
+      total: totalItems*10,
+      date: new Date().toLocaleDateString() + ' ' + new Date().toLocaleTimeString([], {hour:'2-digit', minute:'2-digit'})
+    }).then(ok => {
+      if(cloudNote) cloudNote.textContent = ok
+        ? '☁️ Sent to your teacher automatically!'
+        : '⚠️ Could not connect to sync automatically — use "Save My Results" below as a backup.';
+    });
+  } else if(cloudNote){
+    cloudNote.textContent = '⚠️ Cloud sync unavailable — use "Save My Results" below as a backup.';
+  }
+}
+
+function readSavedResults(){ try{ return JSON.parse(localStorage.getItem(STORAGE_KEY) || "[]"); }catch(e){ return []; } }
+function writeSavedResults(list){ try{ localStorage.setItem(STORAGE_KEY, JSON.stringify(list)); }catch(e){} }
+function csvEscape(v){ const s = String(v); return /[",\n]/.test(s) ? '"' + s.replace(/"/g,'""') + '"' : s; }
+function downloadCSV(filename, rows){
+  const csv = rows.map(r=>r.map(csvEscape).join(",")).join("\r\n");
+  const blob = new Blob([csv], {type:"text/csv;charset=utf-8;"});
+  const url = URL.createObjectURL(blob);
+  const a = document.createElement('a');
+  a.href = url; a.download = filename;
+  document.body.appendChild(a); a.click(); document.body.removeChild(a);
+  setTimeout(()=>URL.revokeObjectURL(url), 1000);
+}
+function renderSavedTable(){
+  const list = readSavedResults();
+  const body = document.getElementById('savedTableBody');
+  body.innerHTML = list.map(r=>`<tr><td>${r.name}</td><td>${r.score}</td><td>${r.total}</td><td>${r.date}</td></tr>`).join('') ||
+    '<tr><td colspan="4" style="color:#999;">No saved results yet on this computer.</td></tr>';
+}
+async function saveCSVWithPicker(filename, rows, noteElId, chosenMsg, fallbackMsg, cancelMsg){
+  const csv = rows.map(r=>r.map(csvEscape).join(",")).join("\r\n");
+  if(window.showSaveFilePicker){
+    try{
+      const handle = await window.showSaveFilePicker({
+        suggestedName: filename,
+        types: [{ description: 'CSV file', accept: {'text/csv': ['.csv']} }]
+      });
+      const writable = await handle.createWritable();
+      await writable.write(csv);
+      await writable.close();
+      document.getElementById(noteElId).textContent = chosenMsg;
+      return;
+    }catch(err){
+      if(err && err.name === 'AbortError'){
+        document.getElementById(noteElId).textContent = cancelMsg;
+        return;
+      }
+    }
+  }
+  downloadCSV(filename, rows);
+  document.getElementById(noteElId).textContent = fallbackMsg;
+}
+async function onSaveResult(){
+  const now = new Date();
+  const record = {
+    name: studentName, score: score, total: totalItems*10,
+    date: now.toLocaleDateString() + ' ' + now.toLocaleTimeString([], {hour:'2-digit', minute:'2-digit'})
+  };
+  const list = readSavedResults();
+  list.push(record);
+  writeSavedResults(list);
+  const safeName = (studentName || 'student').replace(/[^a-z0-9]+/gi,'_');
+  const filename = `WebExplorer_${safeName}_${now.toISOString().slice(0,10)}.csv`;
+  const rows = [["Name","Score","Total","Date"], [record.name, record.score, record.total, record.date]];
+  await saveCSVWithPicker(filename, rows, 'savedNote',
+    '✅ Saved! Your results file was saved where you chose, and your score was stored on this computer.',
+    '✅ Saved! A results file was downloaded (this browser doesn’t support choosing a save location), and your score was stored on this computer.',
+    'Save cancelled — your score is still stored on this computer, so you can still download the class results later.');
+  renderSavedTable();
+}
+async function onDownloadAll(){
+  const list = readSavedResults();
+  if(list.length === 0){
+    document.getElementById('savedNote').textContent = 'No saved results yet on this computer.';
+    return;
+  }
+  const rows = [["Name","Score","Total","Date"], ...list.map(r=>[r.name, r.score, r.total, r.date])];
+  const filename = `WebExplorer_AllResults_${new Date().toISOString().slice(0,10)}.csv`;
+  await saveCSVWithPicker(filename, rows, 'savedNote',
+    '✅ Class results saved where you chose.',
+    '✅ Class results file downloaded (this browser doesn’t support choosing a save location).',
+    'Save cancelled.');
+}
+function onToggleSaved(){
+  const t = document.getElementById('savedTableWrap');
+  const showing = t.style.display === 'block';
+  t.style.display = showing ? 'none' : 'block';
+  if(!showing) renderSavedTable();
+}
+
+/* ================= NAME GATE ================= */
+const gateOverlay = document.getElementById('gateOverlay');
+const nameInput = document.getElementById('nameInput');
+const nameError = document.getElementById('nameError');
+
+function startGame(){
+  const val = nameInput.value.trim();
+  if(!val){
+    nameError.textContent = "Please type your name to start.";
+    nameInput.focus();
+    return;
+  }
+  studentName = val.slice(0,24);
+  document.getElementById('playerName').textContent = studentName;
+  document.getElementById('subline').textContent =
+    `Nice to meet you, ${studentName}! Explore how the World Wide Web works across 4 fun rounds!`;
+  gateOverlay.style.display = 'none';
+  showRoundIntro(0);
+}
+document.getElementById('startBtn').addEventListener('click', startGame);
+nameInput.addEventListener('keydown', (e)=>{ if(e.key === 'Enter') startGame(); });
+nameInput.focus();
+</script>
+
+<!-- ===== Cloud sync: sends each result to the shared Firestore database ===== -->
+<script src="https://www.gstatic.com/firebasejs/10.13.0/firebase-app-compat.js"></script>
+<script src="https://www.gstatic.com/firebasejs/10.13.0/firebase-firestore-compat.js"></script>
+<script>
+  const firebaseConfig = {
+    apiKey: "AIzaSyCEJtHd802MyuZUlwt6OfGkl9IitHaSOaA",
+    authDomain: "tasks-results.firebaseapp.com",
+    projectId: "tasks-results",
+    storageBucket: "tasks-results.firebasestorage.app",
+    messagingSenderId: "1014525306500",
+    appId: "1:1014525306500:web:3ffe2e6f5554e9140e04d1"
+  };
+  try{
+    firebase.initializeApp(firebaseConfig);
+    const db = firebase.firestore();
+    window.__submitResultToCloud = function(record){
+      return db.collection("results").add({
+        ...record,
+        createdAt: firebase.firestore.FieldValue.serverTimestamp()
+      }).then(() => true).catch((err) => { console.error("Cloud sync failed:", err); return false; });
+    };
+  }catch(err){
+    console.error("Firebase init failed:", err);
+  }
+</script>
+</body>
+</html>

@@ -1,0 +1,614 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>Tech Talk! - Year 3 Computing Game</title>
+<style>
+  :root{
+    --primary:#0D9488; --secondary:#F59E0B; --accent:#60A5FA;
+    --light:#F0FDFA; --dark:#0F3730; --red:#E74C3C; --green:#06D6A0;
+  }
+  *{box-sizing:border-box; -webkit-tap-highlight-color: transparent;}
+  html,body{ margin:0; height:100%; }
+  body{
+    font-family:'Segoe UI', Calibri, Arial, sans-serif;
+    background:linear-gradient(135deg,#0D9488 0%,#0369A1 100%);
+    min-height:100vh; display:flex; align-items:center; justify-content:center; padding:20px;
+  }
+  .wrap{ background:var(--light); border-radius:26px; max-width:880px; width:100%; padding:26px 30px 34px;
+    box-shadow:0 20px 50px rgba(0,0,0,0.3); position:relative; overflow:hidden; }
+  h1{ color:var(--primary); text-align:center; margin:0 0 4px; font-size:clamp(24px,4vw,32px); }
+  .sub{ text-align:center; color:#555; margin:0 0 10px; font-size:clamp(13px,2vw,15px); }
+  .headphone-note{ text-align:center; font-size:13.5px; color:#B45309; font-weight:bold; margin:0 0 16px; }
+  .hud{ display:flex; justify-content:space-between; align-items:center; background:white; border-radius:16px;
+    padding:12px 20px; margin-bottom:16px; box-shadow:0 2px 8px rgba(0,0,0,0.08); font-weight:bold; color:var(--primary);
+    flex-wrap:wrap; gap:8px; font-size:clamp(12px,2vw,15px); }
+  .hud span.big{ color:var(--secondary); font-size:1.2em; }
+  .progress-track{ background:#DDF5F0; border-radius:10px; height:10px; overflow:hidden; margin-bottom:16px; }
+  .progress-fill{ background:var(--primary); height:100%; border-radius:10px; transition:width .4s ease; }
+
+  .stage{ background:#E4F9F5; border-radius:22px; padding:26px 22px; text-align:center; border:3px dashed #A7E8DB;
+    min-height:380px; display:flex; flex-direction:column; align-items:center; justify-content:flex-start; }
+
+  .host-row{ display:flex; align-items:center; gap:14px; margin-bottom:6px; }
+  .host-avatar{ font-size:50px; flex-shrink:0; }
+  .host-avatar.speaking{ animation: bob .5s ease infinite; }
+  @keyframes bob{ 0%,100%{ transform:translateY(0) rotate(0deg);} 50%{ transform:translateY(-5px) rotate(-4deg);} }
+  .q-title{ color:var(--primary); font-weight:bold; font-size:clamp(18px,3.2vw,23px); text-align:left; }
+
+  .narration-box{ background:white; border-radius:16px; padding:16px 20px; margin:10px 0 16px; max-width:620px;
+    box-shadow:0 4px 14px rgba(0,0,0,0.08); text-align:left; }
+  .narration-box p{ margin:0; color:#333; font-size:15px; line-height:1.55; }
+
+  .listen-row{ display:flex; gap:12px; justify-content:center; margin-bottom:18px; flex-wrap:wrap; }
+  .listen-btn{ background:var(--primary); color:white; border:none; border-radius:50px; padding:15px 30px;
+    font-size:clamp(15px,2.6vw,18px); font-weight:bold; cursor:pointer; box-shadow:0 8px 0 #0b645b, 0 10px 20px rgba(0,0,0,0.2);
+    transition: transform .08s ease; }
+  .listen-btn:active{ transform:translateY(6px); box-shadow:0 2px 0 #0b645b, 0 4px 10px rgba(0,0,0,0.2); }
+  .listen-btn.speaking{ animation: soundPulse .5s ease infinite; }
+  @keyframes soundPulse{ 0%,100%{ box-shadow:0 8px 0 #0b645b, 0 10px 20px rgba(0,0,0,0.2), 0 0 0 0 rgba(13,148,136,0.5);} 50%{ box-shadow:0 8px 0 #0b645b, 0 10px 20px rgba(0,0,0,0.2), 0 0 0 14px rgba(13,148,136,0);} }
+
+  .example-grid{ display:grid; grid-template-columns:repeat(auto-fit, minmax(110px,1fr)); gap:10px; width:100%; max-width:620px; margin-bottom:6px; }
+  .example-card{ background:white; border:3px solid #BEF0E5; border-radius:14px; padding:12px 8px; font-weight:bold; color:var(--dark);
+    font-size:clamp(12px,2vw,13.5px); display:flex; flex-direction:column; align-items:center; gap:4px; }
+  .example-card .eemoji{ font-size:30px; }
+
+  .next-row{ display:flex; justify-content:center; margin-top:14px; gap:12px; }
+  button.ctrl{ background:var(--primary); color:white; border:none; padding:13px 28px; border-radius:12px; font-size:16px; font-weight:bold; cursor:pointer; }
+  button.ctrl.secondary{ background:white; color:var(--primary); border:2px solid var(--primary); }
+  button.ctrl:disabled{ opacity:0.45; cursor:not-allowed; }
+  .next-hint{ text-align:center; font-size:13px; color:#888; margin-top:8px; min-height:16px; }
+
+  /* quiz */
+  .quiz-grid{ display:grid; grid-template-columns:1fr 1fr; gap:14px; width:100%; max-width:460px; margin:0 auto; }
+  .quiz-btn{ background:white; border:3px solid #BEF0E5; border-radius:16px; padding:16px 10px; cursor:pointer;
+    font-weight:bold; color:var(--dark); font-size:clamp(13px,2.3vw,15.5px); transition: transform .08s ease, border-color .15s ease; }
+  .quiz-btn:active{ transform:scale(0.96); }
+  .quiz-btn:disabled{ opacity:0.6; }
+  .quiz-btn.correct{ border-color:var(--green); background:#E8FFF7; animation:popGood .4s ease; }
+  .quiz-btn.wrong{ border-color:var(--red); background:#FFEDEA; animation:shakeRed .4s ease; }
+  @keyframes popGood{ 0%{transform:scale(1);} 40%{transform:scale(1.08);} 100%{transform:scale(1);} }
+  @keyframes shakeRed{ 0%,100%{transform:translateX(0);} 25%{transform:translateX(-6px);} 75%{transform:translateX(6px);} }
+  .explain-box{ background:white; border-radius:16px; padding:16px 20px; margin-top:16px; max-width:520px; box-shadow:0 4px 14px rgba(0,0,0,0.1); text-align:left; }
+  .explain-box .verdict{ font-weight:bold; font-size:15.5px; margin-bottom:6px; }
+  .explain-box .verdict.happy{ color:#0e9e6f; } .explain-box .verdict.oops{ color:var(--red); }
+  .explain-box p{ margin:0; color:#444; font-size:14px; line-height:1.4; }
+
+  .msg{ text-align:center; margin-top:14px; min-height:26px; font-size:clamp(13px,2.1vw,15px); font-weight:bold; color:var(--primary); }
+
+  .gate-overlay{ position:fixed; inset:0; background:rgba(15,55,48,0.8); display:flex; align-items:center; justify-content:center; z-index:100; padding:20px; }
+  .gate-card{ background:white; border-radius:20px; padding:34px 36px; max-width:430px; width:100%; text-align:center; box-shadow:0 20px 50px rgba(0,0,0,0.4); }
+  .gate-card h2{ color:var(--primary); margin:0 0 8px; font-size:24px; }
+  .gate-card p{ color:#555; margin:0 0 16px; font-size:14.5px; }
+  .gate-card input{ width:100%; font-size:18px; padding:12px 14px; border-radius:10px; border:2px solid var(--secondary);
+    text-align:center; font-weight:bold; color:var(--dark); margin-bottom:14px; box-sizing:border-box; }
+  .gate-card input:focus{ outline:none; border-color:var(--primary); }
+  .gate-card button{ width:100%; padding:13px; font-size:16px; border:none; border-radius:10px; background:var(--primary); color:white; font-weight:bold; cursor:pointer; margin-top:8px; }
+  .gate-card button.test-sound{ background:white; color:var(--primary); border:2px solid var(--primary); margin-top:0; margin-bottom:14px; }
+  .gate-error{ color:var(--red); font-size:13px; min-height:18px; margin-bottom:6px; font-weight:bold; }
+  .gate-support-note{ font-size:12.5px; color:#B45309; margin:0 0 10px; display:none; }
+
+  #resultsPanel{ display:none; background:white; border-radius:14px; padding:18px 20px; margin-top:16px; box-shadow:0 2px 8px rgba(0,0,0,0.08); text-align:center; }
+  #resultsPanel h3{ margin:0 0 4px; color:var(--primary); font-size:18px; }
+  #resultsPanel .save-row{ display:flex; gap:12px; justify-content:center; flex-wrap:wrap; margin-top:12px; }
+  #resultsPanel .saved-note{ font-size:13px; color:#0e9e6f; font-weight:bold; min-height:18px; margin-top:8px; }
+  #savedTableWrap{ margin-top:14px; max-height:220px; overflow:auto; display:none; }
+  #savedTableWrap table{ width:100%; border-collapse:collapse; font-size:13px; }
+  #savedTableWrap th, #savedTableWrap td{ padding:6px 8px; border-bottom:1px solid #e3e6f0; text-align:left; }
+  #savedTableWrap th{ color:var(--primary); }
+
+  .confetti-piece{ position:absolute; top:-20px; width:12px; height:16px; z-index:20; pointer-events:none; animation: fall linear forwards; }
+  @keyframes fall{ to{ transform: translateY(600px) rotate(540deg); opacity:0.2; } }
+  .celebrate-banner{ position:absolute; left:50%; top:45%; transform:translate(-50%,-50%) scale(0.5); background:white; border-radius:22px;
+    padding:24px 36px; box-shadow:0 12px 40px rgba(0,0,0,0.35); text-align:center; z-index:30; opacity:0; pointer-events:none; }
+  .celebrate-banner.show{ animation: bannerPop .6s cubic-bezier(.34,1.56,.64,1) forwards; }
+  @keyframes bannerPop{ 0%{opacity:0; transform:translate(-50%,-50%) scale(0.4) rotate(-6deg);} 60%{opacity:1; transform:translate(-50%,-50%) scale(1.08) rotate(2deg);} 100%{opacity:1; transform:translate(-50%,-50%) scale(1) rotate(0);} }
+  .celebrate-banner .big{ font-size:24px; font-weight:bold; color:var(--primary); }
+  .final-screen{ text-align:center; }
+  .final-screen .trophy{ font-size:76px; }
+  .top-bar{ margin:0; }
+  .hub-top-btn{ position:fixed; top:12px; left:12px; z-index:300;
+    display:inline-flex; align-items:center; gap:6px; background:#1A1A2E; color:white;
+    text-decoration:none; font-weight:bold; font-size:clamp(12px,2.2vw,14px); padding:8px 16px 8px 12px;
+    border-radius:20px; box-shadow:0 3px 10px rgba(0,0,0,0.35); }
+  .hub-top-btn:hover{ opacity:0.85; }
+  .hub-top-btn:active{ transform:scale(0.96); }
+</style>
+</head>
+<body>
+
+<div class="gate-overlay" id="gateOverlay">
+  <div class="gate-card">
+    <h2>🎧 Tech Talk!</h2>
+    <p>Put on your headphones — Robo the Robot will talk to you and explain some important computer words!</p>
+    <button class="test-sound" id="testSoundBtn">🔊 Test My Headphones</button>
+    <p class="gate-support-note" id="supportNote">Your browser can't play spoken audio, but don't worry — you can still read everything Robo says on screen!</p>
+    <input type="text" id="nameInput" placeholder="Your name" maxlength="24" autocomplete="off">
+    <div class="gate-error" id="nameError"></div>
+    <button id="startBtn">Start ▶</button>
+  </div>
+</div>
+
+<div class="wrap" id="wrap">
+  <div class="top-bar"><a href="index.html" class="hub-top-btn">🏠 Back to Hub</a></div>
+  <h1>🎧 Tech Talk!</h1>
+  <p class="sub" id="subline">Listen to Robo explain digital devices, input, output and process!</p>
+  <p class="headphone-note">🎧 Remember to wear your headphones!</p>
+
+  <div class="hud">
+    <div>Player: <span class="big" id="playerName">—</span></div>
+    <div>Step <span class="big" id="stepNum">1</span>/<span id="stepTotal">9</span></div>
+    <div>Score: <span class="big" id="score">0</span> ⭐</div>
+  </div>
+  <div class="progress-track"><div class="progress-fill" id="progressFill" style="width:0%"></div></div>
+
+  <div class="stage" id="stage"><!-- filled by JS --></div>
+
+  <p class="msg" id="msg"></p>
+</div>
+
+<script>
+// ===================== SPEECH (Web Speech API — spoken narration, no audio files needed) =====================
+let speechOK = 'speechSynthesis' in window;
+let chosenVoice = null;
+
+function loadVoices(){
+  if(!speechOK) return;
+  const voices = window.speechSynthesis.getVoices();
+  if(voices && voices.length){
+    chosenVoice = voices.find(v=> /en-GB/i.test(v.lang) && /female|UK|British/i.test(v.name)) ||
+                  voices.find(v=> /en-GB/i.test(v.lang)) ||
+                  voices.find(v=> /^en/i.test(v.lang)) ||
+                  voices[0];
+  }
+}
+if(speechOK){
+  loadVoices();
+  window.speechSynthesis.onvoiceschanged = loadVoices;
+}
+
+let currentUtterance = null;
+function speak(text, onDone){
+  if(!speechOK){ onDone && onDone(); return; }
+  try{ window.speechSynthesis.cancel(); }catch(e){}
+  const utt = new SpeechSynthesisUtterance(text);
+  utt.rate = 0.92; utt.pitch = 1.05; utt.volume = 1;
+  if(chosenVoice) utt.voice = chosenVoice;
+  let finished = false;
+  const finish = ()=>{ if(finished) return; finished = true; onDone && onDone(); };
+  utt.onend = finish;
+  utt.onerror = finish;
+  currentUtterance = utt;
+  window.speechSynthesis.speak(utt);
+  // safety net in case onend/onerror never fire on some browsers
+  const estMs = Math.max(2500, text.split(/\s+/).length * 430);
+  setTimeout(finish, estMs + 4000);
+}
+function stopSpeaking(){ if(speechOK){ try{ window.speechSynthesis.cancel(); }catch(e){} } }
+
+// ===================== CONTENT =====================
+// Narrated explainer sequence for Year 3 "Digital Devices" unit — Robo talks learners through
+// digital devices, input, output and process, with lots of real examples, then checks understanding
+// with a short, clear quiz (no confusing guessing-games).
+const STEPS = [
+  {
+    kind:'intro',
+    title:"Hello! I'm Robo 🤖",
+    narration:"Hi there! I'm Robo, your computer guide. Today, pop on your headphones and get comfy, because I'm going to explain four important computer words: digital device, input, output, and process. Listen carefully to each part — at the end, I'll ask you a few quick questions to see what you remember!",
+    examples:[]
+  },
+  {
+    kind:'lesson',
+    title:"What is a Digital Device?",
+    narration:"Let's start with digital devices. A digital device is any piece of technology that has a computer inside it, which lets it store, process, or show information. Here are lots of examples: a desktop computer, a laptop, a tablet, a smartphone, a smartwatch, a games console, a digital camera, a smart speaker, and even the interactive whiteboard in our classroom! All of these are digital devices because every single one of them has a tiny computer brain inside.",
+    examples:[
+      {emoji:'🖥️', label:'Desktop computer'}, {emoji:'💻', label:'Laptop'}, {emoji:'📱', label:'Smartphone'},
+      {emoji:'⌚', label:'Smartwatch'}, {emoji:'🎮', label:'Games console'}, {emoji:'📷', label:'Digital camera'},
+      {emoji:'🔊', label:'Smart speaker'}, {emoji:'🖊️', label:'Whiteboard'}
+    ]
+  },
+  {
+    kind:'lesson',
+    title:"What is Input?",
+    narration:"Now let's talk about input. Input means any information that goes IN to a digital device. Think of input as the device listening, watching, or feeling for something you do. For example: pressing keys on a keyboard is input. Clicking or moving a mouse is input. Talking into a microphone is input. Taking a photo with a camera is input. Tapping a touchscreen is input. And a scanner reading a barcode is input too! Input is anything that puts information IN.",
+    examples:[
+      {emoji:'⌨️', label:'Keyboard'}, {emoji:'🖱️', label:'Mouse'}, {emoji:'🎙️', label:'Microphone'},
+      {emoji:'📷', label:'Camera'}, {emoji:'👆', label:'Touchscreen'}, {emoji:'🔍', label:'Scanner'}
+    ]
+  },
+  {
+    kind:'lesson',
+    title:"What is Output?",
+    narration:"Next, let's talk about output. Output means information that comes OUT of a digital device for us to see, hear, or use. For example: words and pictures appearing on a screen is output. A printer printing a piece of paper is output. A speaker playing music is output. Your headphones playing sound is output. And a projector showing a picture on the wall is output too! Output is anything that comes OUT for us to notice.",
+    examples:[
+      {emoji:'🖥️', label:'Screen'}, {emoji:'🖨️', label:'Printer'}, {emoji:'🔊', label:'Speaker'},
+      {emoji:'🎧', label:'Headphones'}, {emoji:'📽️', label:'Projector'}
+    ]
+  },
+  {
+    kind:'lesson',
+    title:"What is a Process?",
+    narration:"Finally, let's talk about process. A process happens in the middle, between input and output. Inside every digital device there's a processor, like a tiny brain, that thinks about the input and decides what output to give. Here's an example: imagine you type the word cat on a keyboard. That typing is the input. The processor works out which letters you pressed and puts them in the right order, and that is the processing. Then the letters c, a, t appear on the screen, and that is the output. Input, then process, then output. That is how every digital device works!",
+    examples:[
+      {emoji:'⌨️', label:'1. Input: type "cat"'}, {emoji:'⚙️', label:'2. Process: sort the letters'}, {emoji:'🖥️', label:'3. Output: show "cat"'}
+    ]
+  },
+  {
+    kind:'recap',
+    title:"Let's Recap!",
+    narration:"Great listening! Let's quickly recap. A digital device is technology with a computer inside, like a tablet or a games console. Input is information going IN, like typing or talking into a microphone. Output is information coming OUT, like sound from a speaker or words on a screen. And process is what happens in between, when the device's processor thinks about the input and works out the output. Now I'm going to ask you five quick questions to see what you remember. Good luck!",
+    examples:[
+      {emoji:'📱', label:'Digital device'}, {emoji:'⌨️', label:'Input'}, {emoji:'⚙️', label:'Process'}, {emoji:'🔊', label:'Output'}
+    ]
+  }
+];
+
+const QUIZ = [
+  { q:"Which of these is a digital device?", options:["Wooden chair","Smartwatch","Paper book","Pencil"], correct:"Smartwatch",
+    explain:"A smartwatch has a tiny computer inside it, so it's a digital device. A chair, a book and a pencil don't have computers inside." },
+  { q:"Pressing keys on a keyboard is an example of...", options:["Input","Output","Process","A digital device"], correct:"Input",
+    explain:"Pressing keys sends information IN to the computer — that's input." },
+  { q:"A printer printing out a page is an example of...", options:["Input","Output","Process","A digital device"], correct:"Output",
+    explain:"The printer gives us information OUT, on paper — that's output." },
+  { q:"What happens during the 'process' step?", options:["The computer's brain thinks about the input and works out the output","Information leaves the computer","You type on the keyboard","You put headphones on"], correct:"The computer's brain thinks about the input and works out the output",
+    explain:"Process is the thinking-in-the-middle step — it happens between input and output." },
+  { q:"Which of these is an OUTPUT device?", options:["Microphone","Speaker","Mouse","Scanner"], correct:"Speaker",
+    explain:"A speaker plays sound OUT for us to hear — the others all send information IN." }
+];
+
+function shuffle(arr){ const a=[...arr]; for(let i=a.length-1;i>0;i--){ const j=Math.floor(Math.random()*(i+1)); [a[i],a[j]]=[a[j],a[i]]; } return a; }
+
+let stepIdx = 0, quizIdx = 0, score = 0, answered = false, studentName = "";
+const TOTAL_STEPS = STEPS.length + QUIZ.length;
+const STORAGE_KEY = "techTalkY3Results";
+
+const stage = document.getElementById('stage');
+const msg = document.getElementById('msg');
+const wrap = document.getElementById('wrap');
+document.getElementById('stepTotal').textContent = TOTAL_STEPS;
+
+function updateHUD(current){
+  document.getElementById('stepNum').textContent = current;
+  document.getElementById('score').textContent = score;
+  document.getElementById('progressFill').style.width = Math.round((current-1)/TOTAL_STEPS*100) + '%';
+}
+
+function renderLessonStep(){
+  const step = STEPS[stepIdx];
+  updateHUD(stepIdx+1);
+  msg.textContent = '';
+
+  stage.innerHTML = `
+    <div class="host-row">
+      <div class="host-avatar" id="hostAvatar">🤖</div>
+      <div class="q-title">${step.title}</div>
+    </div>
+    <div class="narration-box"><p id="narrationText">${step.narration}</p></div>
+    ${step.examples.length ? `<div class="example-grid">${step.examples.map(e=>`<div class="example-card"><span class="eemoji">${e.emoji}</span>${e.label}</div>`).join('')}</div>` : ''}
+    <div class="listen-row">
+      <button class="listen-btn" id="listenBtn">🔊 Listen Again</button>
+    </div>
+    <div class="next-row"><button class="ctrl" id="nextBtn" disabled>${stepIdx < STEPS.length-1 ? 'Next ▶' : 'Start the Quiz 🏁'}</button></div>
+    <div class="next-hint" id="nextHint">Listen to Robo first, then the button will light up!</div>
+  `;
+
+  const listenBtn = document.getElementById('listenBtn');
+  const nextBtn = document.getElementById('nextBtn');
+  const hostAvatar = document.getElementById('hostAvatar');
+  const nextHint = document.getElementById('nextHint');
+
+  function playNarration(){
+    listenBtn.classList.add('speaking');
+    hostAvatar.classList.add('speaking');
+    speak(step.narration, ()=>{
+      listenBtn.classList.remove('speaking');
+      hostAvatar.classList.remove('speaking');
+      nextBtn.disabled = false;
+      nextHint.textContent = speechOK ? "Great listening! Tap Next when you're ready." : "You can read along above. Tap Next when you're ready.";
+    });
+  }
+  listenBtn.addEventListener('click', playNarration);
+  nextBtn.addEventListener('click', ()=>{
+    stopSpeaking();
+    stepIdx++;
+    if(stepIdx < STEPS.length){ renderLessonStep(); } else { quizIdx = 0; renderQuizStep(); }
+  });
+
+  // auto-play narration once the step appears
+  setTimeout(playNarration, 350);
+}
+
+const PRAISE = ["Great thinking! 🎧","Nice listening! 🔍","Spot on! ⭐","You got it! 🎉","Well remembered! 👏","Super smart! 🌟"];
+
+function renderQuizStep(){
+  const item = QUIZ[quizIdx];
+  answered = false;
+  updateHUD(STEPS.length + quizIdx + 1);
+  msg.textContent = '';
+  const options = shuffle(item.options);
+
+  stage.innerHTML = `
+    <div class="host-row">
+      <div class="host-avatar">🤖</div>
+      <div class="q-title">Question ${quizIdx+1} of ${QUIZ.length}</div>
+    </div>
+    <div class="narration-box"><p>${item.q}</p></div>
+    <div class="quiz-grid" id="quizGrid">
+      ${options.map(o=>`<button class="quiz-btn" data-ans="${o}">${o}</button>`).join('')}
+    </div>
+    <div id="explainArea"></div>
+  `;
+  stage.querySelectorAll('.quiz-btn').forEach(btn=>{
+    btn.addEventListener('click', ()=> handleQuizAnswer(btn.dataset.ans, btn, item));
+  });
+}
+
+function handleQuizAnswer(chosen, btnEl, item){
+  if(answered) return;
+  answered = true;
+  const correct = chosen === item.correct;
+  stage.querySelectorAll('.quiz-btn').forEach(b=>{
+    b.disabled = true;
+    if(b.dataset.ans === item.correct) b.classList.add('correct');
+    else if(b === btnEl) b.classList.add('wrong');
+  });
+
+  if(correct){
+    score += 10;
+    document.getElementById('score').textContent = score;
+    spawnConfetti(20);
+    showCelebrateBanner(PRAISE[Math.floor(Math.random()*PRAISE.length)], '+10 points');
+  }
+
+  const verdictClass = correct ? 'happy' : 'oops';
+  const verdictText = correct ? '✅ Correct!' : `❌ Not quite — the answer was "${item.correct}".`;
+  document.getElementById('explainArea').innerHTML = `
+    <div class="explain-box">
+      <div class="verdict ${verdictClass}">${verdictText}</div>
+      <p>${item.explain}</p>
+    </div>
+    <div class="next-row"><button class="ctrl" id="nextQBtn">${quizIdx < QUIZ.length-1 ? 'Next Question ▶' : 'See My Results 🏁'}</button></div>
+  `;
+  document.getElementById('nextQBtn').addEventListener('click', ()=>{
+    quizIdx++;
+    if(quizIdx < QUIZ.length){ renderQuizStep(); } else { showFinal(); }
+  });
+}
+
+function spawnConfetti(n){
+  const colors = ['#0D9488','#F59E0B','#60A5FA','#06D6A0','#FFFFFF'];
+  for(let i=0;i<n;i++){
+    const p = document.createElement('div');
+    p.className = 'confetti-piece';
+    p.style.left = Math.random()*100 + '%';
+    p.style.background = colors[Math.floor(Math.random()*colors.length)];
+    p.style.animationDuration = (1.2 + Math.random()*1.1) + 's';
+    wrap.appendChild(p);
+    setTimeout(()=>p.remove(), 2500);
+  }
+}
+function showCelebrateBanner(text, sub){
+  const b = document.createElement('div');
+  b.className = 'celebrate-banner';
+  b.innerHTML = `<div class="big">${text}</div><div style="font-size:14px;color:#555;">${sub}</div>`;
+  wrap.appendChild(b);
+  requestAnimationFrame(()=> b.classList.add('show'));
+  setTimeout(()=>{ b.style.transition='opacity .3s'; b.style.opacity='0'; setTimeout(()=>b.remove(),320); }, 1100);
+}
+
+function showFinal(){
+  const total = QUIZ.length*10;
+  let stars = "⭐";
+  const pct = score/total;
+  if(pct>=0.9) stars="⭐⭐⭐";
+  else if(pct>=0.6) stars="⭐⭐";
+  document.getElementById('progressFill').style.width = '100%';
+
+  stage.innerHTML = `
+    <div class="final-screen">
+      <div class="trophy">🏆</div>
+      <div style="font-size:34px;">${stars}</div>
+      <div style="font-size:22px;font-weight:bold;color:var(--primary);margin-bottom:8px;">You're a Tech Talk Star!</div>
+      <div style="font-size:17px;color:#555;margin-bottom:18px;">Final score: ${score} / ${total}</div>
+      <div class="next-row">
+        <button class="ctrl secondary" id="playAgainBtn">Play Again 🔄</button>
+      </div>
+    </div>`;
+  msg.textContent = "";
+  spawnConfetti(50);
+  document.getElementById('playAgainBtn').addEventListener('click', ()=>{
+    stepIdx = 0; quizIdx = 0; score = 0;
+    document.getElementById('score').textContent = score;
+    renderLessonStep();
+  });
+  showResultsPanel();
+}
+
+/* ================= RESULTS PANEL ================= */
+function showResultsPanel(){
+  let panel = document.getElementById('resultsPanel');
+  if(!panel){
+    panel = document.createElement('div');
+    panel.id = 'resultsPanel';
+    panel.innerHTML = `
+      <h3>🏁 Well done!</h3>
+      <div id="resultsSummary" style="font-size:14.5px;color:#444;"></div>
+      <div class="saved-note" id="cloudSyncNote" style="color:#0D9488;">☁️ Sending your result to your teacher...</div>
+      <div class="save-row">
+        <button class="ctrl" id="saveResultBtn">💾 Save My Results</button>
+        <button class="ctrl secondary" id="downloadAllBtn">📋 Download Class Results</button>
+        <button class="ctrl secondary" id="toggleSavedBtn">👀 View Saved Results</button>
+      </div>
+      <div class="saved-note" id="savedNote"></div>
+      <div style="margin-top:14px;"><a href="index.html" style="display:block; background:#1A1A2E; color:white; text-decoration:none; padding:20px 24px; border-radius:16px; font-weight:bold; font-size:22px; text-align:center; box-shadow:0 6px 18px rgba(0,0,0,0.3);">🏠 Back to Hub</a></div>
+      <div id="savedTableWrap">
+        <table>
+          <thead><tr><th>Name</th><th>Score</th><th>Total</th><th>Date</th></tr></thead>
+          <tbody id="savedTableBody"></tbody>
+        </table>
+      </div>`;
+    wrap.appendChild(panel);
+    document.getElementById('saveResultBtn').addEventListener('click', onSaveResult);
+    document.getElementById('downloadAllBtn').addEventListener('click', onDownloadAll);
+    document.getElementById('toggleSavedBtn').addEventListener('click', onToggleSaved);
+  }
+  panel.style.display = 'block';
+  document.getElementById('resultsSummary').textContent = `${studentName} scored ${score} out of ${QUIZ.length*10}.`;
+  document.getElementById('savedNote').textContent = '';
+  panel.scrollIntoView({ behavior:'smooth', block:'nearest' });
+
+  const cloudNote = document.getElementById('cloudSyncNote');
+  if(window.__submitResultToCloud){
+    window.__submitResultToCloud({
+      name: studentName,
+      game: "Tech Talk! (Y3)",
+      score: score,
+      total: QUIZ.length*10,
+      date: new Date().toLocaleDateString() + ' ' + new Date().toLocaleTimeString([], {hour:'2-digit', minute:'2-digit'})
+    }).then(ok => {
+      if(cloudNote) cloudNote.textContent = ok
+        ? '☁️ Sent to your teacher automatically!'
+        : '⚠️ Could not connect to sync automatically — use "Save My Results" below as a backup.';
+    });
+  } else if(cloudNote){
+    cloudNote.textContent = '⚠️ Cloud sync unavailable — use "Save My Results" below as a backup.';
+  }
+}
+
+function readSavedResults(){ try{ return JSON.parse(localStorage.getItem(STORAGE_KEY) || "[]"); }catch(e){ return []; } }
+function writeSavedResults(list){ try{ localStorage.setItem(STORAGE_KEY, JSON.stringify(list)); }catch(e){} }
+function csvEscape(v){ const s = String(v); return /[",\n]/.test(s) ? '"' + s.replace(/"/g,'""') + '"' : s; }
+function downloadCSV(filename, rows){
+  const csv = rows.map(r=>r.map(csvEscape).join(",")).join("\r\n");
+  const blob = new Blob([csv], {type:"text/csv;charset=utf-8;"});
+  const url = URL.createObjectURL(blob);
+  const a = document.createElement('a');
+  a.href = url; a.download = filename;
+  document.body.appendChild(a); a.click(); document.body.removeChild(a);
+  setTimeout(()=>URL.revokeObjectURL(url), 1000);
+}
+function renderSavedTable(){
+  const list = readSavedResults();
+  const body = document.getElementById('savedTableBody');
+  body.innerHTML = list.map(r=>`<tr><td>${r.name}</td><td>${r.score}</td><td>${r.total}</td><td>${r.date}</td></tr>`).join('') ||
+    '<tr><td colspan="4" style="color:#999;">No saved results yet on this computer.</td></tr>';
+}
+async function saveCSVWithPicker(filename, rows, noteElId, chosenMsg, fallbackMsg, cancelMsg){
+  const csv = rows.map(r=>r.map(csvEscape).join(",")).join("\r\n");
+  if(window.showSaveFilePicker){
+    try{
+      const handle = await window.showSaveFilePicker({
+        suggestedName: filename,
+        types: [{ description: 'CSV file', accept: {'text/csv': ['.csv']} }]
+      });
+      const writable = await handle.createWritable();
+      await writable.write(csv);
+      await writable.close();
+      document.getElementById(noteElId).textContent = chosenMsg;
+      return;
+    }catch(err){
+      if(err && err.name === 'AbortError'){
+        document.getElementById(noteElId).textContent = cancelMsg;
+        return;
+      }
+    }
+  }
+  downloadCSV(filename, rows);
+  document.getElementById(noteElId).textContent = fallbackMsg;
+}
+async function onSaveResult(){
+  const now = new Date();
+  const record = {
+    name: studentName, score: score, total: QUIZ.length*10,
+    date: now.toLocaleDateString() + ' ' + now.toLocaleTimeString([], {hour:'2-digit', minute:'2-digit'})
+  };
+  const list = readSavedResults();
+  list.push(record);
+  writeSavedResults(list);
+  const safeName = (studentName || 'student').replace(/[^a-z0-9]+/gi,'_');
+  const filename = `TechTalk_${safeName}_${now.toISOString().slice(0,10)}.csv`;
+  const rows = [["Name","Score","Total","Date"], [record.name, record.score, record.total, record.date]];
+  await saveCSVWithPicker(filename, rows, 'savedNote',
+    '✅ Saved! Your results file was saved where you chose, and your score was stored on this computer.',
+    '✅ Saved! A results file was downloaded (this browser doesn’t support choosing a save location), and your score was stored on this computer.',
+    'Save cancelled — your score is still stored on this computer, so you can still download the class results later.');
+  renderSavedTable();
+}
+async function onDownloadAll(){
+  const list = readSavedResults();
+  if(list.length === 0){
+    document.getElementById('savedNote').textContent = 'No saved results yet on this computer.';
+    return;
+  }
+  const rows = [["Name","Score","Total","Date"], ...list.map(r=>[r.name, r.score, r.total, r.date])];
+  const filename = `TechTalk_AllResults_${new Date().toISOString().slice(0,10)}.csv`;
+  await saveCSVWithPicker(filename, rows, 'savedNote',
+    '✅ Class results saved where you chose.',
+    '✅ Class results file downloaded (this browser doesn’t support choosing a save location).',
+    'Save cancelled.');
+}
+function onToggleSaved(){
+  const t = document.getElementById('savedTableWrap');
+  const showing = t.style.display === 'block';
+  t.style.display = showing ? 'none' : 'block';
+  if(!showing) renderSavedTable();
+}
+
+/* ================= NAME GATE ================= */
+const gateOverlay = document.getElementById('gateOverlay');
+const nameInput = document.getElementById('nameInput');
+const nameError = document.getElementById('nameError');
+
+if(!speechOK){
+  document.getElementById('supportNote').style.display = 'block';
+}
+
+document.getElementById('testSoundBtn').addEventListener('click', ()=>{
+  speak("Hello! Can you hear me? Put your headphones on and get ready for Tech Talk!");
+});
+
+function startGame(){
+  const val = nameInput.value.trim();
+  if(!val){
+    nameError.textContent = "Please type your name to start.";
+    nameInput.focus();
+    return;
+  }
+  studentName = val.slice(0,24);
+  document.getElementById('playerName').textContent = studentName;
+  gateOverlay.style.display = 'none';
+  renderLessonStep();
+}
+document.getElementById('startBtn').addEventListener('click', startGame);
+nameInput.addEventListener('keydown', (e)=>{ if(e.key === 'Enter') startGame(); });
+nameInput.focus();
+</script>
+
+<!-- ===== Cloud sync: sends each result to the shared Firestore database ===== -->
+<script src="https://www.gstatic.com/firebasejs/10.13.0/firebase-app-compat.js"></script>
+<script src="https://www.gstatic.com/firebasejs/10.13.0/firebase-firestore-compat.js"></script>
+<script>
+  const firebaseConfig = {
+    apiKey: "AIzaSyCEJtHd802MyuZUlwt6OfGkl9IitHaSOaA",
+    authDomain: "tasks-results.firebaseapp.com",
+    projectId: "tasks-results",
+    storageBucket: "tasks-results.firebasestorage.app",
+    messagingSenderId: "1014525306500",
+    appId: "1:1014525306500:web:3ffe2e6f5554e9140e04d1"
+  };
+  try{
+    firebase.initializeApp(firebaseConfig);
+    const db = firebase.firestore();
+    window.__submitResultToCloud = function(record){
+      return db.collection("results").add({
+        ...record,
+        createdAt: firebase.firestore.FieldValue.serverTimestamp()
+      }).then(() => true).catch((err) => { console.error("Cloud sync failed:", err); return false; });
+    };
+  }catch(err){
+    console.error("Firebase init failed:", err);
+  }
+</script>
+</body>
+</html>

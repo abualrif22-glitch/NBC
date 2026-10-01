@@ -121,9 +121,9 @@
 <div class="gate-overlay" id="gateOverlay">
   <div class="gate-card">
     <h2>🎧 Tech Talk!</h2>
-    <p>Put on your headphones — Robo the Robot will talk to you and explain some important computer words!</p>
+    <p>Put on your headphones — Mia will talk to you and explain some important computer words!</p>
     <button class="test-sound" id="testSoundBtn">🔊 Test My Headphones</button>
-    <p class="gate-support-note" id="supportNote">Your browser can't play spoken audio, but don't worry — you can still read everything Robo says on screen!</p>
+    <p class="gate-support-note" id="supportNote">Your browser can't play spoken audio, but don't worry — you can still read everything Mia says on screen!</p>
     <input type="text" id="nameInput" placeholder="Your name" maxlength="24" autocomplete="off">
     <div class="gate-error" id="nameError"></div>
     <button id="startBtn">Start ▶</button>
@@ -133,7 +133,7 @@
 <div class="wrap" id="wrap">
   <div class="top-bar"><a href="index.html" class="hub-top-btn">🏠 Back to Hub</a></div>
   <h1>🎧 Tech Talk!</h1>
-  <p class="sub" id="subline">Listen to Robo explain digital devices, input, output and process!</p>
+  <p class="sub" id="subline">Listen to Mia explain digital devices, input, output and process!</p>
   <p class="headphone-note">🎧 Remember to wear your headphones!</p>
 
   <div class="hud">
@@ -157,7 +157,12 @@ function loadVoices(){
   if(!speechOK) return;
   const voices = window.speechSynthesis.getVoices();
   if(voices && voices.length){
-    chosenVoice = voices.find(v=> /en-GB/i.test(v.lang) && /female|UK|British/i.test(v.name)) ||
+    // Prefer a young-sounding / child / kid voice if the device offers one, then fall back
+    // to a female English voice (which we pitch-shift upward below to sound younger),
+    // then any English voice, then whatever is available.
+    chosenVoice = voices.find(v=> /child|kid|junior/i.test(v.name)) ||
+                  voices.find(v=> /en-GB/i.test(v.lang) && /female|UK|British/i.test(v.name)) ||
+                  voices.find(v=> /^en/i.test(v.lang) && /female|samantha|karen|moira|tessa|fiona|zira|susan|victoria|serena/i.test(v.name)) ||
                   voices.find(v=> /en-GB/i.test(v.lang)) ||
                   voices.find(v=> /^en/i.test(v.lang)) ||
                   voices[0];
@@ -173,7 +178,9 @@ function speak(text, onDone){
   if(!speechOK){ onDone && onDone(); return; }
   try{ window.speechSynthesis.cancel(); }catch(e){}
   const utt = new SpeechSynthesisUtterance(text);
-  utt.rate = 0.92; utt.pitch = 1.05; utt.volume = 1;
+  // Higher pitch + slightly quicker, brighter pace to sound like a young child (around 6-7 years old)
+  // rather than an adult narrator.
+  utt.rate = 1.0; utt.pitch = 1.7; utt.volume = 1;
   if(chosenVoice) utt.voice = chosenVoice;
   let finished = false;
   const finish = ()=>{ if(finished) return; finished = true; onDone && onDone(); };
@@ -188,14 +195,14 @@ function speak(text, onDone){
 function stopSpeaking(){ if(speechOK){ try{ window.speechSynthesis.cancel(); }catch(e){} } }
 
 // ===================== CONTENT =====================
-// Narrated explainer sequence for Year 3 "Digital Devices" unit — Robo talks learners through
+// Narrated explainer sequence for Year 3 "Digital Devices" unit — Mia talks learners through
 // digital devices, input, output and process, with lots of real examples, then checks understanding
 // with a short, clear quiz (no confusing guessing-games).
 const STEPS = [
   {
     kind:'intro',
-    title:"Hello! I'm Robo 🤖",
-    narration:"Hi there! I'm Robo, your computer guide. Today, pop on your headphones and get comfy, because I'm going to explain four important computer words: digital device, input, output, and process. Listen carefully to each part — at the end, I'll ask you a few quick questions to see what you remember!",
+    title:"Hello! I'm Mia 👧",
+    narration:"Hi there! I'm Mia, and I'm going to be your computer guide today. Pop on your headphones and get comfy, because I'm going to explain four important computer words: digital device, input, output, and process. Listen carefully to each part — at the end, I'll ask you a few quick questions to see what you remember!",
     examples:[]
   },
   {
@@ -281,7 +288,7 @@ function renderLessonStep(){
 
   stage.innerHTML = `
     <div class="host-row">
-      <div class="host-avatar" id="hostAvatar">🤖</div>
+      <div class="host-avatar" id="hostAvatar">👧</div>
       <div class="q-title">${step.title}</div>
     </div>
     <div class="narration-box"><p id="narrationText">${step.narration}</p></div>
@@ -290,7 +297,7 @@ function renderLessonStep(){
       <button class="listen-btn" id="listenBtn">🔊 Listen Again</button>
     </div>
     <div class="next-row"><button class="ctrl" id="nextBtn" disabled>${stepIdx < STEPS.length-1 ? 'Next ▶' : 'Start the Quiz 🏁'}</button></div>
-    <div class="next-hint" id="nextHint">Listen to Robo first, then the button will light up!</div>
+    <div class="next-hint" id="nextHint">Listen to Mia first, then the button will light up!</div>
   `;
 
   const listenBtn = document.getElementById('listenBtn');
@@ -330,7 +337,7 @@ function renderQuizStep(){
 
   stage.innerHTML = `
     <div class="host-row">
-      <div class="host-avatar">🤖</div>
+      <div class="host-avatar">👧</div>
       <div class="q-title">Question ${quizIdx+1} of ${QUIZ.length}</div>
     </div>
     <div class="narration-box"><p>${item.q}</p></div>

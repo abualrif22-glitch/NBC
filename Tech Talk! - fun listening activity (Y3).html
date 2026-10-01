@@ -157,15 +157,20 @@ function loadVoices(){
   if(!speechOK) return;
   const voices = window.speechSynthesis.getVoices();
   if(voices && voices.length){
-    // Prefer a young-sounding / child / kid voice if the device offers one, then fall back
-    // to a female English voice (which we pitch-shift upward below to sound younger),
-    // then any English voice, then whatever is available.
-    chosenVoice = voices.find(v=> /child|kid|junior/i.test(v.name)) ||
-                  voices.find(v=> /en-GB/i.test(v.lang) && /female|UK|British/i.test(v.name)) ||
-                  voices.find(v=> /^en/i.test(v.lang) && /female|samantha|karen|moira|tessa|fiona|zira|susan|victoria|serena/i.test(v.name)) ||
-                  voices.find(v=> /en-GB/i.test(v.lang)) ||
-                  voices.find(v=> /^en/i.test(v.lang)) ||
-                  voices[0];
+    // Prefer the natural-sounding "neural"/"online" voices that modern browsers ship
+    // (e.g. Microsoft Edge's "...Online (Natural)" voices, or Google's cloud voices in Chrome) —
+    // these sound like a real person, not a robotic text-to-speech engine. We pick a female
+    // one where possible since it reads as younger/friendlier, and we no longer distort the
+    // pitch — a heavily pitch-shifted voice is what sounded fake before.
+    chosenVoice =
+      voices.find(v=> /natural|neural|online/i.test(v.name) && /female|aria|jenny|sonia|libby|maisie|emma|ana|michelle/i.test(v.name)) ||
+      voices.find(v=> /natural|neural|online/i.test(v.name) && /^en/i.test(v.lang)) ||
+      voices.find(v=> /google/i.test(v.name) && /en-GB/i.test(v.lang) && /female/i.test(v.name)) ||
+      voices.find(v=> /google/i.test(v.name) && /^en/i.test(v.lang)) ||
+      voices.find(v=> /^en/i.test(v.lang) && /female|samantha|karen|moira|tessa|fiona|susan|victoria|serena|kate|zoe/i.test(v.name)) ||
+      voices.find(v=> /en-GB/i.test(v.lang)) ||
+      voices.find(v=> /^en/i.test(v.lang)) ||
+      voices[0];
   }
 }
 if(speechOK){
@@ -178,9 +183,9 @@ function speak(text, onDone){
   if(!speechOK){ onDone && onDone(); return; }
   try{ window.speechSynthesis.cancel(); }catch(e){}
   const utt = new SpeechSynthesisUtterance(text);
-  // Higher pitch + slightly quicker, brighter pace to sound like a young child (around 6-7 years old)
-  // rather than an adult narrator.
-  utt.rate = 1.0; utt.pitch = 1.7; utt.volume = 1;
+  // Natural pitch and a touch slower than default for clarity — no artificial pitch-shifting,
+  // which is what made the previous voice sound fake/robotic.
+  utt.rate = 0.95; utt.pitch = 1.05; utt.volume = 1;
   if(chosenVoice) utt.voice = chosenVoice;
   let finished = false;
   const finish = ()=>{ if(finished) return; finished = true; onDone && onDone(); };

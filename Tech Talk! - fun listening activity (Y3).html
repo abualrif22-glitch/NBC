@@ -157,20 +157,14 @@ function loadVoices(){
   if(!speechOK) return;
   const voices = window.speechSynthesis.getVoices();
   if(voices && voices.length){
-    // Prefer the natural-sounding "neural"/"online" voices that modern browsers ship
-    // (e.g. Microsoft Edge's "...Online (Natural)" voices, or Google's cloud voices in Chrome) —
-    // these sound like a real person, not a robotic text-to-speech engine. We pick a female
-    // one where possible since it reads as younger/friendlier, and we no longer distort the
-    // pitch — a heavily pitch-shifted voice is what sounded fake before.
-    chosenVoice =
-      voices.find(v=> /natural|neural|online/i.test(v.name) && /female|aria|jenny|sonia|libby|maisie|emma|ana|michelle/i.test(v.name)) ||
-      voices.find(v=> /natural|neural|online/i.test(v.name) && /^en/i.test(v.lang)) ||
-      voices.find(v=> /google/i.test(v.name) && /en-GB/i.test(v.lang) && /female/i.test(v.name)) ||
-      voices.find(v=> /google/i.test(v.name) && /^en/i.test(v.lang)) ||
-      voices.find(v=> /^en/i.test(v.lang) && /female|samantha|karen|moira|tessa|fiona|susan|victoria|serena|kate|zoe/i.test(v.name)) ||
-      voices.find(v=> /en-GB/i.test(v.lang)) ||
-      voices.find(v=> /^en/i.test(v.lang)) ||
-      voices[0];
+    // Original voice choice the teacher preferred: a UK/British-sounding English female voice
+    // first, then any English voice. We deliberately never fall back to voices[0] here — on a
+    // device whose system language isn't English, voices[0] can be a non-English voice, and
+    // this game must always be heard in English regardless of the computer's language setting.
+    chosenVoice = voices.find(v=> /en-GB/i.test(v.lang) && /female|UK|British/i.test(v.name)) ||
+                  voices.find(v=> /en-GB/i.test(v.lang)) ||
+                  voices.find(v=> /^en/i.test(v.lang)) ||
+                  null;
   }
 }
 if(speechOK){
@@ -183,9 +177,9 @@ function speak(text, onDone){
   if(!speechOK){ onDone && onDone(); return; }
   try{ window.speechSynthesis.cancel(); }catch(e){}
   const utt = new SpeechSynthesisUtterance(text);
-  // Natural pitch and a touch slower than default for clarity — no artificial pitch-shifting,
-  // which is what made the previous voice sound fake/robotic.
-  utt.rate = 0.95; utt.pitch = 1.05; utt.volume = 1;
+  utt.rate = 0.92; utt.pitch = 1.05; utt.volume = 1;
+  // Always speak English, no matter what language the computer or browser is set to.
+  utt.lang = 'en-GB';
   if(chosenVoice) utt.voice = chosenVoice;
   let finished = false;
   const finish = ()=>{ if(finished) return; finished = true; onDone && onDone(); };

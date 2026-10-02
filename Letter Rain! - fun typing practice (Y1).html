@@ -91,6 +91,11 @@
     border-radius:20px; box-shadow:0 3px 10px rgba(0,0,0,0.35); }
   .hub-top-btn:hover{ opacity:0.85; }
   .hub-top-btn:active{ transform:scale(0.96); }
+  .floating-name-badge{ position:fixed; top:12px; right:12px; z-index:350;
+    background:#1A1A2E; color:#FFD60A; font-weight:bold;
+    font-size:clamp(17px,2.8vw,23px); padding:10px 22px; border-radius:50px;
+    box-shadow:0 4px 16px rgba(0,0,0,0.4); display:none; pointer-events:none;
+    max-width:62vw; overflow:hidden; text-overflow:ellipsis; white-space:nowrap; }
 </style>
 </head>
 <body>
@@ -574,6 +579,30 @@ initNameGate();
   }catch(err){
     console.error("Firebase init failed:", err);
   }
+</script>
+<script>
+// Shows the typed/entered player name as a large, fixed badge in the corner of the
+// screen for the whole game, so a teacher walking around the room can glance at any
+// screen and see immediately if a student typed a real name or not.
+(function(){
+  var src = document.getElementById('playerName');
+  if(!src) return;
+  var badge = document.createElement('div');
+  badge.id = 'floatingNameBadge';
+  badge.className = 'floating-name-badge';
+  document.body.appendChild(badge);
+  function sync(){
+    var txt = (src.textContent || '').trim();
+    if(txt && txt !== '—'){
+      badge.textContent = '👤 ' + txt;
+      badge.style.display = 'inline-block';
+    } else {
+      badge.style.display = 'none';
+    }
+  }
+  sync();
+  new MutationObserver(sync).observe(src, {childList:true, characterData:true, subtree:true});
+})();
 </script>
 </body>
 </html>

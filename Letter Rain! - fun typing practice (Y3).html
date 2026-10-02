@@ -25,6 +25,11 @@
     flex-wrap:wrap; gap:8px; font-size:clamp(12px,2vw,15px); }
   .hud span.big{ color:var(--red); font-size:1.2em; }
   .stage{ background:#EAF6F1; border-radius:22px; padding:20px; border:3px dashed #9FDCC4; position:relative; }
+  .stage.challenge-mode{ border:3px solid #FF6B35; animation: challengePulse 1.3s ease-in-out infinite; }
+  @keyframes challengePulse{ 0%,100%{ box-shadow:0 0 0 rgba(255,107,53,0); } 50%{ box-shadow:0 0 26px rgba(255,107,53,0.6); } }
+  .challenge-badge{ position:absolute; top:-15px; left:50%; transform:translateX(-50%); background:linear-gradient(135deg,#FF6B35,#FFC107);
+    color:white; font-weight:bold; font-size:13px; padding:6px 18px; border-radius:50px; box-shadow:0 4px 10px rgba(0,0,0,0.3);
+    z-index:6; white-space:nowrap; letter-spacing:0.5px; }
   .sky{ position:relative; height:320px; background:linear-gradient(180deg, #A7E3D8 0%, #E8FAF4 100%);
     border-radius:18px; overflow:hidden; border:3px solid #4EC5B8; margin-bottom:14px; }
   .sky::after{ content:'⌨️'; position:absolute; top:8px; left:14px; font-size:22px; opacity:0.6; }
@@ -111,6 +116,8 @@
 <script>
 // Year 3: no on-screen keyboard (real keyboard only) — a gentler pace than the numbers
 // might suggest, easing in slowly since there's no visual key to guide them this time.
+// The final level is a "Challenge Level" — a genuinely harder, faster finale with its own
+// visual flair (pulsing border + badge) to make it feel like a big final showdown.
 const LEVELS = [
   { pool:"QWERTYUIOPASDFGHJKLZXCVBNM".split(''), duration:6400, spawnGap:1050, maxConcurrent:1, target:8 },
   { pool:"QWERTYUIOPASDFGHJKLZXCVBNM".split(''), duration:5600, spawnGap:950,  maxConcurrent:1, target:10 },
@@ -118,6 +125,7 @@ const LEVELS = [
   { pool:"QWERTYUIOPASDFGHJKLZXCVBNM".split(''), duration:4100, spawnGap:800,  maxConcurrent:2, target:14 },
   { pool:"QWERTYUIOPASDFGHJKLZXCVBNM".split(''), duration:3500, spawnGap:700,  maxConcurrent:3, target:16 },
   { pool:"QWERTYUIOPASDFGHJKLZXCVBNM".split(''), duration:3000, spawnGap:600,  maxConcurrent:3, target:18 },
+  { pool:"QWERTYUIOPASDFGHJKLZXCVBNM".split(''), duration:2300, spawnGap:450,  maxConcurrent:4, target:22, challenge:true },
 ];
 const STORAGE_KEY = "letterRainY3Results";
 const GAME_LABEL = "Letter Rain! (Y3)";
@@ -161,11 +169,33 @@ function startLevel(idx){
   document.getElementById('levelTarget').textContent = cfg.target;
   document.getElementById('levelProgress').textContent = '0';
   msg.className = 'msg';
-  msg.textContent = 'Type the matching letter before it lands!';
+
+  const stageEl = document.getElementById('stage');
+  const isChallenge = !!cfg.challenge;
+  stageEl.classList.toggle('challenge-mode', isChallenge);
+  let badge = document.getElementById('challengeBadge');
+  if(isChallenge){
+    if(!badge){
+      badge = document.createElement('div');
+      badge.id = 'challengeBadge';
+      badge.className = 'challenge-badge';
+      badge.textContent = '⚡ CHALLENGE LEVEL ⚡';
+      stageEl.appendChild(badge);
+    }
+    msg.textContent = '⚡ Final Challenge! Catch as many as you can!';
+  } else {
+    if(badge) badge.remove();
+    msg.textContent = 'Type the matching letter before it lands!';
+  }
+
   clearSky();
   lastSpawnTime = 0;
   if(spawnTimerId) clearInterval(spawnTimerId);
   spawnTimerId = setInterval(tick, 250);
+
+  if(isChallenge){
+    setTimeout(()=> showCelebrateBanner('⚡ Challenge Level!', 'Get ready — this one is fast!'), 150);
+  }
 }
 
 function tick(){
@@ -291,6 +321,7 @@ function levelComplete(){
 
 function showFinal(){
   const accuracy = Math.max(0, Math.round(100 * totalCorrect / Math.max(totalCorrect+totalMisses,1)));
+  document.getElementById('stage').classList.remove('challenge-mode');
   document.getElementById('stage').innerHTML = `
     <div style="text-align:center; padding:30px 10px;">
       <div style="font-size:76px;">🏆</div>

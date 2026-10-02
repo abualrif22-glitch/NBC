@@ -25,6 +25,11 @@
     flex-wrap:wrap; gap:8px; font-size:clamp(12px,2vw,15px); }
   .hud span.big{ color:var(--secondary); font-size:1.2em; }
   .stage{ background:#FDECEA; border-radius:22px; padding:20px; border:3px dashed #F4B5AC; position:relative; }
+  .stage.challenge-mode{ border:3px solid #FF6B35; animation: challengePulse 1.3s ease-in-out infinite; }
+  @keyframes challengePulse{ 0%,100%{ box-shadow:0 0 0 rgba(255,107,53,0); } 50%{ box-shadow:0 0 26px rgba(255,107,53,0.65); } }
+  .challenge-badge{ position:absolute; top:-15px; left:50%; transform:translateX(-50%); background:linear-gradient(135deg,#FF6B35,#FACC15);
+    color:white; font-weight:bold; font-size:13px; padding:6px 18px; border-radius:50px; box-shadow:0 4px 10px rgba(0,0,0,0.3);
+    z-index:6; white-space:nowrap; letter-spacing:0.5px; }
   .sky{ position:relative; height:320px; background:linear-gradient(180deg, #2b2560 0%, #4b3f8f 100%);
     border-radius:18px; overflow:hidden; border:3px solid #1E1B4B; margin-bottom:14px; }
   .sky::after{ content:'⌨️'; position:absolute; top:8px; left:14px; font-size:22px; opacity:0.7; }
@@ -113,6 +118,8 @@
 // Year 4: no on-screen keyboard, a calm pace on single letters, then the final three
 // levels ease into two- and three-letter blends that must be typed in full, in order —
 // real word-building practice, with plenty of time to read and type each one.
+// The final level is a "Challenge Level" — longer words, faster falls, more at once — its
+// own visual flair (pulsing border + badge) makes it feel like a big final showdown.
 const LEVELS = [
   { pool:"QWERTYUIOPASDFGHJKLZXCVBNM".split(''), duration:5800, spawnGap:1000, maxConcurrent:1, target:8 },
   { pool:"QWERTYUIOPASDFGHJKLZXCVBNM".split(''), duration:5000, spawnGap:900,  maxConcurrent:2, target:10 },
@@ -120,6 +127,7 @@ const LEVELS = [
   { pool:["TH","ER","ON","AN","IN","RE","ES","EN","AT","OU","A","E","S","T"], duration:5600, spawnGap:1000, maxConcurrent:1, target:10 },
   { pool:["ING","AND","THE","FOR","YOU","TH","ER","ON","AN","IN"], duration:5000, spawnGap:900, maxConcurrent:2, target:12 },
   { pool:["ING","AND","THE","FOR","YOU","PLAY","WORD","TYPE","FAST"], duration:4600, spawnGap:850, maxConcurrent:2, target:14 },
+  { pool:["QUICK","SPEED","SMART","SUPER","CHAMP","BRAVE","STORM","FLASH","ROBOT","LAPTOP"], duration:3900, spawnGap:700, maxConcurrent:3, target:16, challenge:true },
 ];
 const STORAGE_KEY = "letterRainY4Results";
 const GAME_LABEL = "Letter Rain! (Y4)";
@@ -163,11 +171,33 @@ function startLevel(idx){
   document.getElementById('levelTarget').textContent = cfg.target;
   document.getElementById('levelProgress').textContent = '0';
   msg.className = 'msg';
-  msg.textContent = idx >= 3 ? 'Type each whole blend, in order, before it lands!' : 'Type the matching letter before it lands!';
+
+  const stageEl = document.getElementById('stage');
+  const isChallenge = !!cfg.challenge;
+  stageEl.classList.toggle('challenge-mode', isChallenge);
+  let badge = document.getElementById('challengeBadge');
+  if(isChallenge){
+    if(!badge){
+      badge = document.createElement('div');
+      badge.id = 'challengeBadge';
+      badge.className = 'challenge-badge';
+      badge.textContent = '⚡ CHALLENGE LEVEL ⚡';
+      stageEl.appendChild(badge);
+    }
+    msg.textContent = '⚡ Final Challenge! Type every word as fast as you can!';
+  } else {
+    if(badge) badge.remove();
+    msg.textContent = idx >= 3 ? 'Type each whole blend, in order, before it lands!' : 'Type the matching letter before it lands!';
+  }
+
   clearSky();
   lastSpawnTime = 0;
   if(spawnTimerId) clearInterval(spawnTimerId);
   spawnTimerId = setInterval(tick, 250);
+
+  if(isChallenge){
+    setTimeout(()=> showCelebrateBanner('⚡ Challenge Level!', 'Get ready — longer words, faster falls!'), 150);
+  }
 }
 
 function tick(){
@@ -301,6 +331,7 @@ function levelComplete(){
 
 function showFinal(){
   const accuracy = Math.max(0, Math.round(100 * totalCorrect / Math.max(totalCorrect+totalMisses,1)));
+  document.getElementById('stage').classList.remove('challenge-mode');
   document.getElementById('stage').innerHTML = `
     <div style="text-align:center; padding:30px 10px;">
       <div style="font-size:76px;">🏆</div>

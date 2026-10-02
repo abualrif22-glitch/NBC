@@ -214,16 +214,31 @@ function colorFor(name){ return COLORS[hashStr(name) % COLORS.length]; }
 
 /* ============== SAFETY FILTER ============== */
 const BLOCK_WORDS = [
-  'stupid','idiot','dumb','shutup','loser','ugly','kill','die','hate you',
-  'fight you','beat you','nasty','freak','retard','sexy','sex','gun','weapon',
-  'damn','hell','crap','butt','fart'
+  // unkind / bullying language
+  'stupid','idiot','dumb','shut up','shutup','loser','ugly','nasty','freak',
+  'retard','retarded','pathetic','worthless','hate you','fight you','beat you',
+  'kill you','kill yourself','kys','die',
+  // profanity
+  'fuck','fucking','fucker','fuckin','shit','shitty','bullshit','bitch','bitches',
+  'ass','asshole','bastard','cunt','dick','piss','pissed','prick','slut','whore',
+  'douche','douchebag','wtf','stfu','damn','hell','crap',
+  // slurs
+  'nigger','nigga','fag','faggot',
+  // sexual / unsafe content
+  'sex','sexy','porn','nude','naked','boob','boobs','penis','vagina',
+  // weapons/violence
+  'gun','weapon','knife you'
 ];
+function wordToRegex(w){
+  const escaped = w.replace(/[.*+?^${}()|[\]\\]/g, '\\$&').replace(/\s+/g, '\\s+');
+  return new RegExp('\\b' + escaped + '\\b', 'i');
+}
+const BLOCK_REGEXES = BLOCK_WORDS.map(wordToRegex);
 function containsBlocked(text){
   const lower = text.toLowerCase();
   if(/https?:\/\/|www\.|\.com|\.net|\.org|\.io/i.test(text)) return 'link';
   if(/\d{6,}/.test(text)) return 'numbers';
-  for(const w of BLOCK_WORDS){
-    const re = new RegExp('\\b' + w.replace(/[^a-z]/g,'') + '\\b', 'i');
+  for(const re of BLOCK_REGEXES){
     if(re.test(lower)) return 'word';
   }
   return null;

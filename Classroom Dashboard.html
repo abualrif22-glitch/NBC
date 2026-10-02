@@ -406,8 +406,11 @@
   .chatmon-online{ font-weight:bold; color:var(--primary); background:#f1edfb; padding:7px 14px; border-radius:20px; font-size:13.5px; }
   .chatmon-feed{ background:#f7f9fc; border:2px dashed #ddd; border-radius:16px; padding:14px; max-height:360px;
     overflow-y:auto; margin-bottom:22px; }
-  .chatmon-msg-row{ background:white; border-radius:10px; padding:8px 12px; margin-bottom:8px; font-size:14px;
-    box-shadow:0 1px 4px rgba(0,0,0,0.08); }
+  .chatmon-msg-row{ background:white; border-radius:10px; padding:8px 12px 8px 40px; margin-bottom:8px; font-size:14px;
+    box-shadow:0 1px 4px rgba(0,0,0,0.08); position:relative; }
+  .chatmon-del-btn{ position:absolute; left:6px; top:8px; background:none; border:none; cursor:pointer;
+    font-size:15px; padding:4px; border-radius:6px; opacity:0.55; }
+  .chatmon-del-btn:hover{ opacity:1; background:#fde8e8; }
   .chatmon-msg-row.blocked{ border-left:4px solid var(--red); background:#fff5f5; }
   .chatmon-time{ color:#999; font-size:12px; margin-left:6px; }
   .chatmon-empty{ color:#999; text-align:center; font-size:14px; padding:14px; }
@@ -2032,6 +2035,20 @@ function renderChatMonTab(){
   dateInput.onchange = ()=> loadChatMonRoom(dateInput.value);
   document.getElementById('chatMonClearBtn').onclick = ()=> clearChatMonRoom(dateInput.value);
   document.getElementById('chatMonDownloadBtn').onclick = ()=> downloadChatMonCSV(dateInput.value);
+  document.getElementById('chatMonFeed').onclick = (e)=>{
+    const btn = e.target.closest('.chatmon-del-btn');
+    if(btn) deleteSingleMessage(btn.dataset.id);
+  };
+}
+
+async function deleteSingleMessage(id){
+  if(!id) return;
+  if(!confirm('Delete this one message? This cannot be undone.')) return;
+  const db = getChatDb();
+  if(!db) return;
+  try{
+    await db.collection('liveChatY3').doc(id).delete();
+  }catch(e){ console.error(e); alert('Could not delete that message. Check your internet connection.'); }
 }
 
 function loadChatMonRoom(room){
@@ -2046,13 +2063,16 @@ function loadChatMonRoom(room){
   try{
     chatMonUnsubMsgs = db.collection('liveChatY3').where('room','==',room).onSnapshot((snap)=>{
       const msgs = [];
-      snap.forEach(doc=> msgs.push(doc.data()));
+      snap.forEach(doc=> msgs.push({ id: doc.id, ...doc.data() }));
       msgs.sort((a,b)=>(a.createdAtMs||0)-(b.createdAtMs||0));
       chatMonMsgsCache = msgs;
       if(!msgs.length){ feedEl.innerHTML = '<p class="chatmon-empty">No messages yet for this day.</p>'; return; }
       feedEl.innerHTML = msgs.map(m=>{
         const t = m.createdAtMs ? new Date(m.createdAtMs).toLocaleTimeString([], {hour:'2-digit',minute:'2-digit'}) : '';
-        return `<div class="chatmon-msg-row"><strong>${escapeHtmlCM(m.name)}</strong><span class="chatmon-time">${t}</span><div>${escapeHtmlCM(m.text)}</div></div>`;
+        return `<div class="chatmon-msg-row">
+          <button class="chatmon-del-btn" data-id="${escapeHtmlCM(m.id)}" title="Delete this message">🗑️</button>
+          <strong>${escapeHtmlCM(m.name)}</strong><span class="chatmon-time">${t}</span><div>${escapeHtmlCM(m.text)}</div>
+        </div>`;
       }).join('');
     }, ()=>{ feedEl.innerHTML = '<p class="chatmon-empty">Could not load messages.</p>'; });
   }catch(e){ console.error(e); feedEl.innerHTML = '<p class="chatmon-empty">Could not load messages.</p>'; }

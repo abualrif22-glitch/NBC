@@ -4,6 +4,8 @@
 <meta charset="UTF-8">
 <meta name="viewport" content="width=device-width, initial-scale=1">
 <title>Chat Time! - Year 3 Computing Game</title>
+<script src="https://www.gstatic.com/firebasejs/10.13.0/firebase-app-compat.js"></script>
+<script src="https://www.gstatic.com/firebasejs/10.13.0/firebase-firestore-compat.js"></script>
 <style>
   :root{
     --primary:#DB2777; --secondary:#6366F1; --accent:#FBBF24;
@@ -16,7 +18,7 @@
     background:linear-gradient(135deg,#DB2777 0%,#6366F1 100%);
     min-height:100vh; display:flex; align-items:center; justify-content:center; padding:20px;
   }
-  .wrap{ background:var(--light); border-radius:26px; max-width:620px; width:100%; padding:26px 26px 32px;
+  .wrap{ background:var(--light); border-radius:26px; max-width:640px; width:100%; padding:26px 26px 32px;
     box-shadow:0 20px 50px rgba(0,0,0,0.3); position:relative; overflow:hidden; }
   h1{ color:var(--primary); text-align:center; margin:0 0 4px; font-size:clamp(24px,4vw,32px); }
   .sub{ text-align:center; color:#555; margin:0 0 16px; font-size:clamp(13px,2vw,15px); }
@@ -24,69 +26,58 @@
     padding:12px 18px; margin-bottom:14px; box-shadow:0 2px 8px rgba(0,0,0,0.08); font-weight:bold; color:var(--primary);
     flex-wrap:wrap; gap:8px; font-size:clamp(11px,2vw,14px); }
   .hud span.big{ color:var(--secondary); font-size:1.15em; }
-  .progress-track{ background:#FCE7F3; border-radius:10px; height:10px; overflow:hidden; margin-bottom:14px; }
-  .progress-fill{ background:var(--primary); height:100%; border-radius:10px; transition:width .4s ease; }
 
-  .stage{ background:#FCE7F3; border-radius:22px; padding:0; border:3px dashed #F9A8D4; min-height:440px;
-    display:flex; flex-direction:column; overflow:hidden; }
+  .topic-banner{ background:white; border-radius:16px; padding:12px 16px; margin-bottom:10px; text-align:center;
+    box-shadow:0 2px 8px rgba(0,0,0,0.08); }
+  .topic-label{ font-size:11px; color:#999; font-weight:bold; text-transform:uppercase; letter-spacing:0.5px; }
+  .topic-text{ font-size:16px; font-weight:bold; color:var(--primary); margin:4px 0 10px; line-height:1.3; }
+  .topic-btn{ background:var(--secondary); color:white; border:none; border-radius:50px; padding:7px 18px;
+    font-size:12.5px; font-weight:bold; cursor:pointer; }
+  .topic-btn:active{ transform:scale(0.96); }
 
-  /* ---- contacts list ---- */
-  .contacts-list{ padding:18px; display:flex; flex-direction:column; gap:10px; }
-  .contact-card{ background:white; border-radius:16px; padding:14px 16px; display:flex; align-items:center; gap:14px;
-    box-shadow:0 2px 8px rgba(0,0,0,0.08); border:3px solid transparent; transition:transform .1s ease; }
-  .contact-card.current{ border-color:var(--primary); }
-  .contact-card.done{ opacity:0.75; }
-  .contact-avatar{ font-size:36px; width:52px; height:52px; border-radius:50%; background:#FCE7F3; display:flex;
-    align-items:center; justify-content:center; flex-shrink:0; }
-  .contact-info{ flex:1; text-align:left; }
-  .contact-name{ font-weight:bold; color:var(--dark); font-size:15.5px; }
-  .contact-blurb{ color:#777; font-size:13px; }
-  .contact-status{ font-size:22px; width:36px; text-align:center; flex-shrink:0; }
-  .chat-btn{ background:var(--primary); color:white; border:none; border-radius:50px; padding:9px 18px;
-    font-weight:bold; font-size:13.5px; cursor:pointer; flex-shrink:0; }
-  .chat-btn:disabled{ background:#E5B8CF; cursor:not-allowed; }
+  .safety-note{ background:#FFF9E5; border:2px solid var(--accent); border-radius:12px; padding:8px 12px;
+    font-size:12px; color:#7A5B00; text-align:center; margin-bottom:10px; font-weight:bold; }
 
-  /* ---- chat view ---- */
-  .chat-header{ background:white; display:flex; align-items:center; gap:12px; padding:12px 16px;
-    box-shadow:0 2px 8px rgba(0,0,0,0.06); }
-  .chat-header .contact-avatar{ font-size:28px; width:42px; height:42px; }
-  .chat-header .name{ font-weight:bold; color:var(--dark); font-size:16px; }
-  .chat-body{ flex:1; padding:16px; display:flex; flex-direction:column; gap:10px; overflow-y:auto; max-height:320px; }
-  .bubble{ max-width:78%; padding:10px 14px; border-radius:16px; font-size:14.5px; line-height:1.4; animation:popIn .25s ease; }
+  .chat-feed{ background:#FCE7F3; border-radius:22px; padding:14px; border:3px dashed #F9A8D4;
+    min-height:320px; max-height:380px; overflow-y:auto; display:flex; flex-direction:column; gap:10px; }
+  .chat-empty{ margin:auto; text-align:center; color:#B5557E; font-weight:bold; font-size:14px; }
+  .msg-row{ display:flex; align-items:flex-end; gap:8px; animation:popIn .25s ease; max-width:100%; }
+  .msg-row.mine{ flex-direction:row-reverse; }
   @keyframes popIn{ from{opacity:0; transform:translateY(6px) scale(0.96);} to{opacity:1; transform:translateY(0) scale(1);} }
-  .bubble.them{ background:white; color:var(--dark); align-self:flex-start; border-bottom-left-radius:4px; box-shadow:0 2px 6px rgba(0,0,0,0.08); }
-  .bubble.me{ background:var(--primary); color:white; align-self:flex-end; border-bottom-right-radius:4px; }
-  .typing-indicator{ align-self:flex-start; background:white; border-radius:16px; border-bottom-left-radius:4px;
-    padding:10px 16px; box-shadow:0 2px 6px rgba(0,0,0,0.08); display:flex; gap:4px; }
-  .typing-indicator span{ width:7px; height:7px; border-radius:50%; background:#C4C4C4; animation:bounce 1s infinite ease-in-out; }
-  .typing-indicator span:nth-child(2){ animation-delay:0.15s; } .typing-indicator span:nth-child(3){ animation-delay:0.3s; }
-  @keyframes bounce{ 0%,60%,100%{ transform:translateY(0);} 30%{ transform:translateY(-5px);} }
+  .avatar{ width:32px; height:32px; border-radius:50%; display:flex; align-items:center; justify-content:center;
+    font-size:17px; flex-shrink:0; box-shadow:0 2px 6px rgba(0,0,0,0.15); }
+  .chat-bubble{ max-width:72%; padding:9px 14px; border-radius:16px; font-size:14px; line-height:1.4;
+    background:white; border:2px solid #F3D4E4; }
+  .msg-row.mine .chat-bubble{ border-bottom-right-radius:4px; background:#FFF0F7; border-color:var(--primary); }
+  .msg-row:not(.mine) .chat-bubble{ border-bottom-left-radius:4px; }
+  .bname{ font-weight:bold; font-size:11.5px; margin-bottom:2px; }
+  .btext{ word-break:break-word; color:var(--dark); }
+  .btime{ font-size:9.5px; color:#aaa; margin-top:3px; text-align:right; }
 
-  .reply-options{ padding:10px 16px 16px; display:flex; flex-direction:column; gap:8px; }
-  .reply-btn{ background:white; border:2px solid #F9A8D4; border-radius:14px; padding:11px 16px; text-align:left;
-    font-size:14.5px; font-weight:bold; color:var(--dark); cursor:pointer; transition:transform .08s ease, border-color .15s ease; }
-  .reply-btn:active{ transform:scale(0.98); }
-  .reply-btn:hover{ border-color:var(--primary); background:#FFF0F7; }
-  .type-reply-row{ padding:10px 16px 16px; display:flex; gap:8px; }
-  .type-reply-row input{ flex:1; border:2px solid #F9A8D4; border-radius:50px; padding:10px 16px; font-size:14px; }
-  .type-reply-row input:focus{ outline:none; border-color:var(--primary); }
-  .type-reply-row button{ background:var(--primary); color:white; border:none; border-radius:50px; padding:0 18px;
-    font-weight:bold; cursor:pointer; }
-  .skip-link{ text-align:center; font-size:12.5px; color:#999; text-decoration:underline; cursor:pointer; margin-top:-6px; margin-bottom:10px; }
+  .quick-phrases{ display:flex; gap:8px; overflow-x:auto; padding:10px 2px 6px; margin-bottom:4px; }
+  .quick-phrases::-webkit-scrollbar{ height:6px; }
+  .chip{ flex-shrink:0; background:white; border:2px solid var(--secondary); color:var(--dark); border-radius:50px;
+    padding:8px 14px; font-size:13px; font-weight:bold; cursor:pointer; white-space:nowrap; }
+  .chip:active{ transform:scale(0.95); }
+  .chip:disabled{ opacity:0.5; cursor:not-allowed; }
 
-  .sticker-banner{ text-align:center; padding:26px 16px; }
-  .sticker-banner .big-sticker{ font-size:64px; animation:popIn .4s cubic-bezier(.34,1.56,.64,1); }
-  .sticker-banner .label{ font-weight:bold; color:var(--primary); font-size:18px; margin:8px 0 4px; }
+  .chat-input-row{ display:flex; gap:8px; margin-top:6px; }
+  .chat-input-row input{ flex:1; border:2px solid #F9A8D4; border-radius:50px; padding:12px 16px; font-size:14px;
+    min-width:0; }
+  .chat-input-row input:focus{ outline:none; border-color:var(--primary); }
+  .chat-input-row input:disabled{ background:#eee; }
+  .chat-input-row button{ background:var(--primary); color:white; border:none; border-radius:50px; padding:0 20px;
+    font-weight:bold; cursor:pointer; font-size:14px; }
+  .chat-input-row button:disabled{ background:#E5B8CF; cursor:not-allowed; }
 
-  .sticker-row{ display:flex; justify-content:center; gap:10px; margin:6px 0 2px; flex-wrap:wrap; }
-  .sticker-slot{ width:40px; height:40px; border-radius:50%; background:#FCE7F3; display:flex; align-items:center;
-    justify-content:center; font-size:20px; border:2px dashed #F9A8D4; }
-  .sticker-slot.earned{ background:white; border:2px solid var(--primary); font-size:24px; }
+  .msg{ text-align:center; margin-top:10px; min-height:20px; font-size:clamp(12px,2vw,13.5px); font-weight:bold; color:var(--green); }
+  .msg.warn{ color:var(--red); }
 
-  .msg{ text-align:center; margin-top:12px; min-height:22px; font-size:clamp(12px,2vw,14px); font-weight:bold; color:var(--primary); }
-  .controls{ display:flex; justify-content:center; margin-top:12px; gap:12px; }
-  button.ctrl{ background:var(--primary); color:white; border:none; padding:13px 28px; border-radius:12px; font-size:16px; font-weight:bold; cursor:pointer; }
-  button.ctrl.secondary{ background:white; color:var(--primary); border:2px solid var(--primary); }
+  .celebrate-toast{ position:fixed; top:70px; left:50%; transform:translateX(-50%) translateY(-20px);
+    background:var(--primary); color:white; padding:14px 24px; border-radius:16px; font-weight:bold; font-size:15px;
+    box-shadow:0 8px 24px rgba(0,0,0,0.3); z-index:400; opacity:0; transition:all .3s ease; text-align:center;
+    pointer-events:none; max-width:80vw; }
+  .celebrate-toast.show{ opacity:1; transform:translateX(-50%) translateY(0); }
 
   .gate-overlay{ position:fixed; inset:0; background:rgba(59,10,42,0.78); display:flex; align-items:center; justify-content:center; z-index:100; padding:20px; }
   .gate-card{ background:white; border-radius:20px; padding:34px 36px; max-width:420px; width:100%; text-align:center; box-shadow:0 20px 50px rgba(0,0,0,0.4); }
@@ -98,19 +89,6 @@
   .gate-card button{ width:100%; padding:13px; font-size:16px; border:none; border-radius:10px; background:var(--primary); color:white; font-weight:bold; cursor:pointer; }
   .gate-error{ color:var(--red); font-size:13px; min-height:18px; margin-bottom:6px; font-weight:bold; }
 
-  #resultsPanel{ display:none; background:white; border-radius:14px; padding:18px 20px; margin-top:16px; box-shadow:0 2px 8px rgba(0,0,0,0.08); text-align:center; }
-  #resultsPanel h3{ margin:0 0 4px; color:var(--primary); font-size:18px; }
-  #resultsPanel .save-row{ display:flex; gap:12px; justify-content:center; flex-wrap:wrap; margin-top:12px; }
-  #resultsPanel .saved-note{ font-size:13px; color:#0e9e6f; font-weight:bold; min-height:18px; margin-top:8px; }
-  #savedTableWrap{ margin-top:14px; max-height:220px; overflow:auto; display:none; }
-  #savedTableWrap table{ width:100%; border-collapse:collapse; font-size:13px; }
-  #savedTableWrap th, #savedTableWrap td{ padding:6px 8px; border-bottom:1px solid #e3e6f0; text-align:left; }
-  #savedTableWrap th{ color:var(--primary); }
-
-  .confetti-piece{ position:absolute; top:-20px; width:12px; height:16px; z-index:20; pointer-events:none; animation: fall linear forwards; }
-  @keyframes fall{ to{ transform: translateY(600px) rotate(540deg); opacity:0.2; } }
-  .final-screen{ text-align:center; padding:20px 10px; }
-  .final-screen .trophy{ font-size:76px; }
   .top-bar{ margin:0; }
   .hub-top-btn{ position:fixed; top:12px; left:12px; z-index:300;
     display:inline-flex; align-items:center; gap:6px; background:#1A1A2E; color:white;
@@ -127,10 +105,12 @@
 </head>
 <body>
 
+<div class="celebrate-toast" id="celebrateToast"></div>
+
 <div class="gate-overlay" id="gateOverlay">
   <div class="gate-card">
     <h2>💬 Chat Time!</h2>
-    <p>Type your name to start chatting with your Chat Buddies!</p>
+    <p>Type your name to join today's live class chat!</p>
     <input type="text" id="nameInput" placeholder="Your name" maxlength="24" autocomplete="off">
     <div class="gate-error" id="nameError"></div>
     <button id="startBtn">Start ▶</button>
@@ -138,455 +118,323 @@
 </div>
 
 <div class="wrap" id="wrap">
-  <div class="top-bar"><a href="index.html" class="hub-top-btn">🏠 Back to Hub</a></div>
+  <div class="top-bar">
+    <a href="index.html" class="hub-top-btn">🏠 Back to Hub</a>
+  </div>
   <h1>💬 Chat Time!</h1>
-  <p class="sub" id="subline">Send friendly messages to your Chat Buddies and collect stickers!</p>
+  <p class="sub">Chat live with your classmates — be kind and have fun!</p>
 
   <div class="hud">
     <div>Player: <span class="big" id="playerName">—</span></div>
-    <div>Score: <span class="big" id="score">0</span> ⭐</div>
-    <div>Stickers: <span class="big" id="stickerCount">0</span>/<span id="stickerTotal">5</span> 🎁</div>
+    <div>👥 Online: <span class="big" id="onlineCount">0</span></div>
+    <div>⭐ Messages: <span class="big" id="msgCount">0</span></div>
   </div>
-  <div class="progress-track"><div class="progress-fill" id="progressFill" style="width:0%"></div></div>
 
-  <div class="stage" id="stage"><!-- filled by JS --></div>
+  <div class="topic-banner">
+    <div class="topic-label">💡 Today's Chat Topic</div>
+    <div class="topic-text" id="topicText">Loading topic…</div>
+    <button class="topic-btn" id="newTopicBtn">🔄 New Topic</button>
+  </div>
 
+  <div class="safety-note">🛡️ Always be kind. Never share your address, phone number, or password — tell your teacher if a message feels wrong.</div>
+
+  <div class="chat-feed" id="chatFeed">
+    <p class="chat-empty" id="chatEmpty">Say hello to start the conversation! 👋</p>
+  </div>
+
+  <div class="quick-phrases" id="quickPhrases"></div>
+
+  <div class="chat-input-row">
+    <input type="text" id="chatInput" placeholder="Type a friendly message…" maxlength="80" autocomplete="off" disabled>
+    <button id="sendBtn" disabled>Send ➤</button>
+  </div>
   <p class="msg" id="msg"></p>
 </div>
 
 <script>
-// ===================== CONTENT =====================
-// A fun, safe, single-player messaging game for Year 3: learners "chat" with friendly
-// characters by picking reply bubbles (and can optionally type their own message back).
-// No real messages ever leave this page — it's a simulated chat, not real messaging.
-const BUDDIES = [
-  {
-    id:'puppy', name:'Buddy', avatar:'🐶', blurb:'Loves playtime and treats!', sticker:'🦴',
-    exchanges:[
-      { from:"Hi!! 🐾 I'm Buddy! Want to be chat friends?",
-        options:["Yes! Hi Buddy! 🐶","Woof woof! 🐾","Sure, nice to meet you!"],
-        reply:"Yay!! 🎉 Let's chat every day!" },
-      { from:"What's your favourite thing to do outside?",
-        options:["Playing fetch! 🎾","Riding my bike! 🚲","Jumping in puddles! 💦"],
-        reply:"That sounds SO fun! I love running around outside too!" },
-      { from:"One more thing — what's your favourite snack?",
-        options:["Biscuits! 🍪","Apples! 🍎","Pizza! 🍕"],
-        reply:"Yummy! My favourite snack is a bone! 🦴" }
-    ]
-  },
-  {
-    id:'grandma', name:'Grandma Rosie', avatar:'👵', blurb:'Always has a warm hug to send!', sticker:'❤️',
-    exchanges:[
-      { from:"Hello dear! How has your day been? 🌼",
-        options:["It's been great, thanks!","Pretty good!","A little tiring, but okay!"],
-        reply:"Aww, I'm so glad to hear from you! 💛" },
-      { from:"I just baked some cookies — what's your favourite thing to bake or cook?",
-        options:["Cookies! 🍪","Pancakes! 🥞","I like to help mix things!"],
-        reply:"Ooh, lovely choice! We should bake together sometime." },
-      { from:"Before I go — what's something that made you smile today?",
-        options:["Playing with my friends 😊","A funny joke","Something at school"],
-        reply:"That's wonderful! Sending you a big hug! 🤗" }
-    ]
-  },
-  {
-    id:'robo', name:'Robo-Pal', avatar:'🤖', blurb:'A curious little robot friend.', sticker:'⚙️',
-    exchanges:[
-      { from:"BEEP BOOP! 🤖 Hello human friend! What is your favourite game?",
-        options:["Letter Rain! ⌨️","A board game! 🎲","Tag with my friends! 🏃"],
-        reply:"PROCESSING... that sounds AWESOME! 🤖✨" },
-      { from:"If you could build your own robot, what would it do?",
-        options:["Clean my room! 🧹","Fly me to school! ✈️","Make ice cream! 🍦"],
-        reply:"Excellent idea! I would love a robot like that too!" },
-      { from:"One last question — what is your favourite colour?",
-        options:["Blue! 🔵","Green! 🟢","Purple! 🟣"],
-        reply:"BEEP! Great choice! My circuits light up that colour!" }
-    ]
-  },
-  {
-    id:'luna', name:'Captain Luna', avatar:'🧑‍🚀', blurb:'Explorer of planets and stars.', sticker:'🌟',
-    exchanges:[
-      { from:"Greetings, Earth friend! 🚀 I'm Captain Luna. Have you ever looked at the stars?",
-        options:["Yes, they're beautiful! ✨","A little bit!","I'd love to one day!"],
-        reply:"Space is full of wonders — I'm glad you love it too!" },
-      { from:"If you could visit any planet, which one would you choose?",
-        options:["Mars! 🔴","Saturn, for the rings! 🪐","Jupiter, it's huge! 🟠"],
-        reply:"A fantastic choice, astronaut-in-training!" },
-      { from:"Last one — what would you pack for a trip to space?",
-        options:["Snacks! 🍪","My favourite toy! 🧸","A camera to take photos! 📸"],
-        reply:"Smart thinking! I'm packing those too! 🚀" }
-    ]
-  },
-  {
-    id:'sparkle', name:'Sparkle the Fairy', avatar:'🧚', blurb:'Spreads glitter and good vibes.', sticker:'🌈',
-    exchanges:[
-      { from:"Twinkle twinkle! ✨ Hello friend, do you believe in a little bit of magic?",
-        options:["Yes, definitely! ✨","Maybe a little!","I love magic stories! 📖"],
-        reply:"Yay! Magic is everywhere if you look closely!" },
-      { from:"What's your favourite colour in a rainbow?",
-        options:["Pink! 💗","Yellow! 💛","All of them! 🌈"],
-        reply:"A beautiful choice! Rainbows are my favourite thing to paint!" },
-      { from:"Before I fly off — what makes you feel happy?",
-        options:["Spending time with family","Playing outside","Reading a good book"],
-        reply:"That's lovely! Sprinkling some extra sparkle on your day! ✨" }
-    ]
-  }
-];
-
-let buddyIdx = 0, exchangeIdx = 0, score = 0, studentName = "";
-const earnedStickers = [];
-const STORAGE_KEY = "chatTimeY3Results";
-const TOTAL_STEPS = BUDDIES.length * (BUDDIES[0].exchanges.length + 1); // +1 per buddy for the sticker screen
-
-const stage = document.getElementById('stage');
-const msg = document.getElementById('msg');
-const wrap = document.getElementById('wrap');
-document.getElementById('stickerTotal').textContent = BUDDIES.length;
-
-function updateHUD(){
-  document.getElementById('score').textContent = score;
-  document.getElementById('stickerCount').textContent = earnedStickers.length;
-  const stepsDone = buddyIdx * (BUDDIES[0].exchanges.length + 1) + exchangeIdx;
-  document.getElementById('progressFill').style.width = Math.min(100, Math.round(stepsDone/TOTAL_STEPS*100)) + '%';
-}
-
-function renderContactsList(){
-  msg.textContent = '';
-  const html = BUDDIES.map((b, i) => {
-    const isDone = i < buddyIdx;
-    const isCurrent = i === buddyIdx;
-    const statusIcon = isDone ? '✅' : (isCurrent ? '💬' : '🔒');
-    return `
-      <div class="contact-card ${isCurrent?'current':''} ${isDone?'done':''}">
-        <div class="contact-avatar">${b.avatar}</div>
-        <div class="contact-info">
-          <div class="contact-name">${b.name}</div>
-          <div class="contact-blurb">${b.blurb}</div>
-        </div>
-        <div class="contact-status">${statusIcon}</div>
-        <button class="chat-btn" data-idx="${i}" ${isCurrent ? '' : 'disabled'}>${isDone ? 'Done' : 'Chat'}</button>
-      </div>`;
-  }).join('');
-  stage.innerHTML = `<div class="contacts-list">${html}</div>`;
-  stage.querySelectorAll('.chat-btn:not(:disabled)').forEach(btn=>{
-    btn.addEventListener('click', ()=>{ exchangeIdx = 0; renderChatExchange(); });
-  });
-  updateHUD();
-}
-
-function renderChatExchange(){
-  const buddy = BUDDIES[buddyIdx];
-  const chatLogHtml = buddy._log ? buddy._log : '';
-  const isTypedStep = exchangeIdx >= buddy.exchanges.length;
-
-  stage.innerHTML = `
-    <div class="chat-header"><div class="contact-avatar">${buddy.avatar}</div><div class="name">${buddy.name}</div></div>
-    <div class="chat-body" id="chatBody">${chatLogHtml}</div>
-    <div id="chatFooter"></div>
-  `;
-  const chatBody = document.getElementById('chatBody');
-  chatBody.scrollTop = chatBody.scrollHeight;
-
-  if(isTypedStep){
-    renderTypedStep(buddy);
-    return;
-  }
-
-  const ex = buddy.exchanges[exchangeIdx];
-  // show buddy's message with a brief "typing..." delay for realism
-  const typingEl = document.createElement('div');
-  typingEl.className = 'typing-indicator';
-  typingEl.innerHTML = '<span></span><span></span><span></span>';
-  chatBody.appendChild(typingEl);
-  chatBody.scrollTop = chatBody.scrollHeight;
-
-  setTimeout(()=>{
-    typingEl.remove();
-    appendBubble(chatBody, 'them', ex.from);
-    buddy._log = chatBody.innerHTML;
-    renderReplyOptions(buddy, ex);
-  }, 700);
-
-  updateHUD();
-}
-
-function appendBubble(container, who, text){
-  const b = document.createElement('div');
-  b.className = `bubble ${who}`;
-  b.textContent = text;
-  container.appendChild(b);
-  container.scrollTop = container.scrollHeight;
-}
-
-function renderReplyOptions(buddy, ex){
-  const footer = document.getElementById('chatFooter');
-  footer.innerHTML = `<div class="reply-options">${ex.options.map((opt,i)=>`<button class="reply-btn" data-i="${i}">${opt}</button>`).join('')}</div>`;
-  footer.querySelectorAll('.reply-btn').forEach(btn=>{
-    btn.addEventListener('click', ()=>{
-      const chatBody = document.getElementById('chatBody');
-      const chosen = ex.options[btn.dataset.i];
-      appendBubble(chatBody, 'me', chosen);
-      footer.innerHTML = '';
-      score += 10;
-      buddy._log = chatBody.innerHTML;
-      updateHUD();
-      const typingEl = document.createElement('div');
-      typingEl.className = 'typing-indicator';
-      typingEl.innerHTML = '<span></span><span></span><span></span>';
-      chatBody.appendChild(typingEl);
-      chatBody.scrollTop = chatBody.scrollHeight;
-      setTimeout(()=>{
-        typingEl.remove();
-        appendBubble(chatBody, 'them', ex.reply);
-        buddy._log = chatBody.innerHTML;
-        exchangeIdx++;
-        setTimeout(renderChatExchange, 650);
-      }, 700);
-    });
-  });
-}
-
-function renderTypedStep(buddy){
-  const chatBody = document.getElementById('chatBody');
-  const typingEl = document.createElement('div');
-  typingEl.className = 'typing-indicator';
-  typingEl.innerHTML = '<span></span><span></span><span></span>';
-  chatBody.appendChild(typingEl);
-  chatBody.scrollTop = chatBody.scrollHeight;
-
-  setTimeout(()=>{
-    typingEl.remove();
-    appendBubble(chatBody, 'them', `This was fun! Want to send me one last message before I go?`);
-    buddy._log = chatBody.innerHTML;
-    const footer = document.getElementById('chatFooter');
-    footer.innerHTML = `
-      <div class="type-reply-row">
-        <input type="text" id="typedMsgInput" placeholder="Type a friendly message..." maxlength="80">
-        <button id="sendTypedBtn">Send ▶</button>
-      </div>
-      <div class="skip-link" id="skipTypedBtn">Skip this step</div>`;
-    document.getElementById('typedMsgInput').focus();
-    function finishTyped(text){
-      footer.innerHTML = '';
-      if(text){
-        appendBubble(chatBody, 'me', text);
-        score += 10;
-      }
-      buddy._log = chatBody.innerHTML;
-      updateHUD();
-      setTimeout(()=> showStickerReward(buddy), 500);
-    }
-    document.getElementById('sendTypedBtn').addEventListener('click', ()=>{
-      const val = document.getElementById('typedMsgInput').value.trim().slice(0,80);
-      finishTyped(val);
-    });
-    document.getElementById('typedMsgInput').addEventListener('keydown', (e)=>{
-      if(e.key==='Enter'){ const val = e.target.value.trim().slice(0,80); finishTyped(val); }
-    });
-    document.getElementById('skipTypedBtn').addEventListener('click', ()=> finishTyped(''));
-  }, 700);
-}
-
-function showStickerReward(buddy){
-  earnedStickers.push(buddy.sticker);
-  score += 20;
-  spawnConfetti(24);
-  stage.innerHTML = `
-    <div class="sticker-banner">
-      <div class="big-sticker">${buddy.sticker}</div>
-      <div class="label">You earned a sticker from ${buddy.name}!</div>
-      <div style="color:#777;font-size:14px;margin-bottom:14px;">Great chatting! 💬</div>
-      <div class="controls"><button class="ctrl" id="nextContactBtn">${buddyIdx < BUDDIES.length-1 ? 'Next Chat ▶' : 'See My Results 🏁'}</button></div>
-    </div>`;
-  updateHUD();
-  document.getElementById('nextContactBtn').addEventListener('click', ()=>{
-    buddyIdx++;
-    if(buddyIdx < BUDDIES.length){ renderContactsList(); } else { showFinal(); }
-  });
-}
-
-function spawnConfetti(n){
-  const colors = ['#DB2777','#6366F1','#FBBF24','#06D6A0','#FFFFFF'];
-  for(let i=0;i<n;i++){
-    const p = document.createElement('div');
-    p.className = 'confetti-piece';
-    p.style.left = Math.random()*100 + '%';
-    p.style.background = colors[Math.floor(Math.random()*colors.length)];
-    p.style.animationDuration = (1.2 + Math.random()*1.1) + 's';
-    wrap.appendChild(p);
-    setTimeout(()=>p.remove(), 2500);
-  }
-}
-
-function showFinal(){
-  document.getElementById('progressFill').style.width = '100%';
-  const stickerRow = BUDDIES.map(b => `<div class="sticker-slot earned">${b.sticker}</div>`).join('');
-  stage.innerHTML = `
-    <div class="final-screen">
-      <div class="trophy">🏆</div>
-      <div style="font-size:22px;font-weight:bold;color:var(--primary);margin-bottom:6px;">You're a Chat Time star!</div>
-      <div style="font-size:16px;color:#555;margin-bottom:10px;">You chatted with all ${BUDDIES.length} buddies!</div>
-      <div class="sticker-row">${stickerRow}</div>
-      <div style="font-size:19px;font-weight:bold;color:var(--secondary);margin:10px 0 18px;">⭐ Score: ${score} pts</div>
-      <div class="controls">
-        <button class="ctrl secondary" id="playAgainBtn">Play Again 🔄</button>
-      </div>
-    </div>`;
-  msg.textContent = "";
-  spawnConfetti(50);
-  document.getElementById('playAgainBtn').addEventListener('click', ()=>{
-    buddyIdx = 0; exchangeIdx = 0; score = 0; earnedStickers.length = 0;
-    BUDDIES.forEach(b=> b._log = '');
-    document.getElementById('score').textContent = score;
-    renderContactsList();
-  });
-  showResultsPanel();
-
-  if(window.__submitResultToCloud){
-    window.__submitResultToCloud({
-      name: studentName,
-      game: "Chat Time! (Y3)",
-      score: score,
-      total: 250,
-      date: new Date().toLocaleDateString() + ' ' + new Date().toLocaleTimeString([], {hour:'2-digit', minute:'2-digit'})
-    });
-  }
-}
-
-/* ================= RESULTS PANEL ================= */
-function showResultsPanel(){
-  let panel = document.getElementById('resultsPanel');
-  if(!panel){
-    panel = document.createElement('div');
-    panel.id = 'resultsPanel';
-    panel.innerHTML = `
-      <h3>🏁 Well done!</h3>
-      <div id="resultsSummary" style="font-size:14.5px;color:#444;"></div>
-      <div class="saved-note" id="cloudSyncNote" style="color:#DB2777;">☁️ Sending your result to your teacher...</div>
-      <div class="save-row">
-        <button class="ctrl" id="saveResultBtn">💾 Save My Results</button>
-        <button class="ctrl secondary" id="downloadAllBtn">📋 Download Class Results</button>
-        <button class="ctrl secondary" id="toggleSavedBtn">👀 View Saved Results</button>
-      </div>
-      <div class="saved-note" id="savedNote"></div>
-      <div style="margin-top:14px;"><a href="index.html" style="display:block; background:#1A1A2E; color:white; text-decoration:none; padding:20px 24px; border-radius:16px; font-weight:bold; font-size:22px; text-align:center; box-shadow:0 6px 18px rgba(0,0,0,0.3);">🏠 Back to Hub</a></div>
-      <div id="savedTableWrap">
-        <table>
-          <thead><tr><th>Name</th><th>Score</th><th>Total</th><th>Date</th></tr></thead>
-          <tbody id="savedTableBody"></tbody>
-        </table>
-      </div>`;
-    wrap.appendChild(panel);
-    document.getElementById('saveResultBtn').addEventListener('click', onSaveResult);
-    document.getElementById('downloadAllBtn').addEventListener('click', onDownloadAll);
-    document.getElementById('toggleSavedBtn').addEventListener('click', onToggleSaved);
-  }
-  panel.style.display = 'block';
-  document.getElementById('resultsSummary').textContent = `${studentName} scored ${score} points and collected ${earnedStickers.length} stickers!`;
-  document.getElementById('savedNote').textContent = '';
-  panel.scrollIntoView({ behavior:'smooth', block:'nearest' });
-
-  const cloudNote = document.getElementById('cloudSyncNote');
-  if(window.__submitResultToCloud){
-    window.__submitResultToCloud({
-      name: studentName,
-      game: "Chat Time! (Y3)",
-      score: score,
-      total: 250,
-      date: new Date().toLocaleDateString() + ' ' + new Date().toLocaleTimeString([], {hour:'2-digit', minute:'2-digit'})
-    }).then(ok => {
-      if(cloudNote) cloudNote.textContent = ok
-        ? '☁️ Sent to your teacher automatically!'
-        : '⚠️ Could not connect to sync automatically — use "Save My Results" below as a backup.';
-    });
-  } else if(cloudNote){
-    cloudNote.textContent = '⚠️ Cloud sync unavailable — use "Save My Results" below as a backup.';
-  }
-}
-
-function readSavedResults(){ try{ return JSON.parse(localStorage.getItem(STORAGE_KEY) || "[]"); }catch(e){ return []; } }
-function writeSavedResults(list){ try{ localStorage.setItem(STORAGE_KEY, JSON.stringify(list)); }catch(e){} }
-function csvEscape(v){ const s = String(v); return /[",\n]/.test(s) ? '"' + s.replace(/"/g,'""') + '"' : s; }
-function downloadCSV(filename, rows){
-  const csv = rows.map(r=>r.map(csvEscape).join(",")).join("\r\n");
-  const blob = new Blob([csv], {type:"text/csv;charset=utf-8;"});
-  const url = URL.createObjectURL(blob);
-  const a = document.createElement('a');
-  a.href = url; a.download = filename;
-  document.body.appendChild(a); a.click(); document.body.removeChild(a);
-  setTimeout(()=>URL.revokeObjectURL(url), 1000);
-}
-function renderSavedTable(){
-  const list = readSavedResults();
-  const body = document.getElementById('savedTableBody');
-  body.innerHTML = list.map(r=>`<tr><td>${r.name}</td><td>${r.score}</td><td>${r.total}</td><td>${r.date}</td></tr>`).join('') ||
-    '<tr><td colspan="4" style="color:#999;">No saved results yet on this computer.</td></tr>';
-}
-async function saveCSVWithPicker(filename, rows, noteElId, chosenMsg, fallbackMsg, cancelMsg){
-  const csv = rows.map(r=>r.map(csvEscape).join(",")).join("\r\n");
-  if(window.showSaveFilePicker){
-    try{
-      const handle = await window.showSaveFilePicker({
-        suggestedName: filename,
-        types: [{ description: 'CSV file', accept: {'text/csv': ['.csv']} }]
-      });
-      const writable = await handle.createWritable();
-      await writable.write(csv);
-      await writable.close();
-      document.getElementById(noteElId).textContent = chosenMsg;
-      return;
-    }catch(err){
-      if(err && err.name === 'AbortError'){
-        document.getElementById(noteElId).textContent = cancelMsg;
-        return;
-      }
-    }
-  }
-  downloadCSV(filename, rows);
-  document.getElementById(noteElId).textContent = fallbackMsg;
-}
-async function onSaveResult(){
-  const now = new Date();
-  const record = {
-    name: studentName, score: score, total: 250,
-    date: now.toLocaleDateString() + ' ' + now.toLocaleTimeString([], {hour:'2-digit', minute:'2-digit'})
-  };
-  const list = readSavedResults();
-  list.push(record);
-  writeSavedResults(list);
-  const safeName = (studentName || 'student').replace(/[^a-z0-9]+/gi,'_');
-  const filename = `ChatTime_${safeName}_${now.toISOString().slice(0,10)}.csv`;
-  const rows = [["Name","Score","Total","Date"], [record.name, record.score, record.total, record.date]];
-  await saveCSVWithPicker(filename, rows, 'savedNote',
-    '✅ Saved! Your results file was saved where you chose, and your score was stored on this computer.',
-    '✅ Saved! A results file was downloaded (this browser doesn’t support choosing a save location), and your score was stored on this computer.',
-    'Save cancelled — your score is still stored on this computer, so you can still download the class results later.');
-  renderSavedTable();
-}
-async function onDownloadAll(){
-  const list = readSavedResults();
-  if(list.length === 0){
-    document.getElementById('savedNote').textContent = 'No saved results yet on this computer.';
-    return;
-  }
-  const rows = [["Name","Score","Total","Date"], ...list.map(r=>[r.name, r.score, r.total, r.date])];
-  const filename = `ChatTime_AllResults_${new Date().toISOString().slice(0,10)}.csv`;
-  await saveCSVWithPicker(filename, rows, 'savedNote',
-    '✅ Class results saved where you chose.',
-    '✅ Class results file downloaded (this browser doesn’t support choosing a save location).',
-    'Save cancelled.');
-}
-function onToggleSaved(){
-  const t = document.getElementById('savedTableWrap');
-  const showing = t.style.display === 'block';
-  t.style.display = showing ? 'none' : 'block';
-  if(!showing) renderSavedTable();
-}
-
-/* ================= NAME GATE ================= */
+/* ============== SETUP ============== */
 const gateOverlay = document.getElementById('gateOverlay');
 const nameInput = document.getElementById('nameInput');
 const nameError = document.getElementById('nameError');
+const chatFeed = document.getElementById('chatFeed');
+const chatInput = document.getElementById('chatInput');
+const sendBtn = document.getElementById('sendBtn');
+const msgEl = document.getElementById('msg');
+const onlineCountEl = document.getElementById('onlineCount');
+const msgCountEl = document.getElementById('msgCount');
+const topicTextEl = document.getElementById('topicText');
 
+let studentName = '';
+let messageCount = 0;
+let db = null;
+
+function todayStr(){
+  const d = new Date();
+  return d.getFullYear() + '-' + String(d.getMonth()+1).padStart(2,'0') + '-' + String(d.getDate()).padStart(2,'0');
+}
+const ROOM = todayStr();
+
+function getClientId(){
+  let id = sessionStorage.getItem('chatTimeClientId');
+  if(!id){
+    id = 'c_' + Math.random().toString(36).slice(2,10) + Date.now().toString(36);
+    sessionStorage.setItem('chatTimeClientId', id);
+  }
+  return id;
+}
+const CLIENT_ID = getClientId();
+
+function showMsg(text, isWarn){
+  msgEl.textContent = text;
+  msgEl.classList.toggle('warn', !!isWarn);
+}
+
+function celebrate(text){
+  const el = document.getElementById('celebrateToast');
+  el.textContent = text;
+  el.classList.add('show');
+  clearTimeout(el._t);
+  el._t = setTimeout(()=> el.classList.remove('show'), 2600);
+}
+
+function escapeHtml(s){
+  return String(s).replace(/[&<>"']/g, c=>({'&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;',"'":'&#39;'}[c]));
+}
+
+/* ============== AVATAR / COLOR ============== */
+const AVATARS = ['🐶','🐱','🐰','🦊','🐻','🐼','🐨','🦁','🐸','🐵','🐷','🐮','🐯','🦄','🐢','🐥'];
+const COLORS = ['#DB2777','#6366F1','#06D6A0','#F59E0B','#EF4444','#8B5CF6','#0EA5E9','#EC4899'];
+function hashStr(s){
+  let h = 0;
+  for(let i=0;i<s.length;i++){ h = (h*31 + s.charCodeAt(i)) >>> 0; }
+  return h;
+}
+function avatarFor(name){ return AVATARS[hashStr(name) % AVATARS.length]; }
+function colorFor(name){ return COLORS[hashStr(name) % COLORS.length]; }
+
+/* ============== SAFETY FILTER ============== */
+const BLOCK_WORDS = [
+  'stupid','idiot','dumb','shutup','loser','ugly','kill','die','hate you',
+  'fight you','beat you','nasty','freak','retard','sexy','sex','gun','weapon',
+  'damn','hell','crap','butt','fart'
+];
+function containsBlocked(text){
+  const lower = text.toLowerCase();
+  if(/https?:\/\/|www\.|\.com|\.net|\.org|\.io/i.test(text)) return 'link';
+  if(/\d{6,}/.test(text)) return 'numbers';
+  for(const w of BLOCK_WORDS){
+    const re = new RegExp('\\b' + w.replace(/[^a-z]/g,'') + '\\b', 'i');
+    if(re.test(lower)) return 'word';
+  }
+  return null;
+}
+function warnTextFor(reason){
+  if(reason === 'link') return "Let's not share links in chat!";
+  if(reason === 'numbers') return "Let's not share numbers like phone numbers here!";
+  return "Let's use kind words! Try typing that again. 🙂";
+}
+
+/* ============== TOPICS ============== */
+const TOPICS = [
+  "What's your favorite game to play at break time?",
+  "If you could have any animal as a pet, what would it be?",
+  "What's the best book or story you've read this year?",
+  "What do you want to be when you grow up?",
+  "What's your favorite thing about our school?",
+  "If you could visit anywhere in the world, where would you go?",
+  "What's your favorite food?",
+  "What superpower would you most like to have?",
+  "What's something kind you did for someone this week?",
+  "What's your favorite season and why?",
+  "If you invented a new game, what would it be called?",
+  "What makes a good friend?"
+];
+const QUICK_PHRASES = [
+  "Hi there! 👋","How are you?","That's so cool! 😎","I like that idea!",
+  "Good job! 🌟","Thank you! 😊","Have a great day!","See you later!",
+  "I agree!","That's funny! 😂","Nice one! 👍","❤️","🎉","😊","👍"
+];
+document.getElementById('quickPhrases').innerHTML = QUICK_PHRASES.map(p=>
+  `<button class="chip" data-phrase="${escapeHtml(p)}">${escapeHtml(p)}</button>`
+).join('');
+
+function getTopicRef(){ return db.collection('liveChatY3_meta').doc(ROOM); }
+function subscribeTopic(){
+  getTopicRef().onSnapshot((doc)=>{
+    const idx = doc.exists ? (doc.data().topicIndex || 0) : 0;
+    topicTextEl.textContent = TOPICS[idx % TOPICS.length];
+  }, ()=>{ topicTextEl.textContent = TOPICS[0]; });
+}
+document.getElementById('newTopicBtn').addEventListener('click', async ()=>{
+  if(!db) return;
+  try{
+    const ref = getTopicRef();
+    const snap = await ref.get();
+    const cur = snap.exists ? (snap.data().topicIndex || 0) : 0;
+    await ref.set({ topicIndex: cur + 1, updatedAtMs: Date.now() }, { merge:true });
+  }catch(e){ console.error(e); }
+});
+
+/* ============== FIREBASE ============== */
+function initFirebase(){
+  try{
+    const firebaseConfig = {
+      apiKey: "AIzaSyCEJtHd802MyuZUlwt6OfGkl9IitHaSOaA",
+      authDomain: "tasks-results.firebaseapp.com",
+      projectId: "tasks-results",
+      storageBucket: "tasks-results.firebasestorage.app",
+      messagingSenderId: "1014525306500",
+      appId: "1:1014525306500:web:3ffe2e6f5554e9140e04d1"
+    };
+    if(!firebase.apps || !firebase.apps.length){
+      firebase.initializeApp(firebaseConfig);
+    }
+    db = firebase.firestore();
+    return true;
+  }catch(e){
+    console.error('Firebase init failed', e);
+    return false;
+  }
+}
+
+function joinChat(){
+  if(!initFirebase()){
+    showMsg('Could not connect to live chat. Check your internet connection and reload the page.', true);
+    return;
+  }
+  chatInput.disabled = false;
+  sendBtn.disabled = false;
+  document.querySelectorAll('.chip').forEach(c=> c.disabled = false);
+  try{ subscribeTopic(); }catch(e){ console.error('Topic subscribe failed', e); }
+  try{ subscribeMessages(); }catch(e){ console.error('Message subscribe failed', e); }
+  try{ subscribePresence(); }catch(e){ console.error('Presence subscribe failed', e); }
+  updatePresence();
+  setInterval(updatePresence, 15000);
+}
+
+function updatePresence(){
+  if(!db) return;
+  db.collection('liveChatY3_presence').doc(ROOM + '_' + CLIENT_ID).set({
+    room: ROOM, name: studentName, lastSeenMs: Date.now(),
+    ts: firebase.firestore.FieldValue.serverTimestamp()
+  }).catch(()=>{});
+}
+
+function subscribePresence(){
+  db.collection('liveChatY3_presence').where('room','==',ROOM).onSnapshot((snap)=>{
+    const now = Date.now();
+    let count = 0;
+    snap.forEach(doc=>{
+      const d = doc.data();
+      if(now - (d.lastSeenMs || 0) < 40000) count++;
+    });
+    onlineCountEl.textContent = count;
+  }, ()=>{});
+}
+
+let renderedCount = 0;
+function subscribeMessages(){
+  db.collection('liveChatY3').where('room','==',ROOM).onSnapshot((snap)=>{
+    const msgs = [];
+    snap.forEach(doc=> msgs.push(doc.data()));
+    msgs.sort((a,b)=> (a.createdAtMs||0) - (b.createdAtMs||0));
+    renderMessages(msgs);
+  }, (err)=>{
+    console.error(err);
+    showMsg('Lost connection to chat. Trying to reconnect…', true);
+  });
+}
+
+function formatTime(ms){
+  if(!ms) return '';
+  const d = new Date(ms);
+  return d.toLocaleTimeString([], { hour:'2-digit', minute:'2-digit' });
+}
+
+function renderMessages(msgs){
+  if(!msgs.length){
+    chatFeed.innerHTML = '<p class="chat-empty" id="chatEmpty">Say hello to start the conversation! 👋</p>';
+    return;
+  }
+  const wasAtBottom = (chatFeed.scrollTop + chatFeed.clientHeight) >= (chatFeed.scrollHeight - 60);
+  chatFeed.innerHTML = msgs.map(m=>{
+    const mine = m.clientId === CLIENT_ID;
+    const color = colorFor(m.name || '?');
+    return `<div class="msg-row ${mine ? 'mine' : ''}">
+      <div class="avatar" style="background:${color}22;">${avatarFor(m.name || '?')}</div>
+      <div class="chat-bubble">
+        <div class="bname" style="color:${color};">${escapeHtml(m.name || 'Friend')}</div>
+        <div class="btext">${escapeHtml(m.text || '')}</div>
+        <div class="btime">${formatTime(m.createdAtMs)}</div>
+      </div>
+    </div>`;
+  }).join('');
+  if(wasAtBottom || msgs.length !== renderedCount){
+    chatFeed.scrollTop = chatFeed.scrollHeight;
+  }
+  renderedCount = msgs.length;
+}
+
+function logBlocked(text, reason){
+  if(!db) return;
+  db.collection('liveChatY3_blocked').add({
+    room: ROOM, name: studentName, text, reason,
+    ts: firebase.firestore.FieldValue.serverTimestamp(), createdAtMs: Date.now()
+  }).catch(()=>{});
+}
+
+function checkMilestone(count){
+  if(count === 5) celebrate('🌟 Friendly Chatter! You sent 5 kind messages!');
+  else if(count === 15) celebrate('💬 Super Communicator! 15 messages sent!');
+  else if(count === 30) celebrate('🏆 Chat Champion! 30 messages sent!');
+}
+
+function sendChat(rawText, isChip){
+  if(!db){ showMsg('Not connected yet — please wait a moment.', true); return; }
+  let text = String(rawText).trim().slice(0,80);
+  if(!text) return;
+  if(!isChip){
+    const reason = containsBlocked(text);
+    if(reason){
+      showMsg(warnTextFor(reason), true);
+      logBlocked(text, reason);
+      return;
+    }
+  }
+  sendBtn.disabled = true;
+  db.collection('liveChatY3').add({
+    room: ROOM, name: studentName, text, clientId: CLIENT_ID,
+    ts: firebase.firestore.FieldValue.serverTimestamp(), createdAtMs: Date.now()
+  }).then(()=>{
+    messageCount++;
+    msgCountEl.textContent = messageCount;
+    showMsg('');
+    checkMilestone(messageCount);
+  }).catch(()=>{
+    showMsg('Message could not be sent. Check your connection and try again.', true);
+  }).finally(()=>{
+    sendBtn.disabled = false;
+  });
+}
+
+sendBtn.addEventListener('click', ()=>{
+  sendChat(chatInput.value, false);
+  chatInput.value = '';
+  chatInput.focus();
+});
+chatInput.addEventListener('keydown', (e)=>{
+  if(e.key === 'Enter'){
+    sendChat(chatInput.value, false);
+    chatInput.value = '';
+  }
+});
+document.getElementById('quickPhrases').addEventListener('click', (e)=>{
+  const btn = e.target.closest('.chip');
+  if(!btn) return;
+  sendChat(btn.dataset.phrase, true);
+});
+
+/* ============== NAME GATE ============== */
 function startGame(){
   const val = nameInput.value.trim();
   if(!val){
@@ -597,42 +445,14 @@ function startGame(){
   studentName = val.slice(0,24);
   document.getElementById('playerName').textContent = studentName;
   gateOverlay.style.display = 'none';
-  renderContactsList();
+  joinChat();
 }
 document.getElementById('startBtn').addEventListener('click', startGame);
 nameInput.addEventListener('keydown', (e)=>{ if(e.key === 'Enter') startGame(); });
 nameInput.focus();
 </script>
 
-<!-- ===== Cloud sync: sends each result to the shared Firestore database ===== -->
-<script src="https://www.gstatic.com/firebasejs/10.13.0/firebase-app-compat.js"></script>
-<script src="https://www.gstatic.com/firebasejs/10.13.0/firebase-firestore-compat.js"></script>
 <script>
-  const firebaseConfig = {
-    apiKey: "AIzaSyCEJtHd802MyuZUlwt6OfGkl9IitHaSOaA",
-    authDomain: "tasks-results.firebaseapp.com",
-    projectId: "tasks-results",
-    storageBucket: "tasks-results.firebasestorage.app",
-    messagingSenderId: "1014525306500",
-    appId: "1:1014525306500:web:3ffe2e6f5554e9140e04d1"
-  };
-  try{
-    firebase.initializeApp(firebaseConfig);
-    const db = firebase.firestore();
-    window.__submitResultToCloud = function(record){
-      return db.collection("results").add({
-        ...record,
-        createdAt: firebase.firestore.FieldValue.serverTimestamp()
-      }).then(() => true).catch((err) => { console.error("Cloud sync failed:", err); return false; });
-    };
-  }catch(err){
-    console.error("Firebase init failed:", err);
-  }
-</script>
-<script>
-// Shows the typed/entered player name as a large, fixed badge in the corner of the
-// screen for the whole game, so a teacher walking around the room can glance at any
-// screen and see immediately if a student typed a real name or not.
 (function(){
   var src = document.getElementById('playerName');
   if(!src) return;

@@ -397,6 +397,23 @@
   .poll-qr-row{ display:flex; justify-content:center; margin-top:20px; }
   .poll-total-votes{ text-align:center; color:#777; font-size:14px; margin-top:10px; }
 
+  /* ===== CHAT MONITOR ===== */
+  .panel-sub{ color:#777; font-size:14px; margin:-6px 0 18px; }
+  .chatmon-controls{ display:flex; align-items:center; gap:12px; flex-wrap:wrap; margin-bottom:16px; }
+  .chatmon-controls label{ font-weight:bold; color:#333; font-size:14.5px; display:flex; align-items:center; gap:6px; }
+  .chatmon-controls input[type=date]{ padding:8px 12px; border-radius:10px; border:2px solid #ddd; font-size:14px; }
+  .chatmon-controls button{ padding:9px 16px; border-radius:10px; border:none; font-weight:bold; font-size:13.5px; cursor:pointer; }
+  .chatmon-online{ font-weight:bold; color:var(--primary); background:#f1edfb; padding:7px 14px; border-radius:20px; font-size:13.5px; }
+  .chatmon-feed{ background:#f7f9fc; border:2px dashed #ddd; border-radius:16px; padding:14px; max-height:360px;
+    overflow-y:auto; margin-bottom:22px; }
+  .chatmon-msg-row{ background:white; border-radius:10px; padding:8px 12px; margin-bottom:8px; font-size:14px;
+    box-shadow:0 1px 4px rgba(0,0,0,0.08); }
+  .chatmon-msg-row.blocked{ border-left:4px solid var(--red); background:#fff5f5; }
+  .chatmon-time{ color:#999; font-size:12px; margin-left:6px; }
+  .chatmon-empty{ color:#999; text-align:center; font-size:14px; padding:14px; }
+  .chatmon-blocked-section h3{ color:var(--red); font-size:16px; margin-bottom:10px; }
+  .chatmon-blocked{ max-height:220px; overflow-y:auto; }
+
   /* ---------- Password gate ---------- */
   .gate-overlay{
     position:fixed; inset:0; background:rgba(26,26,46,0.82); display:flex; align-items:center;
@@ -499,6 +516,7 @@
       <div class="tab-btn" data-tab="video">🎬 <span>Video</span></div>
       <div class="tab-btn" data-tab="webcam">📷 <span>Webcam</span></div>
       <div class="tab-btn" data-tab="poll">🗳️ <span>Live Poll</span></div>
+      <div class="tab-btn" data-tab="chatmonitor">💬 <span>Chat Monitor</span></div>
     </div>
 
     <div class="main-content">
@@ -765,6 +783,23 @@
     </div>
   </div>
 
+  <!-- CHAT MONITOR -->
+  <div class="panel" id="panel-chatmonitor">
+    <h2 style="margin-top:0;color:var(--primary);">💬 Chat Time Monitor</h2>
+    <p class="panel-sub">Live view of students' Chat Time conversations. This is not visible to students.</p>
+    <div class="chatmon-controls">
+      <label>📅 Date: <input type="date" id="chatMonDate"></label>
+      <span class="chatmon-online" id="chatMonOnline">👥 0 online</span>
+      <button class="cs-delete" id="chatMonClearBtn">🗑️ Clear this day's chat</button>
+      <button class="cs-add" id="chatMonDownloadBtn">⬇️ Download Transcript (CSV)</button>
+    </div>
+    <div class="chatmon-feed" id="chatMonFeed"><p class="chatmon-empty">Loading…</p></div>
+    <div class="chatmon-blocked-section">
+      <h3>⚠️ Blocked Messages (filtered before sending)</h3>
+      <div class="chatmon-blocked" id="chatMonBlocked"><p class="chatmon-empty">None yet.</p></div>
+    </div>
+  </div>
+
     </div>
   </div>
 
@@ -1008,6 +1043,7 @@ function switchTab(tabName){
   if(tabName === 'announce') renderAnnouncement();
   if(tabName === 'drawing') initDrawCanvas();
   if(tabName === 'poll') renderPollTab();
+  if(tabName === 'chatmonitor') renderChatMonTab();
 }
 document.querySelectorAll('.tab-btn').forEach(btn=>{
   btn.addEventListener('click', ()=> switchTab(btn.dataset.tab));
@@ -1958,6 +1994,118 @@ document.getElementById('endPollBtn').addEventListener('click', async ()=>{
 });
 function renderPollTab(){
   subscribeToPoll();
+}
+
+/* ================= CHAT MONITOR (Firebase) ================= */
+function todayStrCM(){
+  const d = new Date();
+  return d.getFullYear() + '-' + String(d.getMonth()+1).padStart(2,'0') + '-' + String(d.getDate()).padStart(2,'0');
+}
+function getChatDb(){
+  try{
+    if(typeof firebase !== 'undefined'){
+      if(!firebase.apps || !firebase.apps.length){
+        firebase.initializeApp({
+          apiKey: "AIzaSyCEJtHd802MyuZUlwt6OfGkl9IitHaSOaA",
+          authDomain: "tasks-results.firebaseapp.com",
+          projectId: "tasks-results",
+          storageBucket: "tasks-results.firebasestorage.app",
+          messagingSenderId: "1014525306500",
+          appId: "1:1014525306500:web:3ffe2e6f5554e9140e04d1"
+        });
+      }
+      return firebase.firestore();
+    }
+  }catch(e){ console.error('Firebase init failed for chat monitor', e); }
+  return null;
+}
+function escapeHtmlCM(s){
+  return String(s).replace(/[&<>"']/g, c=>({'&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;',"'":'&#39;'}[c]));
+}
+let chatMonUnsubMsgs = null, chatMonUnsubPresence = null, chatMonUnsubBlocked = null;
+let chatMonMsgsCache = [];
+
+function renderChatMonTab(){
+  const dateInput = document.getElementById('chatMonDate');
+  if(!dateInput.value) dateInput.value = todayStrCM();
+  loadChatMonRoom(dateInput.value);
+  dateInput.onchange = ()=> loadChatMonRoom(dateInput.value);
+  document.getElementById('chatMonClearBtn').onclick = ()=> clearChatMonRoom(dateInput.value);
+  document.getElementById('chatMonDownloadBtn').onclick = ()=> downloadChatMonCSV(dateInput.value);
+}
+
+function loadChatMonRoom(room){
+  const db = getChatDb();
+  const feedEl = document.getElementById('chatMonFeed');
+  const blockedEl = document.getElementById('chatMonBlocked');
+  if(!db){ feedEl.innerHTML = '<p class="chatmon-empty">Could not connect to chat.</p>'; return; }
+  if(chatMonUnsubMsgs) chatMonUnsubMsgs();
+  if(chatMonUnsubPresence) chatMonUnsubPresence();
+  if(chatMonUnsubBlocked) chatMonUnsubBlocked();
+
+  try{
+    chatMonUnsubMsgs = db.collection('liveChatY3').where('room','==',room).onSnapshot((snap)=>{
+      const msgs = [];
+      snap.forEach(doc=> msgs.push(doc.data()));
+      msgs.sort((a,b)=>(a.createdAtMs||0)-(b.createdAtMs||0));
+      chatMonMsgsCache = msgs;
+      if(!msgs.length){ feedEl.innerHTML = '<p class="chatmon-empty">No messages yet for this day.</p>'; return; }
+      feedEl.innerHTML = msgs.map(m=>{
+        const t = m.createdAtMs ? new Date(m.createdAtMs).toLocaleTimeString([], {hour:'2-digit',minute:'2-digit'}) : '';
+        return `<div class="chatmon-msg-row"><strong>${escapeHtmlCM(m.name)}</strong><span class="chatmon-time">${t}</span><div>${escapeHtmlCM(m.text)}</div></div>`;
+      }).join('');
+    }, ()=>{ feedEl.innerHTML = '<p class="chatmon-empty">Could not load messages.</p>'; });
+  }catch(e){ console.error(e); feedEl.innerHTML = '<p class="chatmon-empty">Could not load messages.</p>'; }
+
+  try{
+    chatMonUnsubPresence = db.collection('liveChatY3_presence').where('room','==',room).onSnapshot((snap)=>{
+      const now = Date.now();
+      let count = 0;
+      snap.forEach(doc=>{ const d = doc.data(); if(now - (d.lastSeenMs||0) < 40000) count++; });
+      document.getElementById('chatMonOnline').textContent = '👥 ' + count + ' online';
+    });
+  }catch(e){ console.error(e); }
+
+  try{
+    chatMonUnsubBlocked = db.collection('liveChatY3_blocked').where('room','==',room).onSnapshot((snap)=>{
+      const items = [];
+      snap.forEach(doc=> items.push(doc.data()));
+      items.sort((a,b)=>(a.createdAtMs||0)-(b.createdAtMs||0));
+      if(!items.length){ blockedEl.innerHTML = '<p class="chatmon-empty">None yet.</p>'; return; }
+      blockedEl.innerHTML = items.map(m=>{
+        const t = m.createdAtMs ? new Date(m.createdAtMs).toLocaleTimeString([], {hour:'2-digit',minute:'2-digit'}) : '';
+        return `<div class="chatmon-msg-row blocked"><strong>${escapeHtmlCM(m.name)}</strong><span class="chatmon-time">${t}</span> <em>(${escapeHtmlCM(m.reason)})</em><div>${escapeHtmlCM(m.text)}</div></div>`;
+      }).join('');
+    });
+  }catch(e){ console.error(e); }
+}
+
+async function clearChatMonRoom(room){
+  if(!confirm('Delete all chat messages for ' + room + '? This cannot be undone.')) return;
+  const db = getChatDb();
+  if(!db) return;
+  try{
+    const snap = await db.collection('liveChatY3').where('room','==',room).get();
+    const batch = db.batch();
+    snap.forEach(doc=> batch.delete(doc.ref));
+    await batch.commit();
+  }catch(e){ console.error(e); alert('Could not clear chat. Check your internet connection.'); }
+}
+
+function downloadChatMonCSV(room){
+  if(!chatMonMsgsCache.length){ alert('No messages to download for this day.'); return; }
+  const rows = [['Name','Time','Message']];
+  chatMonMsgsCache.forEach(m=>{
+    const t = m.createdAtMs ? new Date(m.createdAtMs).toLocaleTimeString() : '';
+    rows.push([m.name, t, m.text]);
+  });
+  const csv = rows.map(r=> r.map(v=> '"' + String(v).replace(/"/g,'""') + '"').join(',')).join('\n');
+  const blob = new Blob([csv], {type:'text/csv'});
+  const url = URL.createObjectURL(blob);
+  const a = document.createElement('a');
+  a.href = url; a.download = 'ChatTime_' + room + '.csv';
+  document.body.appendChild(a); a.click(); a.remove();
+  URL.revokeObjectURL(url);
 }
 </script>
 </body>

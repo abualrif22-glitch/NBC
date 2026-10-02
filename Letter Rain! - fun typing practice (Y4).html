@@ -56,6 +56,10 @@
   #resultsPanel h3{ margin:0 0 4px; color:var(--primary); font-size:18px; }
   .save-row{ display:flex; gap:12px; justify-content:center; flex-wrap:wrap; margin-top:12px; }
   .saved-note{ font-size:13px; color:#0e9e6f; font-weight:bold; min-height:18px; margin-top:8px; }
+  .leaderboard-box{ background:#F7FAFC; border:2px solid #E2E8F0; border-radius:14px; padding:12px 16px; margin:0 auto 16px; max-width:320px; text-align:left; }
+  .leaderboard-title{ font-weight:bold; color:var(--primary); font-size:14px; margin-bottom:8px; text-align:center; }
+  .leaderboard-item{ display:flex; justify-content:space-between; font-size:14px; color:#333; padding:4px 0; border-bottom:1px solid #E2E8F0; }
+  .leaderboard-item:last-child{ border-bottom:none; }
   .confetti-piece{ position:absolute; top:-20px; width:12px; height:16px; z-index:20; pointer-events:none; animation: fall linear forwards; }
   @keyframes fall{ to{ transform: translateY(600px) rotate(540deg); opacity:0.2; } }
   .celebrate-banner{ position:absolute; left:50%; top:45%; transform:translate(-50%,-50%) scale(0.5); background:white; border-radius:22px;
@@ -94,6 +98,7 @@
     <div>Level <span class="big" id="levelNum">1</span>/<span id="levelTotal">6</span> (<span id="levelProgress">0</span>/<span id="levelTarget">10</span>)</div>
     <div>Score: <span class="big" id="scoreCount">0</span> ⭐</div>
     <div>Streak: <span class="big" id="streakCount">0</span> 🔥</div>
+    <div>High Score: <span class="big" id="highScoreDisplay">0</span> 🏆</div>
   </div>
   <div class="stage" id="stage">
     <div class="sky" id="sky"></div>
@@ -119,7 +124,7 @@ const LEVELS = [
 const STORAGE_KEY = "letterRainY4Results";
 const GAME_LABEL = "Letter Rain! (Y4)";
 
-let levelIdx = 0, totalCorrect = 0, totalMisses = 0, correctThisLevel = 0, streak = 0, bestStreak = 0, studentName = "";
+let levelIdx = 0, totalCorrect = 0, totalMisses = 0, correctThisLevel = 0, streak = 0, bestStreak = 0, points = 0, studentName = "";
 let activeLetters = [], letterIdCounter = 0, lastSpawnTime = 0, levelActive = false, spawnTimerId = null;
 
 document.getElementById('levelTotal').textContent = LEVELS.length;
@@ -137,9 +142,11 @@ document.addEventListener('keydown', (e)=>{
 });
 
 function updateHUD(){
-  document.getElementById('scoreCount').textContent = totalCorrect;
+  document.getElementById('scoreCount').textContent = points;
   document.getElementById('streakCount').textContent = streak;
   document.getElementById('levelProgress').textContent = correctThisLevel;
+  const hsEl = document.getElementById('highScoreDisplay');
+  if(hsEl && points > parseInt(hsEl.textContent||'0',10)) hsEl.textContent = points;
 }
 
 function clearSky(){
@@ -218,6 +225,7 @@ function onLetterMissed(record){
   removeActive(record);
   totalMisses++;
   streak = 0;
+  points = Math.max(0, points - 5);
   record.el.classList.add('miss');
   setTimeout(()=>record.el.remove(), 260);
   msg.className = 'msg oops';
@@ -246,6 +254,7 @@ function catchLetter(record){
   correctThisLevel++;
   streak++;
   if(streak>bestStreak) bestStreak = streak;
+  points += 10 + Math.min(streak, 10) * 2;
   record.el.classList.add('caught');
   setTimeout(()=>record.el.remove(), 220);
   spawnConfetti(10);
@@ -296,13 +305,70 @@ function showFinal(){
     <div style="text-align:center; padding:30px 10px;">
       <div style="font-size:76px;">🏆</div>
       <div style="font-size:22px;font-weight:bold;color:var(--primary);margin-bottom:8px;">You finished Letter Rain!</div>
+      <div id="scoreHeadline"></div>
       <div style="font-size:17px;color:#555;margin-bottom:6px;">Accuracy: ${accuracy}% (${totalCorrect} caught, ${totalMisses} missed)</div>
-      <div style="font-size:15px;color:#777;margin-bottom:18px;">Best streak: ${bestStreak} 🔥</div>
+      <div style="font-size:15px;color:#777;margin-bottom:10px;">Best streak: ${bestStreak} 🔥</div>
+      <div id="leaderboardBox"></div>
       <button class="ctrl secondary" id="playAgainBtn">Play Again 🔄</button>
     </div>`;
+  // ---- Competitive scoring: personal best / all-time high score / leaderboard ----
+  const priorList = readSavedResults();
+  const priorPersonalBest = priorList.filter(r=>r.name===studentName).reduce((m,r)=>Math.max(m, r.points||0), 0);
+  const priorHighScore = priorList.reduce((m,r)=>Math.max(m, r.points||0), 0);
+  const isNewPersonalBest = points > priorPersonalBest;
+  const isNewHighScore = points > priorHighScore;
+  const personalBest = Math.max(points, priorPersonalBest);
+  const highScore = Math.max(points, priorHighScore);
+
+  const thisRecord = {
+    name: studentName, score: accuracy, points: points, total: 100,
+    date: new Date().toLocaleDateString() + ' ' + new Date().toLocaleTimeString([], {hour:'2-digit', minute:'2-digit'})
+  };
+  const updatedList = [...priorList, thisRecord];
+  writeSavedResults(updatedList);
+  window.__lastRecord = thisRecord;
+
+  const bestByName = {};
+  updatedList.forEach(r=>{
+    const nm = (r.name || 'Player').trim() || 'Player';
+    const pts = r.points || 0;
+    if(!(nm in bestByName) || pts > bestByName[nm]) bestByName[nm] = pts;
+  });
+  const leaderboard = Object.entries(bestByName).sort((a,b)=>b[1]-a[1]).slice(0,3);
+
+  const headlineEl = document.getElementById('scoreHeadline');
+  if(headlineEl){
+    let badge = '';
+    if(isNewHighScore) badge = '<div style="color:#E0A800;font-weight:bold;font-size:15px;margin-bottom:4px;">🏆 NEW HIGH SCORE!</div>';
+    else if(isNewPersonalBest) badge = '<div style="color:#1a9e6b;font-weight:bold;font-size:15px;margin-bottom:4px;">🎉 New Personal Best!</div>';
+    headlineEl.innerHTML = `
+      ${badge}
+      <div style="font-size:30px;font-weight:bold;color:var(--primary);">⭐ ${points} pts</div>
+      <div style="display:flex;justify-content:center;gap:22px;flex-wrap:wrap;margin:8px 0 14px;font-size:14px;color:#555;">
+        <div>🙂 Your Best: <strong>${personalBest} pts</strong></div>
+        <div>🔥 All-Time High: <strong>${highScore} pts</strong></div>
+      </div>`;
+  }
+
+  const lbEl = document.getElementById('leaderboardBox');
+  if(lbEl && leaderboard.length){
+    const medals = ['🥇','🥈','🥉'];
+    lbEl.innerHTML = `
+      <div class="leaderboard-box">
+        <div class="leaderboard-title">🏆 Top Scores (this computer)</div>
+        ${leaderboard.map((entry,i)=>`<div class="leaderboard-item"><span>${medals[i]||''} ${entry[0]}</span><span>${entry[1]} pts</span></div>`).join('')}
+      </div>`;
+  }
+
+  if(isNewHighScore){
+    showCelebrateBanner('🏆 NEW HIGH SCORE!', `${points} points — amazing!`);
+  } else if(isNewPersonalBest){
+    showCelebrateBanner('🎉 New Personal Best!', `${points} points!`);
+  }
+
   msg.textContent = '';
   document.getElementById('playAgainBtn').addEventListener('click', ()=>{
-    levelIdx = 0; totalCorrect = 0; totalMisses = 0; streak = 0; bestStreak = 0;
+    levelIdx = 0; totalCorrect = 0; totalMisses = 0; streak = 0; bestStreak = 0; points = 0;
     document.getElementById('stage').innerHTML = STAGE_TEMPLATE;
     startLevel(0);
   });
@@ -313,6 +379,7 @@ function showFinal(){
       name: studentName,
       game: GAME_LABEL,
       score: accuracy,
+      points: points,
       total: 100,
       date: new Date().toLocaleDateString() + ' ' + new Date().toLocaleTimeString([], {hour:'2-digit', minute:'2-digit'})
     });
@@ -337,7 +404,7 @@ function showResultsPanel(accuracy){
     document.getElementById('downloadAllBtn').addEventListener('click', onDownloadAll);
   }
   panel.style.display='block';
-  document.getElementById('resultsSummary').textContent = `${studentName} finished with ${accuracy}% accuracy.`;
+  document.getElementById('resultsSummary').textContent = `${studentName} finished with ${accuracy}% accuracy and scored ${points} points.`;
   document.getElementById('savedNote').textContent = '';
 }
 function readSavedResults(){ try{ return JSON.parse(localStorage.getItem(STORAGE_KEY)||"[]"); }catch(e){ return []; } }
@@ -352,18 +419,15 @@ function downloadCSV(filename, rows){
   setTimeout(()=>URL.revokeObjectURL(url),1000);
 }
 function onSaveResult(){
-  const accuracy = Math.max(0, Math.round(100 * totalCorrect / Math.max(totalCorrect+totalMisses,1)));
-  const now = new Date();
-  const record = { name:studentName, score:accuracy, total:100, date: now.toLocaleDateString()+' '+now.toLocaleTimeString([], {hour:'2-digit',minute:'2-digit'}) };
-  const list = readSavedResults(); list.push(record); writeSavedResults(list);
+  const record = window.__lastRecord || { name:studentName, score:0, points:0, total:100, date:'' };
   const safeName = (studentName||'student').replace(/[^a-z0-9]+/gi,'_');
-  downloadCSV(`LetterRainY4_${safeName}_${now.toISOString().slice(0,10)}.csv`, [["Name","Score","Total","Date"],[record.name,record.score,record.total,record.date]]);
-  document.getElementById('savedNote').textContent = '✅ Saved! A results file was downloaded, and your score was stored on this computer.';
+  downloadCSV(`LetterRainY4_${safeName}_${new Date().toISOString().slice(0,10)}.csv`, [["Name","Score","Points","Total","Date"],[record.name,record.score,record.points||0,record.total,record.date]]);
+  document.getElementById('savedNote').textContent = '✅ Saved! Your score was already recorded on this computer, and a results file was downloaded.';
 }
 function onDownloadAll(){
   const list = readSavedResults();
   if(list.length===0){ document.getElementById('savedNote').textContent='No saved results yet on this computer.'; return; }
-  const rows=[["Name","Score","Total","Date"], ...list.map(r=>[r.name,r.score,r.total,r.date])];
+  const rows=[["Name","Score","Points","Total","Date"], ...list.map(r=>[r.name,r.score,r.points||0,r.total,r.date])];
   downloadCSV(`LetterRainY4_AllResults_${new Date().toISOString().slice(0,10)}.csv`, rows);
 }
 
@@ -386,6 +450,7 @@ function startGame(){
   }
   studentName = val.slice(0,24);
   document.getElementById('playerName').textContent = studentName;
+  document.getElementById('highScoreDisplay').textContent = readSavedResults().reduce((m,r)=>Math.max(m, r.points||0), 0);
   gateOverlay.style.display = 'none';
   startLevel(0);
 }

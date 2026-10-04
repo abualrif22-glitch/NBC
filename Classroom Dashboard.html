@@ -200,6 +200,7 @@
   .home-card.c1{ background:linear-gradient(135deg,#3A0CA3,#4CC9F0); }
   .home-card.c2{ background:linear-gradient(135deg,#FF5C8A,#FFD23F); }
   .home-card.c3{ background:linear-gradient(135deg,#06D6A0,#3A0CA3); }
+  .home-card.c4{ background:linear-gradient(135deg,#FFD700,#DB2777); }
 
   /* ===== BULK ADD ===== */
   #bulkAddPanel{ background:#f7f7ff; border-radius:16px; padding:18px 20px; margin-bottom:20px; }
@@ -557,6 +558,11 @@
         <div class="home-card-emoji">🎯</div>
         <div class="home-card-title">Random Picker</div>
         <div class="home-card-desc">Pick who answers next, fair and fun.</div>
+      </div>
+      <div class="home-card c4" data-link="Letter Rain Leaderboard.html">
+        <div class="home-card-emoji">🏆</div>
+        <div class="home-card-title">Letter Rain Leaderboard</div>
+        <div class="home-card-desc">Live big-screen scoreboard for Y1-Y4. Opens in a new tab.</div>
       </div>
     </div>
   </div>
@@ -1054,7 +1060,10 @@ document.querySelectorAll('.tab-btn').forEach(btn=>{
   btn.addEventListener('click', ()=> switchTab(btn.dataset.tab));
 });
 document.querySelectorAll('.home-card').forEach(card=>{
-  card.addEventListener('click', ()=> switchTab(card.dataset.goto));
+  card.addEventListener('click', ()=>{
+    if(card.dataset.link){ window.open(card.dataset.link, '_blank'); return; }
+    switchTab(card.dataset.goto);
+  });
 });
 
 /* ================= HOME ================= */

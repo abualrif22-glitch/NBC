@@ -20,8 +20,6 @@
     --y5-2:#84CC16;
     --y6:#BE123C;
     --y6-2:#FBBF24;
-    --y8:#C9A227;
-    --y8-2:#2C3E6B;
   }
   *{box-sizing:border-box;}
   html,body{ margin:0; }
@@ -171,8 +169,6 @@
   .folder-tile.y3 .folder-card{ background:linear-gradient(150deg,var(--y3),var(--y3-2)); }
   .folder-tile.y4 .folder-tab{ background:var(--y4-2); }
   .folder-tile.y4 .folder-card{ background:linear-gradient(150deg,var(--y4),var(--y4-2)); }
-  .folder-tile.y8 .folder-tab{ background:var(--y8-2); }
-  .folder-tile.y8 .folder-card{ background:linear-gradient(150deg,var(--y8),var(--y8-2)); }
   .folder-tile.y5 .folder-tab{ background:var(--y5-2); }
   .folder-tile.y5 .folder-card{ background:linear-gradient(150deg,var(--y5),var(--y5-2)); }
   .folder-tile.y6 .folder-tab{ background:var(--y6-2); }
@@ -223,7 +219,6 @@
   .year-badge.y2{ background:linear-gradient(135deg,var(--y2),var(--y2-2)); }
   .year-badge.y3{ background:linear-gradient(135deg,var(--y3),var(--y3-2)); }
   .year-badge.y4{ background:linear-gradient(135deg,var(--y4),var(--y4-2)); }
-  .year-badge.y8{ background:linear-gradient(135deg,var(--y8),var(--y8-2)); }
   .year-badge.y5{ background:linear-gradient(135deg,var(--y5),var(--y5-2)); }
   .year-badge.y6{ background:linear-gradient(135deg,var(--y6),var(--y6-2)); }
 
@@ -256,7 +251,6 @@
   .game-card.y2 .stripe{ background:linear-gradient(90deg,var(--y2),var(--y2-2)); }
   .game-card.y3 .stripe{ background:linear-gradient(90deg,var(--y3),var(--y3-2)); }
   .game-card.y4 .stripe{ background:linear-gradient(90deg,var(--y4),var(--y4-2)); }
-  .game-card.y8 .stripe{ background:linear-gradient(90deg,var(--y8),var(--y8-2)); }
 
   .game-emoji{
     font-size:48px;
@@ -298,7 +292,6 @@
   .game-card.y2 .play-btn{ background:var(--y2); }
   .game-card.y3 .play-btn{ background:var(--y3); }
   .game-card.y4 .play-btn{ background:var(--y4); }
-  .game-card.y8 .play-btn{ background:var(--y8); }
 
   .no-results{
     text-align:center;
@@ -423,15 +416,6 @@
         <div class="folder-title">Year 4</div>
         <div class="folder-count">5 Activities</div>
         <div class="folder-peek"><span>📨</span><span>🧭</span><span>🌐</span><span>✍️</span><span>🔥</span></div>
-      </div>
-    </div>
-    <div class="folder-tile y8" data-open="8">
-      <div class="folder-tab"></div>
-      <div class="folder-card">
-        <div class="folder-icon-badge">🕵️</div>
-        <div class="folder-title">Year 8 English</div>
-        <div class="folder-count">1 Activity</div>
-        <div class="folder-peek"><span>🔎</span><span>📖</span><span>🖋️</span></div>
       </div>
     </div>
   </div>
@@ -659,22 +643,6 @@
 
   <p class="no-results" id="noResults">No games match your search. Try a different word!</p>
 
-  <div class="year-section" data-year="8">
-    <div class="year-badge y8">🕵️ Year 8 · English</div>
-    <div class="card-grid">
-
-      <a class="game-card y8" href="Case Files - Watching the Detectives (Y8).html" data-keywords="case files watching the detectives sherlock holmes dupin character analysis mystery detective english unit 1">
-        <div class="stripe"></div>
-        <div class="game-emoji">🕵️</div>
-        <div class="game-lesson">Unit 1 · It's a Mystery — Watching the Detectives</div>
-        <div class="game-title">Case Files: Watching the Detectives</div>
-        <div class="game-desc">Hunt for clues in Holmes and Dupin's character descriptions, pick their traits, reach a verdict, then invent your own fictional detective.</div>
-        <span class="play-btn">▶ Open Case File</span>
-      </a>
-
-    </div>
-  </div>
-
   <div class="year-section" data-year="teachers">
     <div class="year-badge" style="background:linear-gradient(135deg,#1A1A2E,#4B4B78);">🧑‍🏫 For Teachers</div>
     <div class="card-grid">
@@ -701,14 +669,6 @@
         <div class="game-title">Offline Results Dashboard</div>
         <div class="game-desc">No internet? Bring in the results files students save with "Save My Results" instead, and see the same tables and charts.</div>
         <span class="play-btn" style="background:#1A1A2E;">▶ Open Offline Dashboard</span>
-      </a>
-      <a class="game-card" style="text-decoration:none;" href="Case Files - Teacher Review.html" data-keywords="case files teacher review watching the detectives english year 8 analysis data">
-        <div class="stripe" style="background:linear-gradient(90deg,#C9A227,#2C3E6B);"></div>
-        <div class="game-emoji">🔎</div>
-        <div class="game-lesson">Teacher Tool · Year 8 English</div>
-        <div class="game-title">Case Files: Teacher Review</div>
-        <div class="game-desc">See every student's clues found, chosen traits, verdict, and invented detective — with stats, charts and a CSV export.</div>
-        <span class="play-btn" style="background:#2C3E6B;">▶ Open Case Files Review</span>
       </a>
     </div>
   </div>

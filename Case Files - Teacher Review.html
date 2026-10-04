@@ -1,0 +1,249 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>Case Files - Teacher Review</title>
+<style>
+  :root{
+    --primary:#2C3E6B; --accent:#C9A227; --green:#1E7A4C; --red:#A32020; --paper:#F3ECD8;
+  }
+  *{box-sizing:border-box;}
+  html,body{ margin:0; min-height:100%; }
+  body{
+    font-family:'Segoe UI', Calibri, Arial, sans-serif;
+    background:linear-gradient(135deg,#0d0d10 0%,#1b1b24 100%);
+    min-height:100vh; padding:24px 16px 60px;
+  }
+  .wrap{ max-width:1000px; margin:0 auto; }
+  .top-bar{ margin-bottom:16px; display:flex; justify-content:space-between; align-items:center; flex-wrap:wrap; gap:10px; }
+  .hub-top-btn{ display:inline-flex; align-items:center; gap:6px; background:#1A1A2E; color:#FFD166;
+    text-decoration:none; font-weight:bold; font-size:14px; padding:8px 16px 8px 12px;
+    border-radius:20px; box-shadow:0 3px 10px rgba(0,0,0,0.35); border:1px solid rgba(255,214,102,0.3); }
+  .hub-top-btn:hover{ opacity:0.85; }
+  button.csv-btn{ background:var(--green); color:white; border:none; padding:9px 18px; border-radius:20px; font-weight:bold; cursor:pointer; font-size:13.5px; }
+  button.csv-btn:hover{ opacity:0.9; }
+
+  .card{ background:white; border-radius:18px; padding:24px 26px 30px; box-shadow:0 20px 50px rgba(0,0,0,0.35); margin-bottom:20px; }
+  h1{ color:var(--primary); margin:0 0 4px; font-size:23px; }
+  .sub{ color:#666; margin:0 0 20px; font-size:13.5px; }
+
+  .stats-grid{ display:grid; grid-template-columns:repeat(auto-fit, minmax(150px,1fr)); gap:14px; margin-bottom:22px; }
+  .stat-box{ background:#F7F7FB; border-radius:12px; padding:14px 16px; text-align:center; }
+  .stat-box .num{ font-size:26px; font-weight:bold; color:var(--primary); }
+  .stat-box .label{ font-size:12px; color:#777; margin-top:2px; }
+
+  .verdict-split{ display:flex; gap:14px; margin-bottom:22px; }
+  .verdict-bar-wrap{ flex:1; }
+  .verdict-bar-label{ font-size:13px; font-weight:bold; color:#555; margin-bottom:4px; display:flex; justify-content:space-between; }
+  .verdict-bar-bg{ background:#eee; border-radius:8px; height:16px; overflow:hidden; }
+  .verdict-bar-fill{ height:100%; background:var(--primary); border-radius:8px; }
+  .verdict-bar-fill.dupin{ background:var(--accent); }
+
+  .trait-freq-grid{ display:grid; grid-template-columns:1fr 1fr; gap:24px; margin-bottom:10px; }
+  .trait-freq-col h4{ margin:0 0 8px; font-size:14px; color:var(--primary); }
+  .trait-row{ display:flex; align-items:center; gap:8px; margin-bottom:6px; font-size:12.5px; }
+  .trait-row .tname{ width:90px; flex-shrink:0; color:#444; }
+  .trait-row .tbar-bg{ flex:1; background:#eee; border-radius:6px; height:10px; overflow:hidden; }
+  .trait-row .tbar-fill{ height:100%; background:var(--accent); border-radius:6px; }
+  .trait-row .tcount{ width:20px; text-align:right; color:#888; }
+
+  .search-row{ margin-bottom:14px; }
+  .search-row input{ width:100%; max-width:320px; padding:9px 14px; border-radius:20px; border:1px solid #ddd; font-size:14px; }
+
+  .submission{ border:1px solid #eee; border-radius:12px; margin-bottom:10px; overflow:hidden; }
+  .submission-head{ display:flex; justify-content:space-between; align-items:center; padding:12px 16px; cursor:pointer; background:#FAFAFC; }
+  .submission-head:hover{ background:#F2F2F8; }
+  .submission-head .name{ font-weight:bold; color:var(--primary); }
+  .submission-head .verdict-tag{ font-size:11.5px; background:#eee; padding:3px 10px; border-radius:12px; color:#555; }
+  .submission-head .date{ font-size:12px; color:#999; }
+  .submission-body{ display:none; padding:14px 18px 18px; font-size:13.5px; line-height:1.6; border-top:1px solid #eee; }
+  .submission-body.open{ display:block; }
+  .submission-body .field{ margin-bottom:10px; }
+  .submission-body .field b{ color:var(--primary); }
+  .empty-msg, .loading-msg{ padding:30px; text-align:center; color:#888; }
+</style>
+</head>
+<body>
+
+<div class="wrap">
+  <div class="top-bar">
+    <a href="Classroom Dashboard.html" class="hub-top-btn">⬅ Back to Dashboard</a>
+    <div style="display:flex; gap:10px;">
+      <button class="csv-btn" id="refreshBtn" style="background:#555;">🔄 Refresh</button>
+      <button class="csv-btn" id="csvBtn">📊 Download CSV</button>
+    </div>
+  </div>
+
+  <div class="card">
+    <h1>🔎 Case Files — Teacher Review</h1>
+    <p class="sub">Live results from the "Watching the Detectives" character-analysis activity.</p>
+
+    <div class="stats-grid" id="statsGrid">
+      <div class="stat-box"><div class="num" id="statTotal">—</div><div class="label">Submissions</div></div>
+      <div class="stat-box"><div class="num" id="statAvgClues">—</div><div class="label">Avg. clues found</div></div>
+      <div class="stat-box"><div class="num" id="statAvgWords">—</div><div class="label">Avg. bio word count</div></div>
+    </div>
+
+    <div class="verdict-split" id="verdictSplit"></div>
+
+    <div class="trait-freq-grid" id="traitFreqGrid"></div>
+  </div>
+
+  <div class="card">
+    <div class="search-row"><input type="text" id="searchInput" placeholder="🔍 Search by student name..."></div>
+    <div id="submissionsList"><div class="loading-msg">Loading case files…</div></div>
+  </div>
+</div>
+
+<!-- ===== Firebase (shared results database) ===== -->
+<script src="https://www.gstatic.com/firebasejs/10.13.0/firebase-app-compat.js"></script>
+<script src="https://www.gstatic.com/firebasejs/10.13.0/firebase-firestore-compat.js"></script>
+<script>
+  const firebaseConfig = {
+    apiKey: "AIzaSyCEJtHd802MyuZUlwt6OfGkl9IitHaSOaA",
+    authDomain: "tasks-results.firebaseapp.com",
+    projectId: "tasks-results",
+    storageBucket: "tasks-results.firebasestorage.app",
+    messagingSenderId: "1014525306500",
+    appId: "1:1014525306500:web:3ffe2e6f5554e9140e04d1"
+  };
+  firebase.initializeApp(firebaseConfig);
+  const db = firebase.firestore();
+
+  let allSubmissions = [];
+
+  function escapeHtml(s){
+    return String(s||'').replace(/[&<>"']/g, c => ({'&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;',"'":'&#39;'}[c]));
+  }
+
+  function computeStats(list){
+    const total = list.length;
+    document.getElementById('statTotal').textContent = total;
+    if(total === 0){
+      document.getElementById('statAvgClues').textContent = '—';
+      document.getElementById('statAvgWords').textContent = '—';
+      document.getElementById('verdictSplit').innerHTML = '';
+      document.getElementById('traitFreqGrid').innerHTML = '';
+      return;
+    }
+    const avgClues = (list.reduce((s,r)=>s+(r.clueScore||0),0) / total).toFixed(1);
+    const avgWords = Math.round(list.reduce((s,r)=>s+(r.detectiveWordCount||0),0) / total);
+    document.getElementById('statAvgClues').textContent = avgClues + ' / ' + (list[0].clueTotal || 10);
+    document.getElementById('statAvgWords').textContent = avgWords;
+
+    const holmesCount = list.filter(r=>r.verdictChoice==='Holmes').length;
+    const dupinCount = list.filter(r=>r.verdictChoice==='Dupin').length;
+    const vTotal = Math.max(1, holmesCount+dupinCount);
+    document.getElementById('verdictSplit').innerHTML = `
+      <div class="verdict-bar-wrap">
+        <div class="verdict-bar-label"><span>🔎 A Study in Scarlet</span><span>${holmesCount}</span></div>
+        <div class="verdict-bar-bg"><div class="verdict-bar-fill" style="width:${100*holmesCount/vTotal}%"></div></div>
+      </div>
+      <div class="verdict-bar-wrap">
+        <div class="verdict-bar-label"><span>📖 Rue Morgue</span><span>${dupinCount}</span></div>
+        <div class="verdict-bar-bg"><div class="verdict-bar-fill dupin" style="width:${100*dupinCount/vTotal}%"></div></div>
+      </div>`;
+
+    function traitFreq(field){
+      const counts = {};
+      list.forEach(r=>(r[field]||[]).forEach(t=> counts[t] = (counts[t]||0)+1));
+      return Object.entries(counts).sort((a,b)=>b[1]-a[1]);
+    }
+    function renderFreqCol(title, freq){
+      const max = Math.max(1, ...freq.map(f=>f[1]));
+      return `<div class="trait-freq-col"><h4>${title}</h4>${
+        freq.map(([t,c])=>`
+          <div class="trait-row">
+            <div class="tname">${escapeHtml(t)}</div>
+            <div class="tbar-bg"><div class="tbar-fill" style="width:${100*c/max}%"></div></div>
+            <div class="tcount">${c}</div>
+          </div>`).join('') || '<div style="color:#999;font-size:12.5px;">No data yet</div>'
+      }</div>`;
+    }
+    document.getElementById('traitFreqGrid').innerHTML =
+      renderFreqCol('Holmes traits chosen', traitFreq('holmesTraits')) +
+      renderFreqCol('Dupin traits chosen', traitFreq('dupinTraits'));
+  }
+
+  function renderList(list){
+    const container = document.getElementById('submissionsList');
+    if(list.length === 0){
+      container.innerHTML = '<div class="empty-msg">No case files submitted yet.</div>';
+      return;
+    }
+    const sorted = [...list].sort((a,b)=> (b.createdAtMs||0) - (a.createdAtMs||0));
+    container.innerHTML = sorted.map((r,i)=>`
+      <div class="submission">
+        <div class="submission-head" data-idx="${i}">
+          <span class="name">${escapeHtml(r.name)}</span>
+          <span class="verdict-tag">${r.verdictChoice === 'Holmes' ? 'Chose: Scarlet' : r.verdictChoice === 'Dupin' ? 'Chose: Rue Morgue' : '—'}</span>
+          <span class="date">${escapeHtml(r.date||'')}</span>
+        </div>
+        <div class="submission-body" id="subbody-${i}">
+          <div class="field"><b>Clues found:</b> ${r.clueScore||0} / ${r.clueTotal||10}</div>
+          <div class="field"><b>Holmes traits:</b> ${(r.holmesTraits||[]).join(', ')}<br><i>${escapeHtml(r.holmesJustification)}</i></div>
+          <div class="field"><b>Dupin traits:</b> ${(r.dupinTraits||[]).join(', ')}<br><i>${escapeHtml(r.dupinJustification)}</i></div>
+          <div class="field"><b>Verdict reason:</b> ${escapeHtml(r.verdictReason)}</div>
+          <div class="field"><b>Their detective:</b> ${escapeHtml(r.detectiveName)} — ${escapeHtml(r.detectiveJob)} (${r.detectiveWordCount||0} words)</div>
+          <div class="field" style="font-style:italic; background:#FAFAFC; padding:10px 12px; border-radius:8px;">${escapeHtml(r.detectiveBio)}</div>
+        </div>
+      </div>`).join('');
+    container.querySelectorAll('.submission-head').forEach(head=>{
+      head.addEventListener('click', ()=>{
+        const idx = head.dataset.idx;
+        document.getElementById('subbody-'+idx).classList.toggle('open');
+      });
+    });
+  }
+
+  function applyFilter(){
+    const q = document.getElementById('searchInput').value.trim().toLowerCase();
+    const filtered = q ? allSubmissions.filter(r => (r.name||'').toLowerCase().includes(q)) : allSubmissions;
+    renderList(filtered);
+  }
+  document.getElementById('searchInput').addEventListener('input', applyFilter);
+
+  async function loadSubmissions(){
+    document.getElementById('submissionsList').innerHTML = '<div class="loading-msg">Loading case files…</div>';
+    try{
+      const snap = await db.collection('detectiveFiles').get();
+      const list = [];
+      snap.forEach(doc=>{
+        const d = doc.data();
+        let ms = 0;
+        if(d.createdAt && d.createdAt.toMillis) ms = d.createdAt.toMillis();
+        list.push({...d, createdAtMs: ms});
+      });
+      allSubmissions = list;
+      computeStats(list);
+      applyFilter();
+    }catch(err){
+      document.getElementById('submissionsList').innerHTML = '<div class="empty-msg">⚠️ Could not load: ' + escapeHtml(err.message) + '</div>';
+    }
+  }
+  document.getElementById('refreshBtn').addEventListener('click', loadSubmissions);
+
+  function csvEscape(v){ const s=String(v==null?'':v); return /[",\n]/.test(s) ? '"'+s.replace(/"/g,'""')+'"' : s; }
+  document.getElementById('csvBtn').addEventListener('click', ()=>{
+    if(allSubmissions.length === 0){ alert('No submissions to export yet.'); return; }
+    const headers = ["Name","Date","ClueScore","ClueTotal","HolmesTraits","HolmesJustification","DupinTraits","DupinJustification","VerdictChoice","VerdictReason","DetectiveName","DetectiveJob","DetectiveBio","DetectiveWordCount"];
+    const rows = allSubmissions.map(r=>[
+      r.name, r.date, r.clueScore, r.clueTotal,
+      (r.holmesTraits||[]).join('; '), r.holmesJustification,
+      (r.dupinTraits||[]).join('; '), r.dupinJustification,
+      r.verdictChoice, r.verdictReason,
+      r.detectiveName, r.detectiveJob, r.detectiveBio, r.detectiveWordCount
+    ]);
+    const csv = [headers, ...rows].map(row=>row.map(csvEscape).join(",")).join("\r\n");
+    const blob = new Blob([csv], {type:"text/csv;charset=utf-8;"});
+    const url = URL.createObjectURL(blob);
+    const a = document.createElement('a'); a.href = url; a.download = `CaseFiles_WatchingTheDetectives_${new Date().toISOString().slice(0,10)}.csv`;
+    document.body.appendChild(a); a.click(); document.body.removeChild(a);
+    setTimeout(()=>URL.revokeObjectURL(url), 1000);
+  });
+
+  loadSubmissions();
+</script>
+</body>
+</html>

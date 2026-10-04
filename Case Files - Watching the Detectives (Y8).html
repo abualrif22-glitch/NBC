@@ -1,0 +1,488 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>Case Files: Watching the Detectives</title>
+<style>
+  :root{
+    --primary:#C9A227; --ink:#1B1B1B; --paper:#F3ECD8; --paper2:#EAE0C4; --red:#A32020; --green:#1E7A4C;
+    --blue:#2C3E6B;
+  }
+  *{box-sizing:border-box;}
+  html,body{ margin:0; min-height:100%; }
+  body{
+    font-family:'Georgia','Segoe UI',serif;
+    background:
+      radial-gradient(circle at 20% 10%, rgba(255,255,255,0.05), transparent 40%),
+      linear-gradient(135deg,#0d0d10 0%,#1b1b24 50%,#0d0d10 100%);
+    min-height:100vh; padding:26px 16px 70px; color:var(--ink);
+  }
+  .wrap{ max-width:880px; margin:0 auto; }
+  .top-bar{ margin-bottom:16px; display:flex; justify-content:space-between; align-items:center; flex-wrap:wrap; gap:10px; }
+  .hub-top-btn{ display:inline-flex; align-items:center; gap:6px; background:#1A1A2E; color:#FFD166;
+    text-decoration:none; font-weight:bold; font-size:14px; padding:8px 16px 8px 12px;
+    border-radius:20px; box-shadow:0 3px 10px rgba(0,0,0,0.35); border:1px solid rgba(255,214,102,0.3); }
+  .hub-top-btn:hover{ opacity:0.85; }
+  .case-stamp{ color:#FFD166; font-weight:bold; font-size:13px; letter-spacing:2px; opacity:0.8; }
+
+  .stagebar{ display:flex; gap:6px; margin-bottom:18px; }
+  .stagebar .dot{ flex:1; height:6px; border-radius:4px; background:rgba(255,255,255,0.15); }
+  .stagebar .dot.active{ background:var(--primary); }
+  .stagebar .dot.done{ background:#6b8f5a; }
+
+  .folder{ background:var(--paper); border-radius:6px; padding:30px 32px 36px; box-shadow:0 25px 60px rgba(0,0,0,0.5);
+    position:relative; border:1px solid #d8cba0; }
+  .folder::before{ content:'CASE FILE'; position:absolute; top:-14px; left:28px; background:var(--red); color:#fff;
+    font-size:11px; font-weight:bold; letter-spacing:2px; padding:5px 14px; border-radius:3px; box-shadow:0 3px 8px rgba(0,0,0,0.3); }
+
+  h1{ color:var(--ink); margin:6px 0 4px; font-size:25px; }
+  .sub{ color:#5a5240; margin:0 0 20px; font-size:14.5px; line-height:1.5; }
+
+  .gate-overlay{ position:fixed; inset:0; background:rgba(10,10,14,0.85); display:flex; align-items:center; justify-content:center; z-index:200; padding:20px; }
+  .gate-card{ background:var(--paper); border-radius:10px; padding:34px 36px; max-width:420px; width:100%; text-align:center; box-shadow:0 20px 50px rgba(0,0,0,0.5); }
+  .gate-card h2{ color:var(--ink); margin:0 0 8px; font-size:22px; }
+  .gate-card p{ color:#5a5240; margin:0 0 18px; font-size:14px; }
+  .gate-card input{ width:100%; font-size:17px; padding:11px 14px; border-radius:6px; border:2px solid #b8a968;
+    text-align:center; font-weight:bold; color:var(--ink); margin-bottom:12px; box-sizing:border-box; background:#fffdf5; }
+  .gate-card input:focus{ outline:none; border-color:var(--red); }
+  .gate-error{ color:var(--red); font-size:13px; min-height:18px; margin-bottom:6px; font-weight:bold; }
+  .gate-card button{ width:100%; padding:13px; font-size:16px; border:none; border-radius:6px; background:var(--red); color:white; font-weight:bold; cursor:pointer; }
+
+  .detective-card{ background:#fffdf5; border:1px solid #d8cba0; border-radius:8px; padding:16px 18px; margin-bottom:18px; }
+  .detective-card h3{ margin:0 0 2px; font-size:17px; color:var(--blue); }
+  .detective-card .meta{ font-size:12.5px; color:#777; margin-bottom:10px; font-style:italic; }
+  .extract{ font-size:14.5px; line-height:1.7; color:#2a2a2a; }
+  .clue{ background:#fff3c4; padding:1px 3px; border-radius:3px; cursor:pointer; border-bottom:2px dashed #c9a227; transition:background .15s; }
+  .clue:hover{ background:#ffe788; }
+  .clue.found{ background:#c8e6c0; border-bottom-color:#1E7A4C; cursor:default; }
+  .clue.found::after{ content:' ✓'; color:#1E7A4C; font-weight:bold; }
+
+  .clue-counter{ text-align:center; font-weight:bold; color:var(--blue); margin:14px 0; font-size:15px; }
+  .hint{ text-align:center; color:#8a7f5e; font-size:13px; margin-bottom:16px; }
+
+  .trait-bank{ display:flex; flex-wrap:wrap; gap:8px; margin:10px 0 14px; }
+  .trait-chip{ background:#fffdf5; border:2px solid #b8a968; border-radius:20px; padding:7px 14px; font-size:13.5px;
+    font-weight:bold; color:#5a5240; cursor:pointer; transition:all .15s; }
+  .trait-chip:hover{ border-color:var(--primary); }
+  .trait-chip.selected{ background:var(--blue); border-color:var(--blue); color:white; }
+  .trait-chip.disabled{ opacity:0.35; cursor:not-allowed; }
+  textarea, input[type=text]{ width:100%; font-family:inherit; font-size:14.5px; padding:10px 12px; border-radius:6px;
+    border:2px solid #d8cba0; background:#fffdf5; color:var(--ink); box-sizing:border-box; resize:vertical; }
+  textarea:focus, input[type=text]:focus{ outline:none; border-color:var(--blue); }
+  label.field-label{ display:block; font-weight:bold; color:var(--blue); font-size:13.5px; margin:14px 0 6px; }
+
+  .verdict-row{ display:flex; gap:14px; flex-wrap:wrap; margin-bottom:16px; }
+  .verdict-option{ flex:1; min-width:200px; background:#fffdf5; border:3px solid #d8cba0; border-radius:10px; padding:16px;
+    text-align:center; cursor:pointer; transition:all .15s; }
+  .verdict-option:hover{ border-color:var(--primary); }
+  .verdict-option.selected{ border-color:var(--red); background:#fff3ec; }
+  .verdict-option .emoji{ font-size:30px; margin-bottom:6px; }
+  .verdict-option .name{ font-weight:bold; color:var(--blue); font-size:15px; }
+
+  .word-counter{ font-size:13px; margin-top:6px; font-weight:bold; }
+  .word-counter.low{ color:#999; } .word-counter.good{ color:var(--green); } .word-counter.high{ color:var(--red); }
+
+  .nav-row{ display:flex; justify-content:space-between; margin-top:24px; gap:12px; }
+  button.navbtn{ background:var(--blue); color:white; border:none; padding:13px 26px; border-radius:8px; font-size:15px; font-weight:bold; cursor:pointer; }
+  button.navbtn:disabled{ background:#bbb; cursor:not-allowed; }
+  button.navbtn.secondary{ background:#eee; color:#555; }
+  button.navbtn.secondary:hover{ background:#e0e0e0; }
+
+  .stage{ display:none; }
+  .stage.active{ display:block; }
+
+  .case-closed{ text-align:center; }
+  .stamp{ display:inline-block; border:5px solid var(--red); color:var(--red); font-weight:bold; font-size:26px;
+    padding:10px 28px; border-radius:8px; transform:rotate(-7deg); letter-spacing:3px; margin:10px 0 20px; opacity:0;
+    animation: stampIn .5s ease forwards .2s; }
+  @keyframes stampIn{ from{ opacity:0; transform:rotate(-7deg) scale(2);} to{ opacity:1; transform:rotate(-7deg) scale(1);} }
+  .summary-box{ background:#fffdf5; border:1px solid #d8cba0; border-radius:8px; padding:18px 20px; text-align:left; margin-bottom:18px; font-size:14px; line-height:1.6; }
+  .summary-box b{ color:var(--blue); }
+  .saved-note{ font-size:14px; color:var(--green); font-weight:bold; min-height:20px; margin-top:10px; }
+  .saved-note.err{ color:var(--red); }
+</style>
+</head>
+<body>
+
+<div class="gate-overlay" id="gateOverlay">
+  <div class="gate-card">
+    <h2>🔎 Case Files</h2>
+    <p>Type your name to open your detective case file.</p>
+    <input type="text" id="nameInput" placeholder="Your name" maxlength="30" autocomplete="off">
+    <div class="gate-error" id="nameError"></div>
+    <button id="startBtn">Open Case File ▶</button>
+  </div>
+</div>
+
+<div class="wrap" id="wrap" style="display:none;">
+  <div class="top-bar">
+    <a href="index.html" class="hub-top-btn">🏠 Back to Hub</a>
+    <span class="case-stamp">CASE #<span id="caseNum">001</span></span>
+  </div>
+
+  <div class="stagebar" id="stagebar">
+    <div class="dot" data-stage="1"></div>
+    <div class="dot" data-stage="2"></div>
+    <div class="dot" data-stage="3"></div>
+    <div class="dot" data-stage="4"></div>
+    <div class="dot" data-stage="5"></div>
+  </div>
+
+  <div class="folder">
+
+    <!-- STAGE 1: EVIDENCE HUNT -->
+    <section class="stage" data-stage="1">
+      <h1>🕵️ Stage 1 — Evidence Hunt</h1>
+      <p class="sub">Two detectives, two casebooks. Click on the highlighted words and phrases that reveal something about each detective's character.</p>
+
+      <div class="detective-card">
+        <h3>Sherlock Holmes</h3>
+        <div class="meta">from <i>A Study in Scarlet</i> by Arthur Conan Doyle</div>
+        <div class="extract" id="holmesExtract">
+          In height he was <span class="clue" data-id="h1">rather over six feet</span>, and so excessively lean that he seemed to be considerably taller. His <span class="clue" data-id="h2">eyes were sharp and piercing</span>, save during those intervals of torpor to which I have alluded; and his <span class="clue" data-id="h3">thin, hawk-like nose</span> gave his whole expression an air of alertness and decision. His chin, too, had the <span class="clue" data-id="h4">prominence and squareness which mark the man of determination</span>. His hands were invariably blotted with ink and stained with chemicals, yet he was possessed of extraordinary delicacy of touch, as I frequently had occasion to observe when I watched him <span class="clue" data-id="h5">manipulating his fragile philosophical instruments</span>.
+        </div>
+      </div>
+
+      <div class="detective-card">
+        <h3>C. Auguste Dupin</h3>
+        <div class="meta">from <i>The Murders in the Rue Morgue</i> by Edgar Allan Poe</div>
+        <div class="extract" id="dupinExtract">
+          This young gentleman was of an <span class="clue" data-id="d1">excellent, indeed of an illustrious family</span>, but, by a variety of untoward events, had been <span class="clue" data-id="d2">reduced to such poverty</span> that the energy of his character succumbed beneath it, and he ceased to bestir himself in the world. His sole luxuries were books, and I was deeply impressed by <span class="clue" data-id="d3">the vast extent of his reading</span>. At such times I could not help admiring a <span class="clue" data-id="d4">peculiar analytic ability</span> in Dupin. I often amused myself with the fancy of a <span class="clue" data-id="d5">double Dupin — the creative and the resolvent</span>.
+        </div>
+      </div>
+
+      <div class="clue-counter">🔍 Clues found: <span id="clueCount">0</span> / 10</div>
+      <div class="hint" id="clueHint">Find at least 6 clues to continue.</div>
+
+      <div class="nav-row">
+        <span></span>
+        <button class="navbtn" id="toStage2Btn" disabled>Next: Trait Lab ▶</button>
+      </div>
+    </section>
+
+    <!-- STAGE 2: TRAIT LAB -->
+    <section class="stage" data-stage="2">
+      <h1>🧪 Stage 2 — Trait Lab</h1>
+      <p class="sub">Pick exactly <b>3 traits</b> for each detective based on the evidence you found, then explain your thinking.</p>
+
+      <div class="detective-card">
+        <h3>Sherlock Holmes — pick 3 traits</h3>
+        <div class="trait-bank" id="holmesTraits"></div>
+        <label class="field-label">Which clue(s) led you to these traits?</label>
+        <textarea id="holmesJustification" rows="3" placeholder="e.g. His sharp, piercing eyes show that he is very observant..."></textarea>
+      </div>
+
+      <div class="detective-card">
+        <h3>C. Auguste Dupin — pick 3 traits</h3>
+        <div class="trait-bank" id="dupinTraits"></div>
+        <label class="field-label">Which clue(s) led you to these traits?</label>
+        <textarea id="dupinJustification" rows="3" placeholder="e.g. His love of books and vast reading show that he is..."></textarea>
+      </div>
+
+      <div class="nav-row">
+        <button class="navbtn secondary" id="toStage1Btn">◀ Back</button>
+        <button class="navbtn" id="toStage3Btn" disabled>Next: Verdict ▶</button>
+      </div>
+    </section>
+
+    <!-- STAGE 3: VERDICT -->
+    <section class="stage" data-stage="3">
+      <h1>⚖️ Stage 3 — Verdict</h1>
+      <p class="sub">Based on these two extracts, which casebook would you most want to keep reading?</p>
+
+      <div class="verdict-row">
+        <div class="verdict-option" data-verdict="Holmes">
+          <div class="emoji">🔎</div>
+          <div class="name">A Study in Scarlet</div>
+        </div>
+        <div class="verdict-option" data-verdict="Dupin">
+          <div class="emoji">📖</div>
+          <div class="name">The Murders in the Rue Morgue</div>
+        </div>
+      </div>
+
+      <label class="field-label">Give a reason for your answer:</label>
+      <textarea id="verdictReason" rows="3" placeholder="I'd want to keep reading because..."></textarea>
+
+      <div class="nav-row">
+        <button class="navbtn secondary" id="toStage2BtnFrom3">◀ Back</button>
+        <button class="navbtn" id="toStage4Btn" disabled>Next: Create ▶</button>
+      </div>
+    </section>
+
+    <!-- STAGE 4: CREATE YOUR OWN DETECTIVE -->
+    <section class="stage" data-stage="4">
+      <h1>✍️ Stage 4 — Create Your Own Detective</h1>
+      <p class="sub">Use Holmes and Dupin as models. Invent your own fictional detective and describe them in 100–150 words.</p>
+
+      <label class="field-label">Detective's name</label>
+      <input type="text" id="detName" placeholder="e.g. Inspector Mara Voss" maxlength="40">
+
+      <label class="field-label">Job title</label>
+      <input type="text" id="detJob" placeholder="e.g. Amateur sleuth, private investigator, police detective..." maxlength="60">
+
+      <label class="field-label">Description (100–150 words)</label>
+      <textarea id="detBio" rows="8" placeholder="Describe your detective's appearance, personality and the way they solve mysteries..."></textarea>
+      <div class="word-counter low" id="wordCounter">0 words</div>
+
+      <div class="nav-row">
+        <button class="navbtn secondary" id="toStage3BtnFrom4">◀ Back</button>
+        <button class="navbtn" id="toStage5Btn" disabled>Close the Case ▶</button>
+      </div>
+    </section>
+
+    <!-- STAGE 5: CASE CLOSED -->
+    <section class="stage" data-stage="5">
+      <div class="case-closed">
+        <h1>Case File Complete</h1>
+        <div class="stamp">CASE CLOSED</div>
+        <div class="summary-box" id="summaryBox"></div>
+        <div class="saved-note" id="savedNote">Submitting your case file…</div>
+        <div class="nav-row" style="justify-content:center;">
+          <a href="index.html" class="navbtn" style="text-decoration:none; display:inline-block;">🏠 Back to Hub</a>
+        </div>
+      </div>
+    </section>
+
+  </div>
+</div>
+
+<script>
+  const GAME_LABEL = "Watching the Detectives (Y8)";
+  let studentName = "";
+  let currentStage = 1;
+  const TOTAL_CLUES = 10;
+  let foundClues = new Set();
+
+  const HOLMES_TRAIT_BANK = ["Observant","Analytical","Intense","Determined","Precise","Reserved","Methodical","Alert"];
+  const DUPIN_TRAIT_BANK = ["Imaginative","Intellectual","Bookish","Withdrawn","Perceptive","Reflective","Eccentric","Insightful"];
+  let holmesTraitsSelected = [];
+  let dupinTraitsSelected = [];
+  let verdictChoice = null;
+
+  const gateOverlay = document.getElementById('gateOverlay');
+  const nameInput = document.getElementById('nameInput');
+  const nameError = document.getElementById('nameError');
+  const wrap = document.getElementById('wrap');
+
+  function startGame(){
+    const val = nameInput.value.trim();
+    if(!val){
+      nameError.textContent = "Please type your name to start.";
+      nameInput.focus();
+      return;
+    }
+    studentName = val.slice(0,30);
+    document.getElementById('caseNum').textContent = String(Math.floor(100+Math.random()*900));
+    gateOverlay.style.display = 'none';
+    wrap.style.display = 'block';
+    initTraitBanks();
+    goToStage(1);
+  }
+  document.getElementById('startBtn').addEventListener('click', startGame);
+  nameInput.addEventListener('keydown', (e)=>{ if(e.key==='Enter') startGame(); });
+  nameInput.focus();
+
+  function goToStage(n){
+    currentStage = n;
+    document.querySelectorAll('.stage').forEach(s=>{
+      s.classList.toggle('active', parseInt(s.dataset.stage,10) === n);
+    });
+    document.querySelectorAll('.stagebar .dot').forEach(d=>{
+      const ds = parseInt(d.dataset.stage,10);
+      d.classList.toggle('active', ds === n);
+      d.classList.toggle('done', ds < n);
+    });
+    window.scrollTo({top:0, behavior:'smooth'});
+    if(n === 5) submitCaseFile();
+  }
+
+  // ---- Stage 1: clue clicking ----
+  document.querySelectorAll('.clue').forEach(span=>{
+    span.addEventListener('click', ()=>{
+      const id = span.dataset.id;
+      if(foundClues.has(id)) return;
+      foundClues.add(id);
+      span.classList.add('found');
+      document.getElementById('clueCount').textContent = foundClues.size;
+      updateStage1Nav();
+    });
+  });
+  function updateStage1Nav(){
+    const btn = document.getElementById('toStage2Btn');
+    const hint = document.getElementById('clueHint');
+    if(foundClues.size >= 6){
+      btn.disabled = false;
+      hint.textContent = "Great detective work! You can continue, or keep looking for more clues.";
+    } else {
+      btn.disabled = true;
+      hint.textContent = `Find at least 6 clues to continue. (${6-foundClues.size} more to go)`;
+    }
+  }
+  document.getElementById('toStage2Btn').addEventListener('click', ()=> goToStage(2));
+
+  // ---- Stage 2: trait banks ----
+  function initTraitBanks(){
+    renderTraitBank('holmesTraits', HOLMES_TRAIT_BANK, holmesTraitsSelected, updateStage2Nav);
+    renderTraitBank('dupinTraits', DUPIN_TRAIT_BANK, dupinTraitsSelected, updateStage2Nav);
+  }
+  function renderTraitBank(containerId, bank, selectedArr, onChange){
+    const container = document.getElementById(containerId);
+    container.innerHTML = bank.map(t=>`<span class="trait-chip" data-trait="${t}">${t}</span>`).join('');
+    container.querySelectorAll('.trait-chip').forEach(chip=>{
+      chip.addEventListener('click', ()=>{
+        const t = chip.dataset.trait;
+        const idx = selectedArr.indexOf(t);
+        if(idx >= 0){
+          selectedArr.splice(idx,1);
+          chip.classList.remove('selected');
+        } else {
+          if(selectedArr.length >= 3) return;
+          selectedArr.push(t);
+          chip.classList.add('selected');
+        }
+        container.querySelectorAll('.trait-chip').forEach(c=>{
+          const isSel = selectedArr.includes(c.dataset.trait);
+          c.classList.toggle('disabled', !isSel && selectedArr.length >= 3);
+        });
+        onChange();
+      });
+    });
+  }
+  function updateStage2Nav(){
+    const hJust = document.getElementById('holmesJustification').value.trim();
+    const dJust = document.getElementById('dupinJustification').value.trim();
+    const ok = holmesTraitsSelected.length === 3 && dupinTraitsSelected.length === 3 && hJust.length >= 5 && dJust.length >= 5;
+    document.getElementById('toStage3Btn').disabled = !ok;
+  }
+  document.getElementById('holmesJustification').addEventListener('input', updateStage2Nav);
+  document.getElementById('dupinJustification').addEventListener('input', updateStage2Nav);
+  document.getElementById('toStage1Btn').addEventListener('click', ()=> goToStage(1));
+  document.getElementById('toStage3Btn').addEventListener('click', ()=> goToStage(3));
+
+  // ---- Stage 3: verdict ----
+  document.querySelectorAll('.verdict-option').forEach(opt=>{
+    opt.addEventListener('click', ()=>{
+      document.querySelectorAll('.verdict-option').forEach(o=>o.classList.remove('selected'));
+      opt.classList.add('selected');
+      verdictChoice = opt.dataset.verdict;
+      updateStage3Nav();
+    });
+  });
+  document.getElementById('verdictReason').addEventListener('input', updateStage3Nav);
+  function updateStage3Nav(){
+    const reason = document.getElementById('verdictReason').value.trim();
+    document.getElementById('toStage4Btn').disabled = !(verdictChoice && reason.length >= 10);
+  }
+  document.getElementById('toStage2BtnFrom3').addEventListener('click', ()=> goToStage(2));
+  document.getElementById('toStage4Btn').addEventListener('click', ()=> goToStage(4));
+
+  // ---- Stage 4: create your own detective ----
+  const detBio = document.getElementById('detBio');
+  const wordCounter = document.getElementById('wordCounter');
+  function countWords(text){
+    return (text.trim().match(/\S+/g) || []).length;
+  }
+  function updateStage4Nav(){
+    const name = document.getElementById('detName').value.trim();
+    const job = document.getElementById('detJob').value.trim();
+    const wc = countWords(detBio.value);
+    wordCounter.textContent = wc + ' words';
+    if(wc < 100){ wordCounter.className = 'word-counter low'; }
+    else if(wc <= 150){ wordCounter.className = 'word-counter good'; }
+    else { wordCounter.className = 'word-counter high'; }
+    document.getElementById('toStage5Btn').disabled = !(name && job && wc >= 80 && wc <= 180);
+  }
+  document.getElementById('detName').addEventListener('input', updateStage4Nav);
+  document.getElementById('detJob').addEventListener('input', updateStage4Nav);
+  detBio.addEventListener('input', updateStage4Nav);
+  document.getElementById('toStage3BtnFrom4').addEventListener('click', ()=> goToStage(3));
+  document.getElementById('toStage5Btn').addEventListener('click', ()=> goToStage(5));
+
+  // ---- Stage 5: submit ----
+  function escapeHtml(s){
+    return String(s||'').replace(/[&<>"']/g, c => ({'&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;',"'":'&#39;'}[c]));
+  }
+  function submitCaseFile(){
+    const detName = document.getElementById('detName').value.trim();
+    const detJob = document.getElementById('detJob').value.trim();
+    const detBioText = detBio.value.trim();
+    const wc = countWords(detBioText);
+    const verdictReason = document.getElementById('verdictReason').value.trim();
+    const holmesJustification = document.getElementById('holmesJustification').value.trim();
+    const dupinJustification = document.getElementById('dupinJustification').value.trim();
+
+    document.getElementById('summaryBox').innerHTML = `
+      <div><b>Detective:</b> ${escapeHtml(studentName)}</div>
+      <div><b>Clues found:</b> ${foundClues.size} / ${TOTAL_CLUES}</div>
+      <div><b>Holmes traits:</b> ${holmesTraitsSelected.join(', ')}</div>
+      <div><b>Dupin traits:</b> ${dupinTraitsSelected.join(', ')}</div>
+      <div><b>Verdict:</b> ${verdictChoice === 'Holmes' ? 'A Study in Scarlet' : 'The Murders in the Rue Morgue'}</div>
+      <div style="margin-top:10px;"><b>Your detective:</b> ${escapeHtml(detName)} — ${escapeHtml(detJob)}</div>
+      <div style="margin-top:6px; font-style:italic;">${escapeHtml(detBioText)}</div>
+    `;
+
+    const record = {
+      name: studentName,
+      activity: GAME_LABEL,
+      clueScore: foundClues.size,
+      clueTotal: TOTAL_CLUES,
+      holmesTraits: holmesTraitsSelected,
+      holmesJustification: holmesJustification,
+      dupinTraits: dupinTraitsSelected,
+      dupinJustification: dupinJustification,
+      verdictChoice: verdictChoice,
+      verdictReason: verdictReason,
+      detectiveName: detName,
+      detectiveJob: detJob,
+      detectiveBio: detBioText,
+      detectiveWordCount: wc,
+      date: new Date().toLocaleDateString() + ' ' + new Date().toLocaleTimeString([], {hour:'2-digit', minute:'2-digit'})
+    };
+
+    const savedNote = document.getElementById('savedNote');
+    if(window.__submitCaseFileToCloud){
+      window.__submitCaseFileToCloud(record).then(ok=>{
+        if(ok){
+          savedNote.className = 'saved-note';
+          savedNote.textContent = '✅ Case file submitted! Your teacher can review it in the Case Files dashboard.';
+        } else {
+          savedNote.className = 'saved-note err';
+          savedNote.textContent = '⚠️ Could not submit online, but your case file is complete.';
+        }
+      });
+    } else {
+      savedNote.className = 'saved-note err';
+      savedNote.textContent = 'Cloud sync unavailable — case file not submitted.';
+    }
+  }
+</script>
+
+<!-- ===== Cloud sync: sends each case file to the shared Firestore database ===== -->
+<script src="https://www.gstatic.com/firebasejs/10.13.0/firebase-app-compat.js"></script>
+<script src="https://www.gstatic.com/firebasejs/10.13.0/firebase-firestore-compat.js"></script>
+<script>
+  const firebaseConfig = {
+    apiKey: "AIzaSyCEJtHd802MyuZUlwt6OfGkl9IitHaSOaA",
+    authDomain: "tasks-results.firebaseapp.com",
+    projectId: "tasks-results",
+    storageBucket: "tasks-results.firebasestorage.app",
+    messagingSenderId: "1014525306500",
+    appId: "1:1014525306500:web:3ffe2e6f5554e9140e04d1"
+  };
+  try{
+    firebase.initializeApp(firebaseConfig);
+    const db = firebase.firestore();
+    window.__submitCaseFileToCloud = function(record){
+      return db.collection("detectiveFiles").add({
+        ...record,
+        createdAt: firebase.firestore.FieldValue.serverTimestamp()
+      }).then(() => true).catch((err) => { console.error("Cloud sync failed:", err); return false; });
+    };
+  }catch(err){
+    console.error("Firebase init failed:", err);
+  }
+</script>
+</body>
+</html>

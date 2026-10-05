@@ -141,7 +141,7 @@ const STORAGE_KEY = "letterRainY1Results";
 const GAME_LABEL = "Letter Rain! (Y1)";
 
 let levelIdx = 0, totalCorrect = 0, totalMisses = 0, correctThisLevel = 0, streak = 0, bestStreak = 0, points = 0, studentName = "";
-let activeLetters = [], letterIdCounter = 0, lastSpawnTime = 0, levelActive = false, spawnTimerId = null;
+let activeLetters = [], letterIdCounter = 0, lastSpawnTime = 0, levelActive = false, spawnTimerId = null, levelTimerId = null;
 
 document.getElementById('levelTotal').textContent = LEVELS.length;
 const wrap = document.getElementById('wrap');
@@ -200,6 +200,10 @@ function startLevel(idx){
   lastSpawnTime = 0;
   if(spawnTimerId) clearInterval(spawnTimerId);
   spawnTimerId = setInterval(tick, 250);
+
+  if(levelTimerId) clearTimeout(levelTimerId);
+  const levelTimeLimit = Math.min(120000, Math.max(20000, Math.round(cfg.target * cfg.duration * 1.2)));
+  levelTimerId = setTimeout(forceLevelEnd, levelTimeLimit);
 }
 
 function tick(){
@@ -306,6 +310,7 @@ function catchLetter(record, btnEl){
   if(correctThisLevel >= LEVELS[levelIdx].target){
     levelActive = false;
     clearInterval(spawnTimerId);
+    if(levelTimerId) clearTimeout(levelTimerId);
     setTimeout(levelComplete, 500);
   }
 }
@@ -326,9 +331,22 @@ function showCelebrateBanner(text, sub){
   setTimeout(()=>{ b.style.transition='opacity .3s'; b.style.opacity='0'; setTimeout(()=>b.remove(),320); },1300);
 }
 
+function forceLevelEnd(){
+  if(!levelActive) return;
+  levelActive = false;
+  clearInterval(spawnTimerId);
+  levelComplete();
+}
+
 function levelComplete(){
+  if(levelTimerId) clearTimeout(levelTimerId);
+  const metTarget = correctThisLevel >= LEVELS[levelIdx].target;
   spawnConfetti(30);
-  showCelebrateBanner('🎉 Level Complete!', `You did it, ${studentName}!`);
+  if(metTarget){
+    showCelebrateBanner('🎉 Level Complete!', `You did it, ${studentName}!`);
+  } else {
+    showCelebrateBanner("⏱️ Time's Up!", `Nice try, ${studentName} — on to the next level!`);
+  }
   clearSky();
   levelIdx++;
   if(levelIdx < LEVELS.length){

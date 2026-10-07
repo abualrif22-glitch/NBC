@@ -1,0 +1,485 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>Wires or Wi-Fi! - Year 2 Computing Game</title>
+<style>
+  :root{
+    --bgdark:#2B2250; --primary:#FF5C8A; --secondary:#3DDC97;
+    --accent:#FFD23F; --violet:#6C63FF; --light:#F7F9FC; --dark:#1A1A2E; --red:#E74C3C; --sky:#2F9BFF;
+  }
+  *{box-sizing:border-box; -webkit-tap-highlight-color: transparent;}
+  html,body{ margin:0; min-height:100%; }
+  body{
+    font-family:'Segoe UI', Calibri, Arial, sans-serif;
+    background:linear-gradient(135deg,#2B2250 0%,#6C63FF 100%);
+    min-height:100vh; display:flex; align-items:center; justify-content:center; padding:20px;
+  }
+  .wrap{ background:var(--light); border-radius:26px; max-width:900px; width:100%; padding:26px 30px 34px;
+    box-shadow:0 20px 50px rgba(0,0,0,0.3); position:relative; overflow:hidden; }
+  h1{ color:var(--primary); text-align:center; margin:0 0 4px; font-size:clamp(24px,4vw,32px); }
+  .sub{ text-align:center; color:#6B5B4A; margin:0 0 16px; font-size:clamp(13px,2vw,16px); }
+  .hud{ display:flex; justify-content:space-between; align-items:center; background:white; border-radius:16px;
+    padding:12px 20px; margin-bottom:18px; box-shadow:0 2px 8px rgba(0,0,0,0.08); font-weight:bold; color:var(--primary);
+    flex-wrap:wrap; gap:8px; font-size:clamp(13px,2vw,16px); }
+  .hud span.big{ color:var(--violet); font-size:1.2em; }
+  .stage{ display:none; }
+  .stage.active{ display:block; }
+  .round-title{ text-align:center; color:var(--dark); font-size:clamp(19px,3vw,24px); font-weight:bold; margin:0 0 4px; }
+  .round-help{ text-align:center; color:#555; font-size:clamp(14px,2.2vw,17px); margin:0 0 14px; }
+
+  /* Round 1 */
+  .scene{ background:white; border-radius:22px; padding:22px 18px; text-align:center; box-shadow:0 4px 14px rgba(0,0,0,0.1); margin-bottom:16px; }
+  .scene .big-emoji{ font-size:84px; line-height:1.1; }
+  .scene .sentence{ font-size:clamp(18px,3vw,24px); font-weight:bold; color:var(--dark); margin-top:8px; }
+  .choices{ display:grid; grid-template-columns:1fr 1fr; gap:16px; }
+  .choice{ border:none; border-radius:20px; padding:22px 10px; font-size:clamp(20px,3.4vw,28px); font-weight:bold; cursor:pointer; color:white;
+    box-shadow:0 6px 0 rgba(0,0,0,0.18); transition:transform .08s; }
+  .choice:active{ transform:translateY(3px); box-shadow:0 3px 0 rgba(0,0,0,0.18); }
+  .choice.wire{ background:#E67E22; }
+  .choice.wifi{ background:var(--sky); }
+  .choice:disabled{ opacity:0.55; cursor:default; }
+
+  /* Round 2 */
+  .msg-card{ display:block; margin:0 auto 14px; width:max-content; max-width:100%; background:var(--accent); color:var(--dark); border-radius:16px;
+    padding:12px 26px; font-size:clamp(20px,3.4vw,28px); font-weight:bold; box-shadow:0 4px 12px rgba(0,0,0,0.15); }
+  .netbox{ position:relative; display:grid; grid-template-columns:1fr 1fr 1fr; grid-template-rows:auto auto auto; gap:6px 0;
+    background:white; border-radius:22px; padding:20px 14px; box-shadow:0 4px 14px rgba(0,0,0,0.1); max-width:620px; margin:0 auto; }
+  .netbox svg{ position:absolute; inset:0; width:100%; height:100%; pointer-events:none; }
+  .netbox svg line{ stroke:#B8C4FF; stroke-width:1.2; vector-effect:non-scaling-stroke; stroke-width:4px; }
+  .netbox svg line.hot{ stroke:var(--secondary); stroke-width:7px; }
+  .pc{ position:relative; z-index:2; background:#F0F4FF; border:3px solid #C9D3FF; border-radius:18px; padding:12px 6px; text-align:center; cursor:pointer;
+    font-weight:bold; font-size:clamp(14px,2.4vw,18px); color:var(--dark); transition:transform .1s; width:min(150px,100%); justify-self:center; }
+  .pc:active{ transform:scale(0.95); }
+  .pc .e{ font-size:clamp(34px,6vw,48px); display:block; }
+  .pc.good{ background:#DFFBEF; border-color:var(--secondary); }
+  .pc.bad{ animation:shake .35s; border-color:var(--red); }
+  .pc.p1{ grid-column:1; grid-row:1; } .pc.p2{ grid-column:3; grid-row:1; }
+  .pc.p3{ grid-column:1; grid-row:3; } .pc.p4{ grid-column:3; grid-row:3; }
+  .sw{ position:relative; z-index:2; grid-column:2; grid-row:2; background:var(--bgdark); color:white; border-radius:14px; padding:14px 8px; text-align:center; font-weight:bold; font-size:clamp(14px,2.4vw,18px); align-self:center; justify-self:center; width:min(150px,100%); }
+  .sw .ports{ display:flex; gap:5px; justify-content:center; margin-top:6px; }
+  .sw .ports i{ width:14px; height:10px; background:var(--secondary); border-radius:2px; display:block; }
+  @keyframes shake{ 0%,100%{transform:translateX(0);} 25%{transform:translateX(-8px);} 75%{transform:translateX(8px);} }
+
+  /* Round 3 */
+  .steps{ display:grid; grid-template-columns:1fr 1fr; gap:14px; }
+  .step{ position:relative; background:white; border:3px solid #E3E0FF; border-radius:20px; padding:18px 12px; text-align:center; cursor:pointer;
+    font-size:clamp(15px,2.5vw,19px); font-weight:bold; color:var(--dark); box-shadow:0 4px 12px rgba(0,0,0,0.08); transition:transform .1s; }
+  .step:active{ transform:scale(0.97); }
+  .step .e{ font-size:clamp(36px,6vw,52px); display:block; margin-bottom:6px; }
+  .step.done{ background:#DFFBEF; border-color:var(--secondary); cursor:default; }
+  .step.bad{ animation:shake .35s; border-color:var(--red); }
+  .step .num{ position:absolute; top:-12px; left:-8px; width:36px; height:36px; border-radius:50%; background:var(--primary); color:white; font-size:20px; display:none; align-items:center; justify-content:center; }
+  .step.done .num{ display:flex; }
+
+  .msg{ text-align:center; margin-top:16px; min-height:34px; font-size:clamp(16px,2.5vw,20px); font-weight:bold; color:var(--primary); }
+  .msg.happy{ color:#1a9e6b; } .msg.oops{ color:var(--red); }
+  .controls{ display:flex; justify-content:center; margin-top:10px; gap:12px; }
+  button.ctrl{ background:var(--primary); color:white; border:none; padding:13px 28px; border-radius:12px; font-size:16px; font-weight:bold; cursor:pointer; }
+  button.ctrl.secondary{ background:white; color:var(--primary); border:2px solid var(--primary); }
+
+  .gate-overlay{ position:fixed; inset:0; background:rgba(43,34,80,0.75); display:flex; align-items:center; justify-content:center; z-index:100; padding:20px; }
+  .gate-card{ background:white; border-radius:20px; padding:34px 36px; max-width:420px; width:100%; text-align:center; box-shadow:0 20px 50px rgba(0,0,0,0.4); }
+  .gate-card h2{ color:var(--primary); margin:0 0 8px; font-size:24px; }
+  .gate-card p{ color:#555; margin:0 0 18px; font-size:15px; }
+  .gate-card button{ width:100%; padding:15px; font-size:18px; border:none; border-radius:10px; background:var(--primary); color:white; font-weight:bold; cursor:pointer; }
+  #resultsPanel{ display:none; background:white; border-radius:14px; padding:18px 20px; margin-top:16px; box-shadow:0 2px 8px rgba(0,0,0,0.08); text-align:center; }
+  #resultsPanel h3{ margin:0 0 4px; color:var(--primary); font-size:20px; }
+  .stars{ font-size:44px; letter-spacing:4px; margin:6px 0; }
+  .save-row{ display:flex; gap:12px; justify-content:center; flex-wrap:wrap; margin-top:12px; }
+  .saved-note{ font-size:13px; color:#0e9e6f; font-weight:bold; min-height:18px; margin-top:8px; }
+  .confetti-piece{ position:absolute; top:-20px; width:12px; height:16px; z-index:20; pointer-events:none; animation: fall linear forwards; }
+  @keyframes fall{ to{ transform: translateY(700px) rotate(540deg); opacity:0.2; } }
+  .celebrate-banner{ position:absolute; left:50%; top:45%; transform:translate(-50%,-50%) scale(0.5); background:white; border-radius:22px;
+    padding:24px 36px; box-shadow:0 12px 40px rgba(0,0,0,0.35); text-align:center; z-index:30; opacity:0; pointer-events:none; }
+  .celebrate-banner.show{ animation: bannerPop .6s cubic-bezier(.34,1.56,.64,1) forwards; }
+  @keyframes bannerPop{ 0%{opacity:0; transform:translate(-50%,-50%) scale(0.4) rotate(-6deg);} 60%{opacity:1; transform:translate(-50%,-50%) scale(1.08) rotate(2deg);} 100%{opacity:1; transform:translate(-50%,-50%) scale(1) rotate(0);} }
+  .celebrate-banner .big{ font-size:24px; font-weight:bold; color:var(--primary); }
+  .top-bar{ margin:0; }
+  .hub-top-btn{ position:fixed; top:12px; left:12px; z-index:300;
+    display:inline-flex; align-items:center; gap:6px; background:#1A1A2E; color:white;
+    text-decoration:none; font-weight:bold; font-size:clamp(12px,2.2vw,14px); padding:8px 16px 8px 12px;
+    border-radius:20px; box-shadow:0 3px 10px rgba(0,0,0,0.35); }
+  .hub-top-btn:hover{ opacity:0.85; }
+  .hub-top-btn:active{ transform:scale(0.96); }
+  .floating-name-badge{ position:fixed; top:12px; right:12px; z-index:350;
+    background:#1A1A2E; color:#FFD60A; font-weight:bold;
+    font-size:clamp(17px,2.8vw,23px); padding:10px 22px; border-radius:50px;
+    box-shadow:0 4px 16px rgba(0,0,0,0.4); display:none; pointer-events:none;
+    max-width:62vw; overflow:hidden; text-overflow:ellipsis; white-space:nowrap; }
+  @media (max-width:560px){ .wrap{ padding:20px 14px 26px; } .scene .big-emoji{ font-size:64px; } }
+</style>
+</head>
+<body>
+
+<div class="gate-overlay" id="gateOverlay">
+  <div class="gate-card">
+    <h2>📶 Wires or Wi-Fi!</h2>
+    <p>Find out how computers are connected. Ready?</p>
+    <button id="tapStartBtn">Tap to Start! ▶</button>
+  </div>
+</div>
+
+<div class="wrap" id="wrap">
+  <div class="top-bar"><a href="index.html" class="hub-top-btn">🏠 Back to Hub</a></div>
+  <h1>📶 Wires or Wi-Fi!</h1>
+  <p class="sub">How do computers talk to each other? Let's find out!</p>
+  <div class="hud">
+    <div>Player: <span class="big" id="playerName">—</span></div>
+    <div>Round: <span class="big" id="roundNum">1</span> / 3</div>
+    <div>Stars: <span class="big" id="starCount">0</span></div>
+  </div>
+
+  <!-- ROUND 1 -->
+  <div class="stage" id="stage1">
+    <p class="round-title">Round 1 · Wire or Wi-Fi?</p>
+    <p class="round-help">Does this use a <b>wire</b> or <b>Wi-Fi</b>? <span id="r1Progress"></span></p>
+    <div class="scene">
+      <div class="big-emoji" id="r1Emoji"></div>
+      <div class="sentence" id="r1Text"></div>
+    </div>
+    <div class="choices">
+      <button class="choice wire" id="btnWire">🔌 Wire</button>
+      <button class="choice wifi" id="btnWifi">📶 Wi-Fi</button>
+    </div>
+  </div>
+
+  <!-- ROUND 2 -->
+  <div class="stage" id="stage2">
+    <p class="round-title">Round 2 · The switch delivers!</p>
+    <p class="round-help">The switch gives each message to the right computer. Tap the computer named on the message! <span id="r2Progress"></span></p>
+    <div class="msg-card" id="msgCard">✉️ To: Mia</div>
+    <div class="netbox" id="netbox">
+      <svg viewBox="0 0 100 100" preserveAspectRatio="none">
+        <line id="ln1" x1="17" y1="18" x2="50" y2="50"/>
+        <line id="ln2" x1="83" y1="18" x2="50" y2="50"/>
+        <line id="ln3" x1="17" y1="82" x2="50" y2="50"/>
+        <line id="ln4" x1="83" y1="82" x2="50" y2="50"/>
+      </svg>
+      <div class="pc p1" data-i="0"><span class="e">🖥️</span><span class="pname"></span></div>
+      <div class="pc p2" data-i="1"><span class="e">💻</span><span class="pname"></span></div>
+      <div class="sw">🔀 Switch<div class="ports"><i></i><i></i><i></i><i></i></div></div>
+      <div class="pc p3" data-i="2"><span class="e">🖥️</span><span class="pname"></span></div>
+      <div class="pc p4" data-i="3"><span class="e">💻</span><span class="pname"></span></div>
+    </div>
+  </div>
+
+  <!-- ROUND 3 -->
+  <div class="stage" id="stage3">
+    <p class="round-title">Round 3 · Follow the click!</p>
+    <p class="round-help">Tap the steps in the right order: what happens <b>first</b>, <b>second</b>, <b>third</b> and <b>last</b>?</p>
+    <div class="steps" id="steps"></div>
+  </div>
+
+  <p class="msg" id="msg">Let's go!</p>
+  <div class="controls">
+    <button class="ctrl secondary" id="resetBtn">⟲ Start Again</button>
+  </div>
+</div>
+
+<script>
+const GAME_LABEL = "Wires or Wi-Fi! (Y2)";
+const STORAGE_KEY = "wiresOrWifiResults";
+const wrap = document.getElementById('wrap');
+const msg = document.getElementById('msg');
+
+/* ---- Round 1 data: each card has ONE clear answer ---- */
+const R1 = [
+  {e:"🖥️", t:"This computer is plugged in with a cable.", a:"wire"},
+  {e:"📱", t:"This tablet has no cables. Messages fly through the air.", a:"wifi"},
+  {e:"🖨️", t:"The printer is joined to the network with a cable.", a:"wire"},
+  {e:"💻", t:"A laptop on the sofa with no wires at all.", a:"wifi"},
+  {e:"🔌", t:"Messages go along a wire inside a cable.", a:"wire"},
+  {e:"📡", t:"Invisible waves carry messages through the air.", a:"wifi"},
+  {e:"🧑‍💻", t:"A computer is joined to the switch with a network cable.", a:"wire"},
+  {e:"🛋️", t:"Moving around the room and still online, with no cable!", a:"wifi"},
+];
+/* ---- Round 2 data ---- */
+const NAMES = ["Mia","Sam","Leo","Ana"];
+const R2_COUNT = 5;
+/* ---- Round 3 data (correct order = array order) ---- */
+const R3 = [
+  {e:"👆", t:"You tap a video"},
+  {e:"📶", t:"Wi-Fi carries the message through the air"},
+  {e:"🚪", t:"The router sends it out to the internet"},
+  {e:"🗄️", t:"A big computer (a server) sends the video back"},
+];
+
+let studentName = "Player", wrongAttempts = 0, correctCount = 0, stars = 0;
+let r1Order = [], r1Idx = 0, r2Targets = [], r2Idx = 0, r3Next = 0, locked = false;
+
+function shuffle(arr){ const a=[...arr]; for(let i=a.length-1;i>0;i--){ const j=Math.floor(Math.random()*(i+1)); [a[i],a[j]]=[a[j],a[i]]; } return a; }
+function setMsg(text, cls){ msg.className = 'msg' + (cls ? ' '+cls : ''); msg.textContent = text; }
+function showStage(n){
+  document.querySelectorAll('.stage').forEach(s => s.classList.remove('active'));
+  document.getElementById('stage'+n).classList.add('active');
+  document.getElementById('roundNum').textContent = n;
+}
+function addStar(){ stars++; document.getElementById('starCount').textContent = stars; }
+
+/* ---------------- Round 1 ---------------- */
+function startRound1(){
+  r1Order = shuffle(R1); r1Idx = 0;
+  showStage(1); showR1Card();
+}
+function showR1Card(){
+  const c = r1Order[r1Idx];
+  document.getElementById('r1Emoji').textContent = c.e;
+  document.getElementById('r1Text').textContent = c.t;
+  document.getElementById('r1Progress').textContent = `(${r1Idx+1} of ${R1.length})`;
+  document.getElementById('btnWire').disabled = false;
+  document.getElementById('btnWifi').disabled = false;
+  locked = false;
+  setMsg('Wire or Wi-Fi?');
+}
+function answerR1(choice){
+  if(locked) return;
+  const c = r1Order[r1Idx];
+  if(choice === c.a){
+    locked = true;
+    correctCount++; addStar();
+    spawnConfetti(10);
+    setMsg(c.a === 'wire' ? "✅ Yes! That one uses a wire." : "✅ Yes! That one uses Wi-Fi.", 'happy');
+    setTimeout(() => {
+      r1Idx++;
+      if(r1Idx >= r1Order.length) startRound2(); else showR1Card();
+    }, 1000);
+  } else {
+    wrongAttempts++;
+    setMsg(c.a === 'wire' ? "❌ Not quite. Look for the cable!" : "❌ Not quite. Is there a wire? Think again!", 'oops');
+  }
+}
+document.getElementById('btnWire').addEventListener('click', () => answerR1('wire'));
+document.getElementById('btnWifi').addEventListener('click', () => answerR1('wifi'));
+
+/* ---------------- Round 2 ---------------- */
+function startRound2(){
+  // Pick random names for the 4 computers each time (always unique), then a target list that never repeats twice in a row.
+  const names = shuffle(NAMES);
+  document.querySelectorAll('.pc').forEach((pc,i) => { pc.dataset.name = names[i]; pc.querySelector('.pname').textContent = names[i]; pc.className = 'pc p'+(i+1); });
+  r2Targets = []; let prev = null;
+  while(r2Targets.length < R2_COUNT){
+    const n = names[Math.floor(Math.random()*4)];
+    if(n !== prev){ r2Targets.push(n); prev = n; }
+  }
+  r2Idx = 0; locked = false;
+  document.querySelectorAll('#netbox line').forEach(l => l.classList.remove('hot'));
+  showStage(2); showR2Msg();
+}
+function showR2Msg(){
+  document.getElementById('msgCard').textContent = '✉️ To: ' + r2Targets[r2Idx];
+  document.getElementById('r2Progress').textContent = `(${r2Idx+1} of ${R2_COUNT})`;
+  document.querySelectorAll('.pc').forEach(pc => pc.classList.remove('good','bad'));
+  document.querySelectorAll('#netbox line').forEach(l => l.classList.remove('hot'));
+  locked = false;
+  setMsg('Which computer is it for?');
+}
+document.querySelectorAll('.pc').forEach(pc => {
+  pc.addEventListener('click', () => {
+    if(locked) return;
+    const want = r2Targets[r2Idx];
+    if(pc.dataset.name === want){
+      locked = true;
+      pc.classList.add('good');
+      document.getElementById('ln'+(Number(pc.dataset.i)+1)).classList.add('hot');
+      correctCount++; addStar();
+      spawnConfetti(10);
+      setMsg(`✅ The switch gave it to ${want}!`, 'happy');
+      setTimeout(() => {
+        r2Idx++;
+        if(r2Idx >= R2_COUNT) startRound3(); else showR2Msg();
+      }, 1100);
+    } else {
+      wrongAttempts++;
+      pc.classList.remove('bad'); void pc.offsetWidth; pc.classList.add('bad');
+      setTimeout(() => pc.classList.remove('bad'), 500);
+      setMsg(`❌ That is ${pc.dataset.name}. The message says ${want}!`, 'oops');
+    }
+  });
+});
+
+/* ---------------- Round 3 ---------------- */
+function startRound3(){
+  r3Next = 0; locked = false;
+  const order = shuffle(R3.map((s,i) => ({...s, idx:i})));
+  const box = document.getElementById('steps');
+  box.innerHTML = order.map(s => `<div class="step" data-idx="${s.idx}"><span class="num"></span><span class="e">${s.e}</span>${s.t}</div>`).join('');
+  box.querySelectorAll('.step').forEach(el => el.addEventListener('click', () => tapStep(el)));
+  showStage(3);
+  setMsg('Tap what happens FIRST!');
+}
+function tapStep(el){
+  if(el.classList.contains('done')) return;
+  const idx = Number(el.dataset.idx);
+  if(idx === r3Next){
+    el.classList.add('done');
+    el.querySelector('.num').textContent = idx + 1;
+    correctCount++; addStar();
+    r3Next++;
+    spawnConfetti(8);
+    if(r3Next >= R3.length){
+      setMsg('✅ You followed the whole click!', 'happy');
+      setTimeout(showFinal, 700);
+    } else {
+      setMsg(['','Good! What happens NEXT?','Nice! What comes after that?','Almost there! What is LAST?'][r3Next], 'happy');
+    }
+  } else {
+    wrongAttempts++;
+    el.classList.remove('bad'); void el.offsetWidth; el.classList.add('bad');
+    setTimeout(() => el.classList.remove('bad'), 500);
+    setMsg('❌ Not yet! Think about what happens first.', 'oops');
+  }
+}
+
+/* ---------------- Effects ---------------- */
+function spawnConfetti(n){
+  const colors=['#FF5C8A','#3DDC97','#FFD23F','#6C63FF','#2B2250','#FFFFFF'];
+  for(let i=0;i<n;i++){
+    const p=document.createElement('div'); p.className='confetti-piece';
+    p.style.left=Math.random()*100+'%'; p.style.background=colors[Math.floor(Math.random()*colors.length)];
+    p.style.animationDuration=(1.2+Math.random()*1.1)+'s';
+    wrap.appendChild(p); setTimeout(()=>p.remove(),2500);
+  }
+}
+function showCelebrateBanner(text, sub){
+  const b=document.createElement('div'); b.className='celebrate-banner';
+  b.innerHTML = `<div class="big">${text}</div><div style="font-size:14px;color:#555;">${sub||''}</div>`;
+  wrap.appendChild(b); requestAnimationFrame(()=>b.classList.add('show'));
+  setTimeout(()=>{ b.style.transition='opacity .3s'; b.style.opacity='0'; setTimeout(()=>b.remove(),320); },1300);
+}
+
+/* ---------------- Finish ---------------- */
+function calcAccuracy(){
+  return Math.max(0, Math.round(100 * correctCount / Math.max(correctCount + wrongAttempts, 1)));
+}
+function showFinal(){
+  const accuracy = calcAccuracy();
+  spawnConfetti(40);
+  showCelebrateBanner('🎉 You did it!', `Great job, ${studentName}!`);
+  setMsg(`🏆 All 3 rounds done! Accuracy: ${accuracy}%`, 'happy');
+  showResultsPanel(accuracy);
+  if(window.__submitResultToCloud){
+    window.__submitResultToCloud({
+      name: studentName,
+      game: GAME_LABEL,
+      score: accuracy,
+      total: 100,
+      date: new Date().toLocaleDateString() + ' ' + new Date().toLocaleTimeString([], {hour:'2-digit', minute:'2-digit'})
+    });
+  }
+}
+function showResultsPanel(accuracy){
+  document.querySelectorAll('.stage').forEach(s => s.classList.remove('active'));
+  let panel = document.getElementById('resultsPanel');
+  if(!panel){
+    panel = document.createElement('div'); panel.id='resultsPanel';
+    panel.innerHTML = `
+      <h3>🏁 Well done!</h3>
+      <div class="stars" id="finalStars"></div>
+      <div id="resultsSummary" style="font-size:15px;color:#444;"></div>
+      <div class="save-row">
+        <button class="ctrl" id="saveResultBtn">💾 Save My Results</button>
+        <button class="ctrl secondary" id="downloadAllBtn">📋 Download Class Results</button>
+      </div>
+      <div class="saved-note" id="savedNote"></div>
+      <div style="margin-top:14px;"><a href="index.html" style="display:block; background:#1A1A2E; color:white; text-decoration:none; padding:20px 24px; border-radius:16px; font-weight:bold; font-size:22px; text-align:center; box-shadow:0 6px 18px rgba(0,0,0,0.3);">🏠 Back to Hub</a></div>`;
+    wrap.appendChild(panel);
+    document.getElementById('saveResultBtn').addEventListener('click', onSaveResult);
+    document.getElementById('downloadAllBtn').addEventListener('click', onDownloadAll);
+  }
+  panel.style.display = 'block';
+  document.getElementById('finalStars').textContent = accuracy >= 90 ? '⭐⭐⭐' : accuracy >= 70 ? '⭐⭐' : '⭐';
+  document.getElementById('resultsSummary').textContent = `${studentName} finished all 3 rounds with ${accuracy}% accuracy.`;
+}
+function readSavedResults(){ try{ return JSON.parse(localStorage.getItem(STORAGE_KEY)||"[]"); }catch(e){ return []; } }
+function writeSavedResults(list){ try{ localStorage.setItem(STORAGE_KEY, JSON.stringify(list)); }catch(e){} }
+function csvEscape(v){ const s=String(v); return /[",\n]/.test(s) ? '"'+s.replace(/"/g,'""')+'"' : s; }
+function downloadCSV(filename, rows){
+  const csv = rows.map(r=>r.map(csvEscape).join(",")).join("\r\n");
+  const blob = new Blob([csv], {type:"text/csv;charset=utf-8;"});
+  const url = URL.createObjectURL(blob);
+  const a=document.createElement('a'); a.href=url; a.download=filename;
+  document.body.appendChild(a); a.click(); document.body.removeChild(a);
+  setTimeout(()=>URL.revokeObjectURL(url),1000);
+}
+function onSaveResult(){
+  const accuracy = calcAccuracy();
+  const now = new Date();
+  const record = { name:studentName, score:accuracy, total:100, date: now.toLocaleDateString()+' '+now.toLocaleTimeString([], {hour:'2-digit',minute:'2-digit'}) };
+  const list = readSavedResults(); list.push(record); writeSavedResults(list);
+  const safeName = (studentName||'student').replace(/[^a-z0-9]+/gi,'_');
+  downloadCSV(`WiresOrWifi_${safeName}_${now.toISOString().slice(0,10)}.csv`, [["Name","Score","Total","Date"],[record.name,record.score,record.total,record.date]]);
+  document.getElementById('savedNote').textContent = '✅ Saved! A results file was downloaded, and your score was stored on this computer.';
+}
+function onDownloadAll(){
+  const list = readSavedResults();
+  if(list.length===0){ document.getElementById('savedNote').textContent='No saved results yet on this computer.'; return; }
+  const rows=[["Name","Score","Total","Date"], ...list.map(r=>[r.name,r.score,r.total,r.date])];
+  downloadCSV(`WiresOrWifi_AllResults_${new Date().toISOString().slice(0,10)}.csv`, rows);
+}
+
+/* ---------------- Start / restart ---------------- */
+function resetGame(){
+  wrongAttempts = 0; correctCount = 0; stars = 0;
+  document.getElementById('starCount').textContent = 0;
+  const panel = document.getElementById('resultsPanel'); if(panel) panel.style.display = 'none';
+  startRound1();
+}
+document.getElementById('resetBtn').addEventListener('click', resetGame);
+document.getElementById('tapStartBtn').addEventListener('click', () => {
+  document.getElementById('playerName').textContent = studentName;
+  document.getElementById('gateOverlay').style.display = 'none';
+  resetGame();
+});
+</script>
+
+<!-- ===== Cloud sync: sends each result to the shared Firestore database ===== -->
+<script src="https://www.gstatic.com/firebasejs/10.13.0/firebase-app-compat.js"></script>
+<script src="https://www.gstatic.com/firebasejs/10.13.0/firebase-firestore-compat.js"></script>
+<script>
+  const firebaseConfig = {
+    apiKey: "AIzaSyCEJtHd802MyuZUlwt6OfGkl9IitHaSOaA",
+    authDomain: "tasks-results.firebaseapp.com",
+    projectId: "tasks-results",
+    storageBucket: "tasks-results.firebasestorage.app",
+    messagingSenderId: "1014525306500",
+    appId: "1:1014525306500:web:3ffe2e6f5554e9140e04d1"
+  };
+  try{
+    firebase.initializeApp(firebaseConfig);
+    const db = firebase.firestore();
+    window.__submitResultToCloud = function(record){
+      return db.collection("results").add({
+        ...record,
+        createdAt: firebase.firestore.FieldValue.serverTimestamp()
+      }).then(() => true).catch((err) => { console.error("Cloud sync failed:", err); return false; });
+    };
+  }catch(err){
+    console.error("Firebase init failed:", err);
+  }
+</script>
+<script>
+// Shows the player name as a large, fixed badge in the corner of the screen for the whole game.
+(function(){
+  var src = document.getElementById('playerName');
+  if(!src) return;
+  var badge = document.createElement('div');
+  badge.id = 'floatingNameBadge';
+  badge.className = 'floating-name-badge';
+  document.body.appendChild(badge);
+  function sync(){
+    var txt = (src.textContent || '').trim();
+    if(txt && txt !== '—'){
+      badge.textContent = '👤 ' + txt;
+      badge.style.display = 'inline-block';
+    } else {
+      badge.style.display = 'none';
+    }
+  }
+  sync();
+  new MutationObserver(sync).observe(src, {childList:true, characterData:true, subtree:true});
+})();
+</script>
+</body>
+</html>

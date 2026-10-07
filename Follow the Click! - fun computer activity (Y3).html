@@ -1,0 +1,491 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>Follow the Click! - Year 3 Computing Game</title>
+<style>
+  :root{
+    --bgdark:#0F2A5C; --primary:#2F7DE1; --secondary:#00B8AE; --accent:#FFC83D; --coral:#FF6B6B; --violet:#7B61FF;
+    --light:#F4F7FF; --dark:#1B1F4B; --red:#E74C3C; --green:#1a9e6b;
+  }
+  *{box-sizing:border-box; -webkit-tap-highlight-color: transparent;}
+  html,body{ margin:0; min-height:100%; }
+  body{
+    font-family:'Segoe UI', Calibri, Arial, sans-serif;
+    background:linear-gradient(135deg,#0F2A5C 0%,#2F7DE1 100%);
+    min-height:100vh; display:flex; align-items:center; justify-content:center; padding:20px;
+  }
+  .wrap{ background:var(--light); border-radius:26px; max-width:960px; width:100%; padding:26px 30px 34px;
+    box-shadow:0 20px 50px rgba(0,0,0,0.3); position:relative; overflow:hidden; display:none; }
+  h1{ color:var(--primary); text-align:center; margin:0 0 4px; font-size:clamp(24px,4vw,32px); }
+  .sub{ text-align:center; color:#555; margin:0 0 16px; font-size:clamp(13px,2vw,15px); }
+  .hud{ display:flex; justify-content:space-between; align-items:center; background:white; border-radius:16px;
+    padding:12px 20px; margin-bottom:12px; box-shadow:0 2px 8px rgba(0,0,0,0.08); font-weight:bold; color:var(--primary);
+    flex-wrap:wrap; gap:8px; font-size:clamp(13px,2vw,16px); }
+  .hud span.big{ color:var(--dark); font-size:1.2em; }
+  .stagebar{ display:flex; justify-content:center; gap:10px; margin-bottom:14px; }
+  .stagebar .dot{ width:34px; height:10px; border-radius:6px; background:#D5DCF5; }
+  .stagebar .dot.on{ background:var(--secondary); }
+  .stagebar .dot.cur{ background:var(--accent); }
+  .stage{ display:none; }
+  .stage.active{ display:block; }
+  .round-title{ text-align:center; color:var(--dark); font-size:clamp(19px,3vw,24px); font-weight:bold; margin:0 0 4px; }
+  .round-help{ text-align:center; color:#555; font-size:clamp(14px,2.2vw,16px); margin:0 0 14px; }
+
+  /* Stage 1: order */
+  .steps{ display:grid; grid-template-columns:1fr 1fr; gap:14px; }
+  .step{ position:relative; display:flex; gap:12px; align-items:center; background:white; border:3px solid #DDE5FF; border-radius:18px; padding:14px 14px; cursor:pointer;
+    font-size:clamp(14px,2.2vw,17px); font-weight:600; color:var(--dark); box-shadow:0 4px 12px rgba(0,0,0,0.07); transition:transform .1s; text-align:left; }
+  .step:active{ transform:scale(0.98); }
+  .step .e{ font-size:clamp(30px,5vw,42px); flex:none; }
+  .step.done{ background:#DFF8F5; border-color:var(--secondary); cursor:default; }
+  .step.bad{ animation:shake .35s; border-color:var(--red); }
+  .step .num{ position:absolute; top:-12px; left:-8px; width:34px; height:34px; border-radius:50%; background:var(--primary); color:white; font-size:18px; font-weight:bold; display:none; align-items:center; justify-content:center; }
+  .step.done .num{ display:flex; }
+  @keyframes shake{ 0%,100%{transform:translateX(0);} 25%{transform:translateX(-8px);} 75%{transform:translateX(8px);} }
+
+  /* Stage 2: match */
+  .match{ display:grid; grid-template-columns:1fr 1.5fr; gap:12px 22px; align-items:stretch; }
+  .col{ display:flex; flex-direction:column; gap:10px; }
+  .tile{ background:white; border:3px solid #DDE5FF; border-radius:16px; padding:12px 14px; cursor:pointer; font-weight:600; color:var(--dark);
+    font-size:clamp(14px,2.2vw,16.5px); box-shadow:0 3px 10px rgba(0,0,0,0.07); display:flex; align-items:center; gap:10px; text-align:left; transition:transform .1s; min-height:58px; }
+  .tile:active{ transform:scale(0.98); }
+  .tile .e{ font-size:28px; flex:none; }
+  .tile.sel{ border-color:var(--accent); background:#FFF6DB; box-shadow:0 0 0 3px rgba(255,200,61,0.45); }
+  .tile.matched{ background:#DFF8F5; border-color:var(--secondary); cursor:default; }
+  .tile.bad{ animation:shake .35s; border-color:var(--red); }
+
+  /* Stage 3: quiz */
+  .qbox{ background:white; border-radius:20px; padding:20px 22px; box-shadow:0 4px 14px rgba(0,0,0,0.09); }
+  .qbox .qtext{ font-size:clamp(17px,2.8vw,22px); font-weight:bold; color:var(--dark); margin-bottom:14px; }
+  .opts{ display:grid; gap:10px; }
+  .opt{ background:#F1F5FF; border:3px solid #DDE5FF; border-radius:14px; padding:14px 16px; font-size:clamp(15px,2.4vw,18px); font-weight:600; color:var(--dark); cursor:pointer; text-align:left; transition:transform .1s; }
+  .opt:active{ transform:scale(0.99); }
+  .opt.good{ background:#DFF8F5; border-color:var(--secondary); }
+  .opt.bad{ animation:shake .35s; border-color:var(--red); background:#FFECEC; }
+
+  .msg{ text-align:center; margin-top:16px; min-height:34px; font-size:clamp(15px,2.4vw,19px); font-weight:bold; color:var(--primary); }
+  .msg.happy{ color:var(--green); } .msg.oops{ color:var(--red); }
+  button.ctrl{ background:var(--primary); color:white; border:none; padding:13px 28px; border-radius:12px; font-size:16px; font-weight:bold; cursor:pointer; }
+  button.ctrl.secondary{ background:white; color:var(--primary); border:2px solid var(--primary); }
+  .controls{ display:flex; justify-content:center; margin-top:10px; gap:12px; flex-wrap:wrap; }
+
+  .gate-overlay{ position:fixed; inset:0; background:rgba(15,42,92,0.78); display:flex; align-items:center; justify-content:center; z-index:100; padding:20px; }
+  .gate-card{ background:white; border-radius:20px; padding:34px 36px; max-width:420px; width:100%; text-align:center; box-shadow:0 20px 50px rgba(0,0,0,0.4); }
+  .gate-card h2{ color:var(--primary); margin:0 0 8px; font-size:24px; }
+  .gate-card p{ color:#555; margin:0 0 18px; font-size:14.5px; }
+  .gate-card input{ width:100%; font-size:18px; padding:12px 14px; border-radius:10px; border:2px solid var(--secondary);
+    text-align:center; font-weight:bold; color:var(--dark); margin-bottom:10px; }
+  .gate-card input:focus{ outline:none; border-color:var(--primary); }
+  .gate-card button{ width:100%; padding:13px; font-size:16px; border:none; border-radius:10px; background:var(--primary); color:white; font-weight:bold; cursor:pointer; }
+  .gate-error{ color:var(--red); font-size:13px; min-height:18px; margin-bottom:6px; font-weight:bold; }
+
+  #resultsPanel{ display:none; background:white; border-radius:14px; padding:18px 20px; margin-top:16px; box-shadow:0 2px 8px rgba(0,0,0,0.08); text-align:center; }
+  #resultsPanel h3{ margin:0 0 4px; color:var(--primary); font-size:20px; }
+  .stars{ font-size:42px; letter-spacing:4px; margin:6px 0; }
+  .save-row{ display:flex; gap:12px; justify-content:center; flex-wrap:wrap; margin-top:12px; }
+  .saved-note{ font-size:13px; color:#0e9e6f; font-weight:bold; min-height:18px; margin-top:8px; }
+  .confetti-piece{ position:absolute; top:-20px; width:12px; height:16px; z-index:20; pointer-events:none; animation: fall linear forwards; }
+  @keyframes fall{ to{ transform: translateY(700px) rotate(540deg); opacity:0.2; } }
+  .celebrate-banner{ position:absolute; left:50%; top:45%; transform:translate(-50%,-50%) scale(0.5); background:white; border-radius:22px;
+    padding:24px 36px; box-shadow:0 12px 40px rgba(0,0,0,0.35); text-align:center; z-index:30; opacity:0; pointer-events:none; }
+  .celebrate-banner.show{ animation: bannerPop .6s cubic-bezier(.34,1.56,.64,1) forwards; }
+  @keyframes bannerPop{ 0%{opacity:0; transform:translate(-50%,-50%) scale(0.4) rotate(-6deg);} 60%{opacity:1; transform:translate(-50%,-50%) scale(1.08) rotate(2deg);} 100%{opacity:1; transform:translate(-50%,-50%) scale(1) rotate(0);} }
+  .celebrate-banner .big{ font-size:24px; font-weight:bold; color:var(--primary); }
+  .top-bar{ margin:0; }
+  .hub-top-btn{ position:fixed; top:12px; left:12px; z-index:300;
+    display:inline-flex; align-items:center; gap:6px; background:#1A1A2E; color:#FFD166;
+    text-decoration:none; font-weight:bold; font-size:13.5px; padding:8px 16px 8px 12px;
+    border-radius:20px; box-shadow:0 3px 10px rgba(0,0,0,0.35); border:1px solid rgba(255,214,102,0.3); }
+  .hub-top-btn:hover{ opacity:0.85; }
+  .hub-top-btn:active{ transform:scale(0.96); }
+  .floating-name-badge{ position:fixed; top:12px; right:12px; z-index:350;
+    background:#1A1A2E; color:#FFD60A; font-weight:bold;
+    font-size:clamp(14px,2.2vw,17px); padding:8px 18px; border-radius:50px;
+    box-shadow:0 4px 16px rgba(0,0,0,0.4); display:none; pointer-events:none;
+    max-width:50vw; overflow:hidden; text-overflow:ellipsis; white-space:nowrap; }
+  @media (max-width:640px){
+    .wrap{ padding:20px 14px 26px; }
+    .steps{ grid-template-columns:1fr; }
+    .match{ grid-template-columns:1fr; }
+  }
+</style>
+</head>
+<body>
+
+<div class="gate-overlay" id="gateOverlay">
+  <div class="gate-card">
+    <h2>🖱️ Follow the Click!</h2>
+    <p>Type your name to start. Follow a click all the way across the internet!</p>
+    <input type="text" id="nameInput" placeholder="Your name" maxlength="24" autocomplete="off">
+    <div class="gate-error" id="nameError"></div>
+    <button id="startBtn">Start ▶</button>
+  </div>
+</div>
+
+<div class="wrap" id="wrap">
+  <div class="top-bar"><a href="index.html" class="hub-top-btn">🏠 Back to Hub</a></div>
+  <h1>🖱️ Follow the Click!</h1>
+  <p class="sub">What happens when you click a link? Put the journey in order, match each part to its job, then crack the network challenges!</p>
+  <div class="hud">
+    <div>Player: <span class="big" id="playerName">—</span></div>
+    <div>Stage: <span class="big" id="stageNum">1</span> / 3</div>
+    <div>Mistakes: <span class="big" id="mistakeCount">0</span></div>
+  </div>
+  <div class="stagebar" id="stagebar"><div class="dot" data-s="1"></div><div class="dot" data-s="2"></div><div class="dot" data-s="3"></div></div>
+
+  <!-- STAGE 1 -->
+  <div class="stage" id="stage1">
+    <p class="round-title">Stage 1 · Put the journey in order</p>
+    <p class="round-help">You click a video on your tablet. Tap the steps in the order they happen!</p>
+    <div class="steps" id="steps"></div>
+  </div>
+
+  <!-- STAGE 2 -->
+  <div class="stage" id="stage2">
+    <p class="round-title">Stage 2 · Who does the job?</p>
+    <p class="round-help">Tap a part on the left, then tap the job it does on the right.</p>
+    <div class="match">
+      <div class="col" id="partCol"></div>
+      <div class="col" id="jobCol"></div>
+    </div>
+  </div>
+
+  <!-- STAGE 3 -->
+  <div class="stage" id="stage3">
+    <p class="round-title">Stage 3 · Network challenges</p>
+    <p class="round-help" id="qProgress"></p>
+    <div class="qbox">
+      <div class="qtext" id="qText"></div>
+      <div class="opts" id="qOpts"></div>
+    </div>
+  </div>
+
+  <p class="msg" id="msg">Let's go!</p>
+  <div class="controls">
+    <button class="ctrl secondary" id="resetBtn">⟲ Start Again</button>
+  </div>
+</div>
+
+<script>
+const GAME_LABEL = "Follow the Click! (Y3)";
+const STORAGE_KEY = "followTheClickResults";
+const wrap = document.getElementById('wrap');
+const msg = document.getElementById('msg');
+
+/* ---- Stage 1: correct order = array order ---- */
+const JOURNEY = [
+  {e:"👆", t:"You click a video on your tablet."},
+  {e:"📶", t:"Wi-Fi carries your request through the air as radio waves."},
+  {e:"🔀", t:"The switch passes it along the cables."},
+  {e:"🚪", t:"The router sends it out to the internet."},
+  {e:"🗄️", t:"A server far away finds the video and sends it back in packets."},
+  {e:"▶️", t:"The packets arrive, are put back in order, and the video plays."},
+];
+/* ---- Stage 2: each part has exactly one job ---- */
+const PAIRS = [
+  {e:"🔀", part:"Network switch", job:"Sends a message to ONLY the right computer in the network."},
+  {e:"📶", part:"Wi-Fi", job:"Carries messages through the air using radio waves."},
+  {e:"🚪", part:"Router", job:"Joins our network to the internet."},
+  {e:"🗄️", part:"Server", job:"A computer that stores websites and sends them back to you."},
+  {e:"🔌", part:"Cable", job:"Carries messages inside a wire (some even run under the sea)."},
+];
+/* ---- Stage 3: three choices, one right ---- */
+const QUIZ = [
+  {q:"Mia's tablet has no cable but it can still use the internet. How?", opts:["Wi-Fi sends messages through the air","Tiny pipes carry the messages","It borrows a cable from the next room"], a:0, why:"Wi-Fi uses invisible radio waves, so no cable is needed."},
+  {q:"Leo sends a message to Ana only. Which part makes sure it goes to Ana and not to Sam?", opts:["The router","The network switch","The keyboard"], a:1, why:"The switch reads the address and sends the message only to the right computer."},
+  {q:"Our class wants to open a website in another country. Which part is the door out of our network?", opts:["The printer","The mouse","The router"], a:2, why:"The router joins our network to other networks, so we can reach the internet."},
+  {q:"A big photo is sent across the internet. How does it travel?", opts:["Cut into small packets, then put back together","All in one piece, in a straight line","As a printed picture in the post"], a:0, why:"Data is cut into packets with numbers and addresses, and rebuilt at the end."},
+];
+
+let studentName = "", mistakes = 0, correctCount = 0, locked = false;
+let nextStep = 0, selPart = null, matchedCount = 0, qIdx = 0;
+
+function shuffle(arr){ const a=[...arr]; for(let i=a.length-1;i>0;i--){ const j=Math.floor(Math.random()*(i+1)); [a[i],a[j]]=[a[j],a[i]]; } return a; }
+function setMsg(text, cls){ msg.className = 'msg' + (cls ? ' '+cls : ''); msg.textContent = text; }
+function addMistake(){ mistakes++; document.getElementById('mistakeCount').textContent = mistakes; }
+function flashBad(el){ el.classList.remove('bad'); void el.offsetWidth; el.classList.add('bad'); setTimeout(() => el.classList.remove('bad'), 500); }
+function showStage(n){
+  document.querySelectorAll('.stage').forEach(s => s.classList.remove('active'));
+  document.getElementById('stage'+n).classList.add('active');
+  document.getElementById('stageNum').textContent = n;
+  document.querySelectorAll('#stagebar .dot').forEach(d => {
+    const s = Number(d.dataset.s);
+    d.className = 'dot' + (s < n ? ' on' : s === n ? ' cur' : '');
+  });
+}
+
+/* ---------------- Stage 1 ---------------- */
+function startStage1(){
+  nextStep = 0;
+  const order = shuffle(JOURNEY.map((s,i) => ({...s, idx:i})));
+  const box = document.getElementById('steps');
+  box.innerHTML = order.map(s => `<div class="step" data-idx="${s.idx}"><span class="num"></span><span class="e">${s.e}</span><span>${s.t}</span></div>`).join('');
+  box.querySelectorAll('.step').forEach(el => el.addEventListener('click', () => tapStep(el)));
+  showStage(1);
+  setMsg('What happens FIRST?');
+}
+function tapStep(el){
+  if(el.classList.contains('done')) return;
+  const idx = Number(el.dataset.idx);
+  if(idx === nextStep){
+    el.classList.add('done');
+    el.querySelector('.num').textContent = idx + 1;
+    correctCount++;
+    nextStep++;
+    spawnConfetti(8);
+    if(nextStep >= JOURNEY.length){
+      setMsg('✅ You followed the whole click!', 'happy');
+      setTimeout(startStage2, 1100);
+    } else {
+      setMsg('✅ Yes! What happens NEXT?', 'happy');
+    }
+  } else {
+    addMistake(); flashBad(el);
+    setMsg(nextStep === 0 ? '❌ Not that one. What happens FIRST when you click?' : '❌ Not yet. What comes right after the last step?', 'oops');
+  }
+}
+
+/* ---------------- Stage 2 ---------------- */
+function startStage2(){
+  selPart = null; matchedCount = 0;
+  const parts = shuffle(PAIRS.map((p,i) => ({...p, idx:i})));
+  const jobs = shuffle(PAIRS.map((p,i) => ({...p, idx:i})));
+  const partCol = document.getElementById('partCol');
+  const jobCol = document.getElementById('jobCol');
+  partCol.innerHTML = parts.map(p => `<div class="tile part" data-idx="${p.idx}"><span class="e">${p.e}</span><span>${p.part}</span></div>`).join('');
+  jobCol.innerHTML = jobs.map(p => `<div class="tile job" data-idx="${p.idx}"><span>${p.job}</span></div>`).join('');
+  partCol.querySelectorAll('.tile').forEach(t => t.addEventListener('click', () => pickPart(t)));
+  jobCol.querySelectorAll('.tile').forEach(t => t.addEventListener('click', () => pickJob(t)));
+  showStage(2);
+  setMsg('Tap a part, then the job it does.');
+}
+function pickPart(t){
+  if(t.classList.contains('matched')) return;
+  document.querySelectorAll('#partCol .tile').forEach(x => x.classList.remove('sel'));
+  t.classList.add('sel'); selPart = t;
+  setMsg('Now tap the job it does.');
+}
+function pickJob(t){
+  if(t.classList.contains('matched')) return;
+  if(!selPart){ setMsg('Tap a part on the left first!', 'oops'); return; }
+  if(selPart.dataset.idx === t.dataset.idx){
+    selPart.classList.remove('sel'); selPart.classList.add('matched'); t.classList.add('matched');
+    selPart = null; matchedCount++; correctCount++;
+    spawnConfetti(10);
+    if(matchedCount >= PAIRS.length){
+      setMsg('✅ Every part matched!', 'happy');
+      setTimeout(startStage3, 1100);
+    } else {
+      setMsg('✅ Perfect match!', 'happy');
+    }
+  } else {
+    addMistake(); flashBad(t); flashBad(selPart);
+    setMsg('❌ Not that job. Think about what that part does!', 'oops');
+  }
+}
+
+/* ---------------- Stage 3 ---------------- */
+function startStage3(){
+  qIdx = 0; showStage(3); showQuestion();
+}
+function showQuestion(){
+  const Q = QUIZ[qIdx]; locked = false;
+  document.getElementById('qProgress').textContent = `Question ${qIdx+1} of ${QUIZ.length}`;
+  document.getElementById('qText').textContent = Q.q;
+  const box = document.getElementById('qOpts');
+  box.innerHTML = Q.opts.map((o,i) => `<button class="opt" data-i="${i}">${'ABC'[i]}.&nbsp; ${o}</button>`).join('');
+  box.querySelectorAll('.opt').forEach(b => b.addEventListener('click', () => answerQ(b)));
+  setMsg('Pick the best answer.');
+}
+function answerQ(btn){
+  if(locked) return;
+  const Q = QUIZ[qIdx];
+  if(Number(btn.dataset.i) === Q.a){
+    locked = true; btn.classList.add('good'); correctCount++;
+    spawnConfetti(12);
+    setMsg('✅ ' + Q.why, 'happy');
+    setTimeout(() => {
+      qIdx++;
+      if(qIdx >= QUIZ.length) showFinal(); else showQuestion();
+    }, 2200);
+  } else {
+    addMistake(); flashBad(btn);
+    setMsg('❌ Not quite. Have another go!', 'oops');
+  }
+}
+
+/* ---------------- Effects ---------------- */
+function spawnConfetti(n){
+  const colors=['#2F7DE1','#00B8AE','#FFC83D','#FF6B6B','#7B61FF','#FFFFFF'];
+  for(let i=0;i<n;i++){
+    const p=document.createElement('div'); p.className='confetti-piece';
+    p.style.left=Math.random()*100+'%'; p.style.background=colors[Math.floor(Math.random()*colors.length)];
+    p.style.animationDuration=(1.2+Math.random()*1.1)+'s';
+    wrap.appendChild(p); setTimeout(()=>p.remove(),2500);
+  }
+}
+function showCelebrateBanner(text, sub){
+  const b=document.createElement('div'); b.className='celebrate-banner';
+  b.innerHTML = `<div class="big">${text}</div><div style="font-size:14px;color:#555;">${sub||''}</div>`;
+  wrap.appendChild(b); requestAnimationFrame(()=>b.classList.add('show'));
+  setTimeout(()=>{ b.style.transition='opacity .3s'; b.style.opacity='0'; setTimeout(()=>b.remove(),320); },1300);
+}
+
+/* ---------------- Finish ---------------- */
+function calcAccuracy(){
+  return Math.max(0, Math.round(100 * correctCount / Math.max(correctCount + mistakes, 1)));
+}
+function showFinal(){
+  const accuracy = calcAccuracy();
+  spawnConfetti(40);
+  showCelebrateBanner('🎉 Network Expert!', `Brilliant work, ${studentName}!`);
+  setMsg(`🏆 You followed the click all the way! Accuracy: ${accuracy}%`, 'happy');
+  showResultsPanel(accuracy);
+  const cloudNote = document.getElementById('cloudSyncNote');
+  if(window.__submitResultToCloud){
+    window.__submitResultToCloud({
+      name: studentName,
+      game: GAME_LABEL,
+      score: accuracy,
+      total: 100,
+      date: new Date().toLocaleDateString() + ' ' + new Date().toLocaleTimeString([], {hour:'2-digit', minute:'2-digit'})
+    }).then(ok => {
+      if(cloudNote) cloudNote.textContent = ok
+        ? '☁️ Sent to your teacher automatically!'
+        : '⚠️ Could not connect to sync automatically — use "Save My Results" below as a backup.';
+    });
+  } else if(cloudNote){
+    cloudNote.textContent = '⚠️ Cloud sync unavailable — use "Save My Results" below as a backup.';
+  }
+}
+function showResultsPanel(accuracy){
+  document.querySelectorAll('.stage').forEach(s => s.classList.remove('active'));
+  document.querySelectorAll('#stagebar .dot').forEach(d => d.className = 'dot on');
+  let panel = document.getElementById('resultsPanel');
+  if(!panel){
+    panel = document.createElement('div'); panel.id='resultsPanel';
+    panel.innerHTML = `
+      <h3>🏁 Well done!</h3>
+      <div class="stars" id="finalStars"></div>
+      <div id="resultsSummary" style="font-size:15px;color:#444;"></div>
+      <div class="saved-note" id="cloudSyncNote"></div>
+      <div class="save-row">
+        <button class="ctrl" id="saveResultBtn">💾 Save My Results</button>
+        <button class="ctrl secondary" id="downloadAllBtn">📋 Download Class Results</button>
+        <button class="ctrl secondary" id="playAgainBtn">🔁 Play Again</button>
+      </div>
+      <div class="saved-note" id="savedNote"></div>
+      <div style="margin-top:14px;"><a href="index.html" style="display:block; background:#1A1A2E; color:white; text-decoration:none; padding:20px 24px; border-radius:16px; font-weight:bold; font-size:22px; text-align:center; box-shadow:0 6px 18px rgba(0,0,0,0.3);">🏠 Back to Hub</a></div>`;
+    wrap.appendChild(panel);
+    document.getElementById('saveResultBtn').addEventListener('click', onSaveResult);
+    document.getElementById('downloadAllBtn').addEventListener('click', onDownloadAll);
+    document.getElementById('playAgainBtn').addEventListener('click', () => location.reload());
+  }
+  panel.style.display = 'block';
+  document.getElementById('finalStars').textContent = accuracy >= 90 ? '⭐⭐⭐' : accuracy >= 70 ? '⭐⭐' : '⭐';
+  document.getElementById('resultsSummary').textContent = `${studentName} followed a click across the whole internet with ${accuracy}% accuracy and ${mistakes} mistake${mistakes===1?'':'s'}.`;
+  document.getElementById('savedNote').textContent = '';
+}
+function readSavedResults(){ try{ return JSON.parse(localStorage.getItem(STORAGE_KEY)||"[]"); }catch(e){ return []; } }
+function writeSavedResults(list){ try{ localStorage.setItem(STORAGE_KEY, JSON.stringify(list)); }catch(e){} }
+function csvEscape(v){ const s=String(v); return /[",\n]/.test(s) ? '"'+s.replace(/"/g,'""')+'"' : s; }
+function downloadCSV(filename, rows){
+  const csv = rows.map(r=>r.map(csvEscape).join(",")).join("\r\n");
+  const blob = new Blob([csv], {type:"text/csv;charset=utf-8;"});
+  const url = URL.createObjectURL(blob);
+  const a=document.createElement('a'); a.href=url; a.download=filename;
+  document.body.appendChild(a); a.click(); document.body.removeChild(a);
+  setTimeout(()=>URL.revokeObjectURL(url),1000);
+}
+function onSaveResult(){
+  const accuracy = calcAccuracy();
+  const now = new Date();
+  const record = { name:studentName, score:accuracy, total:100, date: now.toLocaleDateString()+' '+now.toLocaleTimeString([], {hour:'2-digit',minute:'2-digit'}) };
+  const list = readSavedResults(); list.push(record); writeSavedResults(list);
+  const safeName = (studentName||'student').replace(/[^a-z0-9]+/gi,'_');
+  downloadCSV(`FollowTheClick_${safeName}_${now.toISOString().slice(0,10)}.csv`, [["Name","Score","Total","Date"],[record.name,record.score,record.total,record.date]]);
+  document.getElementById('savedNote').textContent = '✅ Saved! A results file was downloaded, and your score was stored on this computer.';
+}
+function onDownloadAll(){
+  const list = readSavedResults();
+  if(list.length===0){ document.getElementById('savedNote').textContent='No saved results yet on this computer.'; return; }
+  const rows=[["Name","Score","Total","Date"], ...list.map(r=>[r.name,r.score,r.total,r.date])];
+  downloadCSV(`FollowTheClick_AllResults_${new Date().toISOString().slice(0,10)}.csv`, rows);
+}
+
+/* ---------------- Restart ---------------- */
+document.getElementById('resetBtn').addEventListener('click', () => location.reload());
+
+/* ================= NAME GATE ================= */
+const gateOverlay = document.getElementById('gateOverlay');
+const nameInput = document.getElementById('nameInput');
+const nameError = document.getElementById('nameError');
+function startGame(){
+  const val = nameInput.value.trim();
+  if(!val){
+    nameError.textContent = "Please type your name to start.";
+    nameInput.focus();
+    return;
+  }
+  studentName = val.slice(0,24);
+  document.getElementById('playerName').textContent = studentName;
+  gateOverlay.style.display = 'none';
+  wrap.style.display = 'block';
+  startStage1();
+}
+document.getElementById('startBtn').addEventListener('click', startGame);
+nameInput.addEventListener('keydown', (e)=>{ if(e.key === 'Enter') startGame(); });
+nameInput.focus();
+</script>
+
+<!-- ===== Cloud sync: sends each result to the shared Firestore database ===== -->
+<script src="https://www.gstatic.com/firebasejs/10.13.0/firebase-app-compat.js"></script>
+<script src="https://www.gstatic.com/firebasejs/10.13.0/firebase-firestore-compat.js"></script>
+<script>
+  const firebaseConfig = {
+    apiKey: "AIzaSyCEJtHd802MyuZUlwt6OfGkl9IitHaSOaA",
+    authDomain: "tasks-results.firebaseapp.com",
+    projectId: "tasks-results",
+    storageBucket: "tasks-results.firebasestorage.app",
+    messagingSenderId: "1014525306500",
+    appId: "1:1014525306500:web:3ffe2e6f5554e9140e04d1"
+  };
+  try{
+    firebase.initializeApp(firebaseConfig);
+    const db = firebase.firestore();
+    window.__submitResultToCloud = function(record){
+      return db.collection("results").add({
+        ...record,
+        createdAt: firebase.firestore.FieldValue.serverTimestamp()
+      }).then(() => true).catch((err) => { console.error("Cloud sync failed:", err); return false; });
+    };
+  }catch(err){
+    console.error("Firebase init failed:", err);
+  }
+</script>
+<script>
+// Shows the typed player name as a large, fixed badge in the corner so a teacher can glance at any screen.
+(function(){
+  var src = document.getElementById('playerName');
+  if(!src) return;
+  var badge = document.createElement('div');
+  badge.id = 'floatingNameBadge';
+  badge.className = 'floating-name-badge';
+  document.body.appendChild(badge);
+  function sync(){
+    var txt = (src.textContent || '').trim();
+    if(txt && txt !== '—'){
+      badge.textContent = '👤 ' + txt;
+      badge.style.display = 'inline-block';
+    } else {
+      badge.style.display = 'none';
+    }
+  }
+  sync();
+  new MutationObserver(sync).observe(src, {childList:true, characterData:true, subtree:true});
+})();
+</script>
+</body>
+</html>

@@ -1,0 +1,852 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>Build a Network! - Year 4 Computing Game</title>
+<style>
+  :root{
+    --primary:#0F4C81;
+    --secondary:#2A9D8F;
+    --accent:#E76F51;
+    --light:#F7F7FC;
+    --dark:#1A1A2E;
+    --green:#06D6A0;
+    --red:#E63946;
+  }
+  *{box-sizing:border-box;}
+  body{
+    margin:0;
+    font-family:'Segoe UI', Calibri, Arial, sans-serif;
+    background:linear-gradient(135deg,#0F4C81 0%,#2A9D8F 100%);
+    min-height:100vh;
+    display:flex;
+    align-items:center;
+    justify-content:center;
+    padding:24px;
+  }
+  .wrap{
+    background:var(--light);
+    border-radius:24px;
+    max-width:920px;
+    width:100%;
+    padding:28px 32px 36px;
+    box-shadow:0 20px 50px rgba(0,0,0,0.35);
+    position:relative;
+    overflow:hidden;
+  }
+  h1{ color:var(--primary); text-align:center; margin:0 0 4px; font-size:30px; }
+  .sub{ text-align:center; color:#555; margin:0 0 18px; font-size:14.5px; }
+
+  .stagebar{ display:flex; justify-content:center; gap:10px; margin-bottom:20px; }
+  .stagebar .dot{
+    width:14px; height:14px; border-radius:50%; background:#dcdcec;
+    transition:background .2s ease, transform .2s ease;
+  }
+  .stagebar .dot.active{ background:var(--accent); transform:scale(1.25); }
+  .stagebar .dot.done{ background:var(--green); }
+
+  .stage{ display:none; }
+  .stage.active{ display:block; animation:fadeIn .3s ease; }
+  @keyframes fadeIn{ from{opacity:0; transform:translateY(8px);} to{opacity:1; transform:translateY(0);} }
+
+  .stage-title{ color:var(--primary); font-size:20px; font-weight:bold; margin:0 0 4px; text-align:center; }
+  .stage-desc{ color:#555; font-size:14px; text-align:center; margin:0 0 18px; }
+
+  /* ---------- Network diagram ---------- */
+  .network-stage{
+    background:#eef3fb;
+    border-radius:16px;
+    padding:20px 16px 26px;
+    position:relative;
+    border:3px dashed #c9d6ea;
+    margin-bottom:18px;
+    min-height:300px;
+  }
+  .net-row{ display:flex; justify-content:center; align-items:center; gap:28px; flex-wrap:wrap; position:relative; z-index:2; }
+  .net-row.computers{ margin-bottom:60px; }
+  .net-row.switch-row{ margin-bottom:60px; }
+  .net-row.wifi-row{ margin-top:60px; gap:40px; }
+
+  .node{
+    background:white;
+    border-radius:16px;
+    padding:12px 10px 10px;
+    width:92px;
+    text-align:center;
+    box-shadow:0 4px 12px rgba(0,0,0,0.12);
+    border:3px solid transparent;
+    cursor:pointer;
+    transition:transform .15s ease, border-color .15s ease, box-shadow .15s ease;
+    user-select:none;
+  }
+  .node .icon{ font-size:34px; line-height:1; margin-bottom:4px; }
+  .node .label{ font-size:10.5px; font-weight:bold; color:var(--dark); line-height:1.2; }
+  .node:hover{ transform:translateY(-3px); box-shadow:0 8px 18px rgba(0,0,0,0.2); }
+  .node.selected{ border-color:var(--accent); box-shadow:0 0 0 4px rgba(231,111,81,0.18); }
+  .node.connected{ border-color:var(--green); }
+  .node.connected .icon{ filter:none; }
+  .node.switch-node{ width:104px; }
+  .node.switch-node .icon{ font-size:38px; }
+  .node.pulse{ animation:nodePulse .5s ease; }
+  @keyframes nodePulse{ 0%{transform:scale(1);} 40%{transform:scale(1.18);} 100%{transform:scale(1);} }
+
+  .net-svg{ position:absolute; inset:0; width:100%; height:100%; z-index:1; pointer-events:none; }
+  .net-svg line.wire{ stroke:#9aa5c9; stroke-width:3; }
+  .net-svg line.wire.active{ stroke:var(--green); }
+  .net-svg line.wireless{ stroke:#9aa5c9; stroke-width:3; stroke-dasharray:6 6; }
+  .net-svg line.wireless.active{ stroke:var(--secondary); stroke-dasharray:6 6; }
+
+  .file-dot{
+    position:absolute; z-index:5; font-size:22px; transform:translate(-50%,-50%);
+    transition:left .55s ease, top .55s ease; pointer-events:none; display:none;
+  }
+
+  .hint-msg{ text-align:center; font-size:13.5px; color:var(--primary); font-weight:bold; min-height:20px; margin-bottom:10px; }
+  .progress-chip{
+    display:inline-block; background:white; border-radius:20px; padding:6px 16px; font-size:13px;
+    font-weight:bold; color:var(--primary); box-shadow:0 2px 8px rgba(0,0,0,0.08); margin:0 auto 12px; display:block; width:fit-content;
+  }
+
+  .action-row{ text-align:center; margin:14px 0; }
+  .btn{
+    background:var(--primary); color:white; border:none; padding:12px 26px; border-radius:30px;
+    font-weight:bold; font-size:14.5px; cursor:pointer; box-shadow:0 4px 12px rgba(15,76,129,0.3);
+    transition:transform .12s ease, opacity .12s ease;
+  }
+  .btn:hover{ transform:translateY(-2px); }
+  .btn:disabled{ opacity:0.4; cursor:not-allowed; transform:none; }
+  .btn.secondary{ background:white; color:var(--primary); border:2px solid var(--primary); box-shadow:none; }
+  .btn.ghost{ background:transparent; color:#888; border:2px dashed #ccc; box-shadow:none; }
+
+  /* ---------- Quiz ---------- */
+  .quiz-block{ background:white; border-radius:14px; padding:16px 18px; margin-bottom:14px; box-shadow:0 2px 10px rgba(0,0,0,0.06); }
+  .quiz-q{ font-weight:bold; color:var(--dark); margin-bottom:10px; font-size:14.5px; }
+  .quiz-opts{ display:flex; flex-direction:column; gap:8px; }
+  .opt-btn{
+    text-align:left; background:#F2F2FA; border:2px solid transparent; border-radius:10px; padding:10px 14px;
+    font-size:14px; cursor:pointer; color:var(--dark); transition:background .15s ease, border-color .15s ease;
+  }
+  .opt-btn:hover{ background:#e8e8f6; }
+  .opt-btn.correct{ background:#d8f9ec; border-color:var(--green); font-weight:bold; }
+  .opt-btn.incorrect{ background:#fde2e4; border-color:var(--red); }
+  .opt-btn.disabled{ pointer-events:none; }
+
+  /* ---------- Matching (plenary) ---------- */
+  .match-wrap{ display:flex; gap:24px; flex-wrap:wrap; justify-content:center; }
+  .match-col{ flex:1; min-width:220px; display:flex; flex-direction:column; gap:10px; }
+  .match-col h4{ text-align:center; color:var(--primary); margin:0 0 4px; font-size:14px; }
+  .match-chip{
+    background:white; border-radius:10px; padding:12px 14px; font-size:13.5px; font-weight:bold;
+    cursor:pointer; box-shadow:0 2px 8px rgba(0,0,0,0.08); border:2px solid transparent; color:var(--dark);
+    transition:border-color .15s ease, background .15s ease;
+  }
+  .match-col.defs .match-chip{ font-weight:normal; font-size:13px; }
+  .match-chip.selected{ border-color:var(--accent); }
+  .match-chip.matched{ background:#d8f9ec; border-color:var(--green); cursor:default; opacity:0.85; }
+  .match-chip.wrong{ animation:shake .3s ease; }
+  @keyframes shake{ 0%,100%{transform:translateX(0);} 25%{transform:translateX(-6px);} 75%{transform:translateX(6px);} }
+
+  /* ---------- Summary ---------- */
+  .summary-box{ text-align:center; padding:20px 10px; }
+  .stamp{ font-size:70px; margin-bottom:10px; animation:stampIn .5s cubic-bezier(.34,1.56,.64,1); }
+  @keyframes stampIn{ from{transform:scale(2.4) rotate(-12deg); opacity:0;} to{transform:scale(1) rotate(-6deg); opacity:1;} }
+  .score-big{ font-size:42px; font-weight:bold; color:var(--primary); margin:6px 0; }
+  .score-sub{ color:#666; font-size:14px; margin-bottom:18px; }
+  .saved-note{ font-size:13px; color:var(--green); font-weight:bold; min-height:18px; margin-top:10px; }
+  .cloud-note{ font-size:12.5px; color:#888; margin-top:6px; }
+
+  /* ---------- Gate + hub btn + badge (shared house style) ---------- */
+  .gate-overlay{ position:fixed; inset:0; background:rgba(26,26,46,0.72); display:flex; align-items:center; justify-content:center; z-index:100; padding:20px; }
+  .gate-card{ background:white; border-radius:20px; padding:34px 36px; max-width:420px; width:100%; text-align:center; box-shadow:0 20px 50px rgba(0,0,0,0.4); }
+  .gate-card h2{ color:var(--primary); margin:0 0 8px; font-size:24px; }
+  .gate-card p{ color:#555; margin:0 0 18px; font-size:14.5px; }
+  .gate-card input{ width:100%; font-size:18px; padding:12px 14px; border-radius:10px; border:2px solid var(--secondary);
+    margin-bottom:10px; text-align:center; }
+  .gate-card input:focus{ outline:none; border-color:var(--primary); }
+  .gate-card button{ width:100%; padding:13px; font-size:16px; border:none; border-radius:10px; background:var(--primary); color:white; font-weight:bold; cursor:pointer; }
+  .gate-error{ color:var(--red); font-size:13px; min-height:18px; margin-bottom:6px; }
+
+  .top-bar{ margin:0; }
+  .hub-top-btn{ position:fixed; top:12px; left:12px; z-index:300;
+    display:inline-flex; align-items:center; gap:6px; background:#1A1A2E; color:#FFD166;
+    text-decoration:none; font-weight:bold; font-size:13.5px; padding:8px 16px 8px 12px;
+    border-radius:20px; box-shadow:0 3px 10px rgba(0,0,0,0.35); border:1px solid rgba(255,214,102,0.3); }
+  .hub-top-btn:hover{ opacity:0.85; }
+  .hub-top-btn:active{ transform:scale(0.96); }
+  .floating-name-badge{ position:fixed; top:12px; right:12px; z-index:350;
+    background:#1A1A2E; color:#FFD60A; font-weight:bold;
+    font-size:clamp(14px,2.2vw,17px); padding:8px 18px; border-radius:50px;
+    box-shadow:0 4px 16px rgba(0,0,0,0.4); display:none; pointer-events:none;
+    max-width:50vw; overflow:hidden; text-overflow:ellipsis; white-space:nowrap; }
+
+  @media (max-width:560px){
+    .net-row.computers, .net-row.switch-row{ margin-bottom:46px; }
+    .node{ width:76px; padding:8px 6px; }
+    .node .icon{ font-size:26px; }
+    .node .label{ font-size:9px; }
+  }
+</style>
+</head>
+<body>
+
+<div class="gate-overlay" id="gateOverlay">
+  <div class="gate-card">
+    <h2>🌐 Build a Network!</h2>
+    <p>Type your name to start building the internet.</p>
+    <input type="text" id="nameInput" placeholder="Your name" maxlength="24" autocomplete="off">
+    <div class="gate-error" id="nameError"></div>
+    <button id="startBtn">Start ▶</button>
+  </div>
+</div>
+
+<div class="wrap" id="wrap">
+  <div class="top-bar"><a href="index.html" class="hub-top-btn">🏠 Back to Hub</a></div>
+  <h1>🌐 Build a Network! <span style="font-size:16px;color:#E76F51;">Year 4</span></h1>
+  <p class="sub" id="subline">Build a LAN, join it to the internet with a router, then find a website using DNS!</p>
+
+  <div class="stagebar" id="stagebar">
+    <div class="dot" data-s="1"></div>
+    <div class="dot" data-s="2"></div>
+    <div class="dot" data-s="3"></div>
+    <div class="dot" data-s="4"></div>
+    <div class="dot" data-s="5"></div>
+  </div>
+
+  <!-- ===================== STAGE 1: Connect the computers ===================== -->
+  <div class="stage" id="stage1" data-stage="1">
+    <div class="stage-title">Activity 1 · Build a LAN</div>
+    <div class="stage-desc">A <b>LAN</b> (Local Area Network) joins devices in one place. Click a computer, then click the <b>network switch</b> to connect it with a wire.</div>
+    <div class="progress-chip" id="s1Progress">Connected: 0 / 4</div>
+    <div class="hint-msg" id="s1Hint">&nbsp;</div>
+
+    <div class="network-stage" id="netStage1">
+      <svg class="net-svg" id="svg1"></svg>
+      <div class="net-row computers">
+        <div class="node" data-id="comp1"><div class="icon">🖥️</div><div class="label">Computer 1</div></div>
+        <div class="node" data-id="comp2"><div class="icon">🖥️</div><div class="label">Computer 2</div></div>
+        <div class="node" data-id="comp3"><div class="icon">🖥️</div><div class="label">Computer 3</div></div>
+        <div class="node" data-id="comp4"><div class="icon">🖥️</div><div class="label">Computer 4</div></div>
+      </div>
+      <div class="net-row switch-row">
+        <div class="node switch-node" data-id="switchNode"><div class="icon">🔀</div><div class="label">Network Switch</div></div>
+      </div>
+      <div class="file-dot" id="fileDot1">📄</div>
+    </div>
+
+    <div class="action-row">
+      <button class="btn secondary" id="demoSendBtn" disabled>📨 Send a note: Computer 1 → Computer 2</button>
+    </div>
+
+    <div id="s1Quiz" style="display:none;">
+      <div class="quiz-block">
+        <div class="quiz-q">1. What do we call a small network in one place, like the computers in our school, joined by a switch?</div>
+        <div class="quiz-opts" id="s1q1opts"></div>
+      </div>
+      <div class="quiz-block">
+        <div class="quiz-q">2. The note is going to Computer 2. What does the switch do with it?</div>
+        <div class="quiz-opts" id="s1q2opts"></div>
+      </div>
+    </div>
+
+    <div class="action-row"><button class="btn" id="toStage2Btn" disabled>Next: Join the Internet ▶</button></div>
+  </div>
+
+  <!-- ===================== STAGE 2: Router + Internet ===================== -->
+  <div class="stage" id="stage2" data-stage="2">
+    <div class="stage-title">Activity 2 · Join the Internet</div>
+    <div class="stage-desc">A <b>router</b> joins our LAN to other networks. Connect the <b>switch → router</b>, then the <b>router → internet</b>.</div>
+    <div class="progress-chip" id="s2Progress">Connected: 0 / 2</div>
+    <div class="hint-msg" id="s2Hint">&nbsp;</div>
+
+    <div class="network-stage" id="netStage2">
+      <svg class="net-svg" id="svg2"></svg>
+      <div class="net-row computers" style="margin-bottom:44px;">
+        <div class="node connected" data-id="comp1b"><div class="icon">🖥️</div><div class="label">Computer 1</div></div>
+        <div class="node connected" data-id="comp2b"><div class="icon">🖥️</div><div class="label">Computer 2</div></div>
+        <div class="node connected" data-id="comp3b"><div class="icon">🖥️</div><div class="label">Computer 3</div></div>
+        <div class="node connected" data-id="comp4b"><div class="icon">🖥️</div><div class="label">Computer 4</div></div>
+      </div>
+      <div class="net-row switch-row" style="margin-bottom:44px;">
+        <div class="node switch-node connected" data-id="switchNodeB"><div class="icon">🔀</div><div class="label">Network Switch</div></div>
+      </div>
+      <div class="net-row" style="margin-bottom:44px;">
+        <div class="node" data-id="routerNode"><div class="icon">🚪</div><div class="label">Router</div></div>
+      </div>
+      <div class="net-row">
+        <div class="node" data-id="internetNode"><div class="icon">🌐</div><div class="label">The Internet</div></div>
+      </div>
+      <div class="file-dot" id="fileDot2">📦</div>
+    </div>
+
+    <div class="action-row">
+      <button class="btn secondary" id="tracePacketBtn" disabled>📦 Send a packet from Computer 1 to the internet</button>
+    </div>
+
+    <div id="s2Quiz" style="display:none;">
+      <div class="quiz-block">
+        <div class="quiz-q">1. Which device joins our LAN to the internet?</div>
+        <div class="quiz-opts" id="s2q1opts"></div>
+      </div>
+      <div class="quiz-block">
+        <div class="quiz-q">2. Big messages and files are chopped into small pieces before they travel. What are the pieces called?</div>
+        <div class="quiz-opts" id="s2q2opts"></div>
+      </div>
+      <div class="quiz-block">
+        <div class="quiz-q">3. What is the internet?</div>
+        <div class="quiz-opts" id="s2q3opts"></div>
+      </div>
+    </div>
+
+    <div class="action-row"><button class="btn" id="toStage3Btn" disabled>Next: Find a Website ▶</button></div>
+  </div>
+
+  <!-- ===================== STAGE 3: Find a website ===================== -->
+  <div class="stage" id="stage3" data-stage="3">
+    <div class="stage-title">Activity 3 · Find a Website</div>
+    <div class="stage-desc">Connect the <b>laptop</b> (Wi-Fi) to the router, the router to the internet, then a <b>DNS server</b> and a <b>web server</b> to the internet.</div>
+    <div class="progress-chip" id="s3Progress">Connected: 0 / 4</div>
+    <div class="hint-msg" id="s3Hint">&nbsp;</div>
+
+    <div class="network-stage" id="netStage3">
+      <svg class="net-svg" id="svg3"></svg>
+      <div class="net-row switch-row" style="margin-bottom:44px;">
+        <div class="node" data-id="laptopC"><div class="icon">💻</div><div class="label">Laptop (Wi-Fi)</div></div>
+        <div class="node" data-id="routerC"><div class="icon">🚪</div><div class="label">Router</div></div>
+      </div>
+      <div class="net-row" style="margin-bottom:44px;">
+        <div class="node" data-id="internetC"><div class="icon">🌐</div><div class="label">The Internet</div></div>
+      </div>
+      <div class="net-row">
+        <div class="node" data-id="dnsC"><div class="icon">📒</div><div class="label">DNS Server</div></div>
+        <div class="node" data-id="webC"><div class="icon">🗄️</div><div class="label">Web Server<br>(93.184.216.34)</div></div>
+      </div>
+      <div class="file-dot" id="fileDot3">🔍</div>
+    </div>
+
+    <div class="action-row">
+      <button class="btn secondary" id="traceWebBtn" disabled>🔍 Open www.school-fun.com on the laptop</button>
+    </div>
+
+    <div id="s3Quiz" style="display:none;">
+      <div class="quiz-block">
+        <div class="quiz-q">1. You type a website name. Which server works like a phone book and finds the IP address for it?</div>
+        <div class="quiz-opts" id="s3q1opts"></div>
+      </div>
+      <div class="quiz-block">
+        <div class="quiz-q">2. What is an IP address?</div>
+        <div class="quiz-opts" id="s3q2opts"></div>
+      </div>
+    </div>
+
+    <div class="action-row"><button class="btn" id="toStage4Btn" disabled>Next: Plenary ▶</button></div>
+  </div>
+
+  <!-- ===================== STAGE 4: Plenary matching ===================== -->
+  <div class="stage" id="stage4" data-stage="4">
+    <div class="stage-title">Plenary · Match the Vocabulary</div>
+    <div class="stage-desc">Click a word, then click its matching definition.</div>
+    <div class="progress-chip" id="matchProgress">Matched: 0 / 6</div>
+
+    <div class="match-wrap">
+      <div class="match-col terms" id="matchTerms"></div>
+      <div class="match-col defs" id="matchDefs"></div>
+    </div>
+
+    <div class="action-row"><button class="btn" id="toStage5Btn" disabled>See My Score ▶</button></div>
+  </div>
+
+  <!-- ===================== STAGE 5: Summary ===================== -->
+  <div class="stage" id="stage5" data-stage="5">
+    <div class="summary-box">
+      <div class="stamp">🏆</div>
+      <div class="stage-title">Network Built!</div>
+      <div class="score-big" id="finalScore">0 / 13</div>
+      <div class="score-sub" id="finalSummary"></div>
+      <div class="action-row">
+        <button class="btn" id="saveResultBtn">💾 Save My Results</button>
+        <button class="btn secondary" id="playAgainBtn">🔁 Play Again</button>
+      </div>
+      <div class="saved-note" id="savedNote"></div>
+      <div class="cloud-note" id="cloudSyncNote"></div>
+    </div>
+  </div>
+
+</div>
+
+<script>
+/* ================= STATE ================= */
+let studentName = "";
+let score = 0;
+const TOTAL_POINTS = 13; // 2 + 3 + 2 + 6
+
+/* ================= STAGE NAVIGATION ================= */
+function goToStage(n){
+  document.querySelectorAll('.stage').forEach(s => s.classList.remove('active'));
+  document.getElementById('stage' + n).classList.add('active');
+  document.querySelectorAll('.stagebar .dot').forEach(d => {
+    const s = parseInt(d.dataset.s, 10);
+    d.classList.toggle('active', s === n);
+    d.classList.toggle('done', s < n);
+  });
+  if(n === 2) setTimeout(drawLines2, 50);
+  if(n === 3) setTimeout(drawLines3, 50);
+  if(n === 5) showSummary();
+  window.scrollTo({top:0, behavior:'smooth'});
+}
+
+/* ================= GENERIC NETWORK-CONNECT LOGIC ================= */
+// Builds click-to-connect behaviour for a given stage: nodes connect to a
+// "hub" node (switch or WAP). Draws an SVG line once connected.
+function setupNetwork(containerId, svgId, pairs, onAllConnected, lineClassFn){
+  const container = document.getElementById(containerId);
+  const svg = document.getElementById(svgId);
+  const connected = new Set();
+  let selected = null;
+
+  function centerOf(id){
+    const el = container.querySelector(`[data-id="${id}"]`);
+    const cRect = container.getBoundingClientRect();
+    const r = el.getBoundingClientRect();
+    return { x: r.left + r.width/2 - cRect.left, y: r.top + r.height/2 - cRect.top, el };
+  }
+
+  function redraw(){
+    svg.innerHTML = '';
+    pairs.forEach(p => {
+      const key = p.a + '|' + p.b;
+      if(!connected.has(key)) return;
+      const a = centerOf(p.a), b = centerOf(p.b);
+      const line = document.createElementNS('http://www.w3.org/2000/svg','line');
+      line.setAttribute('x1', a.x); line.setAttribute('y1', a.y);
+      line.setAttribute('x2', b.x); line.setAttribute('y2', b.y);
+      line.setAttribute('class', (lineClassFn ? lineClassFn(p) : 'wire') + ' active');
+      svg.appendChild(line);
+    });
+  }
+
+  function tryConnect(idA, idB){
+    const pair = pairs.find(p => (p.a===idA && p.b===idB) || (p.a===idB && p.b===idA));
+    if(!pair) return false;
+    const key = pair.a + '|' + pair.b;
+    if(connected.has(key)) return false;
+    connected.add(key);
+    [pair.a, pair.b].forEach(id => {
+      const el = container.querySelector(`[data-id="${id}"]`);
+      if(el){ el.classList.add('pulse'); setTimeout(()=>el.classList.remove('pulse'), 500); }
+    });
+    redraw();
+    if(connected.size === pairs.length && onAllConnected) onAllConnected();
+    return true;
+  }
+
+  container.querySelectorAll('.node').forEach(node => {
+    const id = node.dataset.id;
+    // Skip nodes that start pre-connected (no pair references them as the "new" side)
+    const isConnectable = pairs.some(p => p.a === id || p.b === id);
+    if(!isConnectable) return;
+    node.addEventListener('click', () => {
+      if(selected === id){
+        node.classList.remove('selected');
+        selected = null;
+        return;
+      }
+      if(selected === null){
+        selected = id;
+        node.classList.add('selected');
+        return;
+      }
+      const prevEl = container.querySelector(`[data-id="${selected}"]`);
+      const ok = tryConnect(selected, id);
+      if(ok){
+        if(prevEl) prevEl.classList.remove('selected');
+        node.classList.add('connected');
+        if(prevEl) prevEl.classList.add('connected');
+        selected = null;
+      } else {
+        if(prevEl) prevEl.classList.remove('selected');
+        node.classList.add('selected');
+        selected = id;
+      }
+    });
+  });
+
+  window.addEventListener('resize', redraw);
+  return { redraw, connectedCount: () => connected.size };
+}
+
+/* ---------- Stage 1 network ---------- */
+const s1Pairs = [
+  {a:'comp1', b:'switchNode'}, {a:'comp2', b:'switchNode'},
+  {a:'comp3', b:'switchNode'}, {a:'comp4', b:'switchNode'}
+];
+const s1Net = setupNetwork('netStage1', 'svg1', s1Pairs, () => {
+  document.getElementById('s1Hint').textContent = '🎉 All computers connected!';
+  document.getElementById('demoSendBtn').disabled = false;
+});
+// live progress counter
+(function trackS1Progress(){
+  const chip = document.getElementById('s1Progress');
+  const obs = new MutationObserver(() => {
+    chip.textContent = `Connected: ${s1Net.connectedCount()} / 4`;
+  });
+  document.querySelectorAll('#netStage1 .node').forEach(n => obs.observe(n, {attributes:true, attributeFilter:['class']}));
+})();
+
+function moveFileDot(dotId, containerId, fromId, toId, onDone){
+  const container = document.getElementById(containerId);
+  const dot = document.getElementById(dotId);
+  const cRect = container.getBoundingClientRect();
+  function centerOf(id){
+    const el = container.querySelector(`[data-id="${id}"]`);
+    const r = el.getBoundingClientRect();
+    return { x: r.left + r.width/2 - cRect.left, y: r.top + r.height/2 - cRect.top };
+  }
+  const start = centerOf(fromId);
+  dot.style.display = 'block';
+  dot.style.left = start.x + 'px';
+  dot.style.top = start.y + 'px';
+  requestAnimationFrame(() => {
+    const end = centerOf(toId);
+    dot.style.left = end.x + 'px';
+    dot.style.top = end.y + 'px';
+  });
+  setTimeout(() => { if(onDone) onDone(); }, 600);
+}
+
+document.getElementById('demoSendBtn').addEventListener('click', function(){
+  this.disabled = true;
+  document.getElementById('s1Hint').textContent = '📨 Sending a message: Computer 1 → Switch → Computer 2 …';
+  moveFileDot('fileDot1','netStage1','comp1','switchNode', () => {
+    moveFileDot('fileDot1','netStage1','switchNode','comp2', () => {
+      document.getElementById('fileDot1').style.display = 'none';
+      document.getElementById('s1Hint').textContent = '✅ Delivered! The switch passed it only to Computer 2.';
+      document.getElementById('s1Quiz').style.display = 'block';
+      renderMCQ('s1q1opts', [
+        "The internet",
+        "A LAN (Local Area Network)",
+        "A web page"
+      ], 1, checkS1Done);
+      renderMCQ('s1q2opts', [
+        "Sends it to every computer in the world",
+        "Deletes it",
+        "Sends it only to Computer 2"
+      ], 2, checkS1Done);
+    });
+  });
+});
+
+let s1q1Done = false, s1q2Done = false;
+function checkS1Done(){
+  const a = document.querySelectorAll('#s1q1opts .opt-btn.disabled').length > 0;
+  const b = document.querySelectorAll('#s1q2opts .opt-btn.disabled').length > 0;
+  if(a && b) document.getElementById('toStage2Btn').disabled = false;
+}
+
+function renderMCQ(containerId, options, correctIndex, onAnswered){
+  const el = document.getElementById(containerId);
+  el.innerHTML = '';
+  options.forEach((text, i) => {
+    const btn = document.createElement('div');
+    btn.className = 'opt-btn';
+    btn.textContent = text;
+    btn.addEventListener('click', () => {
+      if(btn.classList.contains('disabled')) return;
+      const opts = el.querySelectorAll('.opt-btn');
+      opts.forEach(o => o.classList.add('disabled'));
+      if(i === correctIndex){
+        btn.classList.add('correct');
+        score++;
+      } else {
+        btn.classList.add('incorrect');
+        opts[correctIndex].classList.add('correct');
+      }
+      if(onAnswered) onAnswered();
+    });
+    el.appendChild(btn);
+  });
+}
+
+document.getElementById('toStage2Btn').addEventListener('click', () => goToStage(2));
+
+/* ---------- Stage 2 network ---------- */
+function travel(dotId, containerId, path, done){
+  let i = 0;
+  (function step(){
+    if(i >= path.length - 1){ document.getElementById(dotId).style.display = 'none'; if(done) done(); return; }
+    moveFileDot(dotId, containerId, path[i], path[i+1], () => { i++; step(); });
+  })();
+}
+function trackProgress(chipId, containerId, netGetter, total){
+  const chip = document.getElementById(chipId);
+  const obs = new MutationObserver(() => { chip.textContent = `Connected: ${netGetter().connectedCount()} / ${total}`; });
+  document.querySelectorAll('#' + containerId + ' .node').forEach(n => obs.observe(n, {attributes:true, attributeFilter:['class']}));
+}
+const s2Pairs = [{a:'switchNodeB', b:'routerNode'}, {a:'routerNode', b:'internetNode'}];
+function drawLines2(){ if(s2NetRef) s2NetRef.redraw(); }
+const s2NetRef = setupNetwork('netStage2', 'svg2', s2Pairs, () => {
+  document.getElementById('s2Hint').textContent = '🎉 Your LAN is joined to the internet!';
+  document.getElementById('tracePacketBtn').disabled = false;
+});
+trackProgress('s2Progress', 'netStage2', () => s2NetRef, 2);
+
+document.getElementById('tracePacketBtn').addEventListener('click', function(){
+  this.disabled = true;
+  document.getElementById('s2Hint').textContent = '📦 A packet leaves Computer 1 → switch → router → internet …';
+  travel('fileDot2', 'netStage2', ['comp1b','switchNodeB','routerNode','internetNode'], () => {
+    document.getElementById('s2Hint').textContent = '✅ The packet reached the internet!';
+    document.getElementById('s2Quiz').style.display = 'block';
+    renderMCQ('s2q1opts', ["The monitor","The router","The mouse"], 1, checkS2Done);
+    renderMCQ('s2q2opts', ["Pixels","Passwords","Packets"], 2, checkS2Done);
+    renderMCQ('s2q3opts', [
+      "One giant computer in one country",
+      "A huge network of networks joined together all around the world",
+      "A program that only lives on your tablet"
+    ], 1, checkS2Done);
+  });
+});
+function checkS2Done(){
+  const done = ['s2q1opts','s2q2opts','s2q3opts'].every(id =>
+    document.querySelectorAll('#' + id + ' .opt-btn.disabled').length > 0);
+  if(done) document.getElementById('toStage3Btn').disabled = false;
+}
+document.getElementById('toStage3Btn').addEventListener('click', () => goToStage(3));
+
+/* ---------- Stage 3 network ---------- */
+const s3Pairs = [
+  {a:'laptopC', b:'routerC'},
+  {a:'routerC', b:'internetC'},
+  {a:'internetC', b:'dnsC'},
+  {a:'internetC', b:'webC'}
+];
+function drawLines3(){ if(s3NetRef) s3NetRef.redraw(); }
+const s3NetRef = setupNetwork('netStage3', 'svg3', s3Pairs, () => {
+  document.getElementById('s3Hint').textContent = '🎉 Everything is connected!';
+  document.getElementById('traceWebBtn').disabled = false;
+}, (p) => (p.a === 'laptopC' || p.b === 'laptopC') ? 'wireless' : 'wire');
+trackProgress('s3Progress', 'netStage3', () => s3NetRef, 4);
+
+document.getElementById('traceWebBtn').addEventListener('click', function(){
+  this.disabled = true;
+  document.getElementById('s3Hint').textContent = '🔍 Laptop asks the DNS server: "What is the IP address of www.school-fun.com?"';
+  travel('fileDot3', 'netStage3', ['laptopC','routerC','internetC','dnsC'], () => {
+    document.getElementById('s3Hint').textContent = '📒 DNS answers: 93.184.216.34! Now the laptop asks the web server for the page …';
+    document.getElementById('fileDot3').textContent = '📄';
+    travel('fileDot3', 'netStage3', ['dnsC','internetC','webC','internetC','routerC','laptopC'], () => {
+      document.getElementById('s3Hint').textContent = '✅ The web page arrived in packets and the laptop put them back together!';
+      document.getElementById('s3Quiz').style.display = 'block';
+      renderMCQ('s3q1opts', ["The switch","A DNS server","The monitor"], 1, checkS3Done);
+      renderMCQ('s3q2opts', ["A password for Wi-Fi","A type of cable","A unique number that helps packets find the right device"], 2, checkS3Done);
+    });
+  });
+});
+function checkS3Done(){
+  const done = ['s3q1opts','s3q2opts'].every(id =>
+    document.querySelectorAll('#' + id + ' .opt-btn.disabled').length > 0);
+  if(done) document.getElementById('toStage4Btn').disabled = false;
+}
+document.getElementById('toStage4Btn').addEventListener('click', () => goToStage(4));
+
+/* ---------- Stage 4: Plenary matching ---------- */
+const vocabPairs = [
+  { term: "LAN", def: "A network that joins devices in one place, like a school" },
+  { term: "Router", def: "A device that joins your network to other networks and the internet" },
+  { term: "Internet", def: "A huge network of networks joined together around the world" },
+  { term: "IP address", def: "A unique number that identifies a device on a network" },
+  { term: "Packet", def: "A small piece of data sent across a network" },
+  { term: "DNS", def: "A system that turns website names into IP addresses" }
+];
+function shuffle(arr){ return arr.map(v=>[Math.random(),v]).sort((a,b)=>a[0]-b[0]).map(v=>v[1]); }
+
+let matchSelectedTerm = null, matchedCount = 0;
+function renderMatching(){
+  const termsEl = document.getElementById('matchTerms');
+  const defsEl = document.getElementById('matchDefs');
+  termsEl.innerHTML = '<h4>Word</h4>';
+  defsEl.innerHTML = '<h4>Definition</h4>';
+  const shuffledTerms = shuffle(vocabPairs.map((p,i)=>({...p, idx:i})));
+  const shuffledDefs = shuffle(vocabPairs.map((p,i)=>({...p, idx:i})));
+
+  shuffledTerms.forEach(p => {
+    const chip = document.createElement('div');
+    chip.className = 'match-chip';
+    chip.textContent = p.term;
+    chip.dataset.idx = p.idx;
+    chip.addEventListener('click', () => {
+      if(chip.classList.contains('matched')) return;
+      document.querySelectorAll('#matchTerms .match-chip').forEach(c => c.classList.remove('selected'));
+      chip.classList.add('selected');
+      matchSelectedTerm = chip;
+    });
+    termsEl.appendChild(chip);
+  });
+  shuffledDefs.forEach(p => {
+    const chip = document.createElement('div');
+    chip.className = 'match-chip';
+    chip.textContent = p.def;
+    chip.dataset.idx = p.idx;
+    chip.addEventListener('click', () => {
+      if(chip.classList.contains('matched') || !matchSelectedTerm) return;
+      if(matchSelectedTerm.dataset.idx === chip.dataset.idx){
+        matchSelectedTerm.classList.remove('selected');
+        matchSelectedTerm.classList.add('matched');
+        chip.classList.add('matched');
+        matchSelectedTerm = null;
+        matchedCount++;
+        score++;
+        document.getElementById('matchProgress').textContent = `Matched: ${matchedCount} / 6`;
+        if(matchedCount === 6) document.getElementById('toStage5Btn').disabled = false;
+      } else {
+        chip.classList.add('wrong');
+        matchSelectedTerm.classList.add('wrong');
+        setTimeout(() => {
+          chip.classList.remove('wrong');
+          matchSelectedTerm.classList.remove('wrong','selected');
+          matchSelectedTerm = null;
+        }, 350);
+      }
+    });
+    defsEl.appendChild(chip);
+  });
+}
+
+document.getElementById('toStage5Btn').addEventListener('click', () => goToStage(5));
+
+/* ---------- Stage 5: summary ---------- */
+function showSummary(){
+  document.getElementById('finalScore').textContent = `${score} / ${TOTAL_POINTS}`;
+  document.getElementById('finalSummary').textContent =
+    `${studentName} built a LAN, joined it to the internet with a router, and found a website using DNS!`;
+  document.getElementById('savedNote').textContent = '';
+  const cloudNote = document.getElementById('cloudSyncNote');
+  if(window.__submitResultToCloud){
+    window.__submitResultToCloud({
+      name: studentName,
+      game: "Build a Network! (Y4)",
+      score: score,
+      total: TOTAL_POINTS,
+      date: new Date().toLocaleDateString() + ' ' + new Date().toLocaleTimeString([], {hour:'2-digit', minute:'2-digit'})
+    }).then(ok => {
+      if(cloudNote) cloudNote.textContent = ok
+        ? '☁️ Sent to your teacher automatically!'
+        : '⚠️ Could not connect to sync automatically — use "Save My Results" below as a backup.';
+    });
+  } else if(cloudNote){
+    cloudNote.textContent = '⚠️ Cloud sync unavailable — use "Save My Results" below as a backup.';
+  }
+}
+
+function csvEscape(v){ const s = String(v); return /[",\n]/.test(s) ? '"' + s.replace(/"/g,'""') + '"' : s; }
+function downloadCSV(filename, rows){
+  const csv = rows.map(r=>r.map(csvEscape).join(",")).join("\r\n");
+  const blob = new Blob([csv], {type:"text/csv;charset=utf-8;"});
+  const url = URL.createObjectURL(blob);
+  const a = document.createElement('a');
+  a.href = url; a.download = filename;
+  document.body.appendChild(a); a.click(); document.body.removeChild(a);
+  setTimeout(()=>URL.revokeObjectURL(url), 1000);
+}
+async function saveCSVWithPicker(filename, rows, noteElId, chosenMsg, fallbackMsg, cancelMsg){
+  const csv = rows.map(r=>r.map(csvEscape).join(",")).join("\r\n");
+  if(window.showSaveFilePicker){
+    try{
+      const handle = await window.showSaveFilePicker({
+        suggestedName: filename,
+        types: [{ description: 'CSV file', accept: {'text/csv': ['.csv']} }]
+      });
+      const writable = await handle.createWritable();
+      await writable.write(csv);
+      await writable.close();
+      document.getElementById(noteElId).textContent = chosenMsg;
+      return;
+    }catch(err){
+      if(err && err.name === 'AbortError'){
+        document.getElementById(noteElId).textContent = cancelMsg;
+        return;
+      }
+    }
+  }
+  downloadCSV(filename, rows);
+  document.getElementById(noteElId).textContent = fallbackMsg;
+}
+document.getElementById('saveResultBtn').addEventListener('click', async () => {
+  const now = new Date();
+  const safeName = (studentName || 'student').replace(/[^a-z0-9]+/gi,'_');
+  const filename = `BuildANetwork_Y4_${safeName}_${now.toISOString().slice(0,10)}.csv`;
+  const rows = [["Name","Score","Total","Date"], [studentName, score, TOTAL_POINTS, now.toLocaleDateString() + ' ' + now.toLocaleTimeString([], {hour:'2-digit', minute:'2-digit'})]];
+  await saveCSVWithPicker(filename, rows, 'savedNote',
+    '✅ Saved! Your results file was saved where you chose.',
+    '✅ Saved! A results file was downloaded (this browser doesn’t support choosing a save location).',
+    'Save cancelled.');
+});
+document.getElementById('playAgainBtn').addEventListener('click', () => location.reload());
+
+/* ================= NAME GATE ================= */
+const gateOverlay = document.getElementById('gateOverlay');
+const nameInput = document.getElementById('nameInput');
+const nameError = document.getElementById('nameError');
+function startGame(){
+  const val = nameInput.value.trim();
+  if(!val){
+    nameError.textContent = "Please type your name to start.";
+    nameInput.focus();
+    return;
+  }
+  studentName = val.slice(0,24);
+  document.getElementById('playerName') && (document.getElementById('playerName').textContent = studentName);
+  gateOverlay.style.display = 'none';
+  renderMatching();
+  goToStage(1);
+}
+document.getElementById('startBtn').addEventListener('click', startGame);
+nameInput.addEventListener('keydown', (e)=>{ if(e.key === 'Enter') startGame(); });
+nameInput.focus();
+</script>
+
+<!-- ===== Cloud sync: sends each result to the shared Firestore database ===== -->
+<script src="https://www.gstatic.com/firebasejs/10.13.0/firebase-app-compat.js"></script>
+<script src="https://www.gstatic.com/firebasejs/10.13.0/firebase-firestore-compat.js"></script>
+<script>
+  const firebaseConfig = {
+    apiKey: "AIzaSyCEJtHd802MyuZUlwt6OfGkl9IitHaSOaA",
+    authDomain: "tasks-results.firebaseapp.com",
+    projectId: "tasks-results",
+    storageBucket: "tasks-results.firebasestorage.app",
+    messagingSenderId: "1014525306500",
+    appId: "1:1014525306500:web:3ffe2e6f5554e9140e04d1"
+  };
+  try{
+    firebase.initializeApp(firebaseConfig);
+    const db = firebase.firestore();
+    window.__submitResultToCloud = function(record){
+      return db.collection("results").add({
+        ...record,
+        createdAt: firebase.firestore.FieldValue.serverTimestamp()
+      }).then(() => true).catch((err) => { console.error("Cloud sync failed:", err); return false; });
+    };
+  }catch(err){
+    console.error("Firebase init failed:", err);
+  }
+</script>
+<script>
+// Shows the typed/entered player name as a large, fixed badge in the corner of the
+// screen for the whole game, so a teacher walking around the room can glance at any
+// screen and see immediately if a student typed a real name or not.
+(function(){
+  var badge = document.createElement('div');
+  badge.id = 'floatingNameBadge';
+  badge.className = 'floating-name-badge';
+  document.body.appendChild(badge);
+  function sync(){
+    if(studentName){
+      badge.textContent = '👤 ' + studentName;
+      badge.style.display = 'inline-block';
+    } else {
+      badge.style.display = 'none';
+    }
+  }
+  setInterval(sync, 300);
+})();
+</script>
+</body>
+</html>

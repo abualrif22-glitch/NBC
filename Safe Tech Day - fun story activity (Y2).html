@@ -1,0 +1,263 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1, user-scalable=no">
+<title>Sam's Safe Tech Day - Year 2 Computing Game</title>
+<style>
+:root{--ink:#27324A;--cream:#FFF9EC;--orange:#FF8A3D;--green:#2FB872;--red:#E5484D;--blue:#3B82F6;--yellow:#FFC93C;--pink:#FF6FA5;--sky:#9AD8FF;--ground:#7BC96F}
+*{box-sizing:border-box;-webkit-tap-highlight-color:transparent}
+html,body{margin:0;min-height:100%;font-family:'Comic Sans MS','Trebuchet MS','Segoe UI',Arial,sans-serif;color:var(--ink);background:#FDE9C8;user-select:none;touch-action:manipulation}
+body{padding:12px;display:flex;justify-content:center}
+#app{width:100%;max-width:860px}
+.top{display:flex;align-items:center;gap:10px;margin-bottom:8px}
+.title{font-weight:900;font-size:clamp(18px,3.4vw,26px);flex:1}
+.title small{display:block;font-size:.55em;opacity:.7}
+.score{background:#fff;border-radius:99px;padding:6px 16px;font-weight:900;box-shadow:0 3px 0 rgba(0,0,0,.12)}
+.track{position:relative;height:34px;background:#fff;border-radius:99px;margin-bottom:10px;box-shadow:inset 0 0 0 3px #fff, 0 3px 0 rgba(0,0,0,.1);overflow:hidden}
+.track .fill{position:absolute;left:0;top:0;bottom:0;background:linear-gradient(90deg,#FFE08A,#FFB86B,#8EA4FF,#3B3F8F);border-radius:99px;transition:width .6s}
+.track .sun{position:absolute;top:2px;font-size:26px;transition:left .6s;transform:translateX(-50%)}
+.card{background:var(--cream);border-radius:26px;padding:16px;box-shadow:0 10px 0 rgba(0,0,0,.12)}
+.stage{position:relative;height:clamp(190px,34vw,260px);border-radius:20px;overflow:hidden;background:var(--sky);margin-bottom:12px;border:4px solid #fff;box-shadow:0 0 0 3px rgba(0,0,0,.08)}
+.stage .gnd{position:absolute;left:0;right:0;bottom:0;height:28%;background:var(--ground)}
+.stage .bg{position:absolute;font-size:clamp(34px,7vw,56px);opacity:.9}
+.stage .ch{position:absolute;bottom:14%;transform:translateX(-50%);line-height:1;transition:all .5s}
+.stage .place{position:absolute;left:10px;top:8px;background:rgba(255,255,255,.85);padding:4px 12px;border-radius:99px;font-weight:900;font-size:clamp(13px,2.4vw,17px)}
+.stage .fx{position:absolute;left:50%;top:30%;transform:translate(-50%,-50%);font-size:clamp(50px,12vw,100px);pointer-events:none}
+.fx.bad{animation:boom .9s forwards}.fx.good{animation:twinkle 1.1s forwards}
+@keyframes boom{0%{transform:translate(-50%,-50%) scale(.2);opacity:0}30%{transform:translate(-50%,-50%) scale(1.3);opacity:1}100%{transform:translate(-50%,-50%) scale(1);opacity:0}}
+@keyframes twinkle{0%{transform:translate(-50%,-50%) scale(.3);opacity:0}40%{transform:translate(-50%,-70%) scale(1.2);opacity:1}100%{transform:translate(-50%,-110%) scale(1);opacity:0}}
+.wobble{animation:wob .5s}
+@keyframes wob{25%{transform:translateX(-8px) rotate(-4deg)}75%{transform:translateX(8px) rotate(4deg)}}
+.story{background:#fff;border-radius:18px;padding:12px 16px;font-size:clamp(17px,2.9vw,23px);font-weight:700;line-height:1.35;margin-bottom:10px;border-left:8px solid var(--orange)}
+.story b{color:var(--orange)}
+.q{font-weight:900;text-align:center;font-size:clamp(18px,3.1vw,25px);margin:8px 0}
+.opts{display:grid;gap:10px}
+.opt{display:flex;gap:12px;align-items:center;background:#fff;border:4px solid #EADFC8;border-radius:20px;padding:12px 14px;font-weight:800;font-size:clamp(16px,2.8vw,22px);cursor:pointer;box-shadow:0 5px 0 #E3D5B6;text-align:left;font-family:inherit;color:var(--ink);width:100%}
+.opt:active{transform:translateY(4px);box-shadow:0 1px 0 #E3D5B6}
+.opt .em{font-size:clamp(32px,6vw,46px);line-height:1}
+.opt.good{background:#DDF7E8;border-color:var(--green);box-shadow:0 5px 0 #A5E3C1;pointer-events:none}
+.opt.bad{background:#FFE3E3;border-color:var(--red);box-shadow:0 5px 0 #F2B6B6;pointer-events:none;opacity:.75}
+.msg{margin-top:10px;border-radius:18px;padding:12px 16px;font-weight:800;font-size:clamp(16px,2.8vw,21px);line-height:1.35}
+.msg.bad{background:#FFE3E3;color:#8A1C20}.msg.good{background:#DDF7E8;color:#14532D}
+.rule{display:inline-block;background:var(--yellow);color:#5A3B00;border-radius:99px;padding:4px 14px;font-weight:900;margin-top:6px}
+.btn{border:none;border-radius:18px;background:var(--orange);color:#fff;font-weight:900;font-size:clamp(18px,3.2vw,26px);padding:12px 32px;cursor:pointer;box-shadow:0 7px 0 #C96A24;font-family:inherit;margin-top:12px}
+.btn:active{transform:translateY(5px);box-shadow:0 2px 0 #C96A24}
+.btn.green{background:var(--green);box-shadow:0 7px 0 #1E8A54}
+.center{text-align:center}.hidden{display:none!important}
+/* gate */
+#gate{position:fixed;inset:0;z-index:50;display:grid;place-items:center;padding:16px;background:linear-gradient(#9AD8FF,#FDE9C8)}
+.gatebox{background:var(--cream);border-radius:28px;max-width:520px;width:100%;text-align:center;padding:26px;box-shadow:0 12px 0 rgba(0,0,0,.14)}
+.gatebox .big{font-size:80px}.gatebox h1{margin:4px 0;font-size:clamp(28px,6vw,42px);color:var(--orange)}
+.gatebox input{width:100%;font-size:26px;padding:12px;border-radius:16px;border:4px solid var(--sky);text-align:center;margin:12px 0 4px;font-family:inherit}
+.err{color:var(--red);font-weight:800;min-height:22px}
+/* room game */
+.room{position:relative;background:linear-gradient(#FFF1D6 70%,#D9B98A 70%);border-radius:20px;height:clamp(300px,52vw,380px);border:4px solid #fff;margin-bottom:8px}
+.item{position:absolute;transform:translate(-50%,-50%);font-size:clamp(40px,9vw,66px);cursor:pointer;line-height:1;background:none;border:none;padding:6px;border-radius:16px}
+.item.found{background:#DDF7E8;outline:4px solid var(--green)}
+.item .t{display:block;font-size:12px;font-weight:800;margin-top:2px}
+/* match */
+.mgrid{display:grid;grid-template-columns:1fr 1fr;gap:12px}
+.mcol{display:grid;gap:10px;align-content:start}
+.mc{background:#fff;border:4px solid #EADFC8;border-radius:16px;padding:10px;font-weight:800;text-align:center;cursor:pointer;font-size:clamp(14px,2.5vw,19px)}
+.mc .em{display:block;font-size:clamp(34px,7vw,52px)}
+.mc.sel{border-color:var(--blue);background:#E7F0FF}.mc.done{border-color:var(--green);background:#DDF7E8;pointer-events:none}.mc.bad{animation:wob .5s;border-color:var(--red)}
+.hint{min-height:30px;text-align:center;font-weight:800;margin-top:8px}
+/* finish */
+.cert{border:8px double var(--orange);border-radius:22px;background:#fff;padding:18px;text-align:center}
+.cert h2{margin:0;color:var(--orange);font-size:clamp(24px,5vw,38px)}
+.cert .nm{font-size:clamp(28px,6vw,44px);font-weight:900;color:var(--pink)}
+.book{display:grid;gap:8px;text-align:left;margin:10px auto;max-width:600px}
+.book .r{background:#F5FFF9;border:3px solid #BDEBD0;border-radius:14px;padding:8px 12px;font-weight:800;display:flex;gap:10px;align-items:center;cursor:pointer}
+.book .r.pick{background:#FFF3C4;border-color:var(--yellow)}
+.book .r .em{font-size:28px}
+.note{font-weight:700;color:#6b7280;min-height:20px;margin-top:6px}
+.floating-name-badge{position:fixed;right:10px;bottom:10px;background:#fff;font-weight:900;font-size:20px;padding:8px 16px;border-radius:99px;box-shadow:0 4px 0 rgba(0,0,0,.2);z-index:40;display:none}
+</style>
+</head>
+<body>
+<div id="gate"><div class="gatebox"><div class="big">🧒🐶</div><h1>Sam's Safe Tech Day</h1>
+<div style="font-weight:800;font-size:19px">Help Sam and his dog Biscuit make safe choices with technology, from morning to bedtime!</div>
+<input id="nameInput" placeholder="Type your name" maxlength="24" autocomplete="off"><div class="err" id="nameErr"></div>
+<button class="btn" id="startBtn">Start the day ▶</button></div></div>
+<div id="app" class="hidden">
+  <div class="top"><div class="title">🌈 Sam's Safe Tech Day<small>Year 2 · Using IT safely</small></div><div class="score">⭐ <span id="score">0</span></div></div>
+  <div class="track"><div class="fill" id="fill" style="width:0"></div><div class="sun" id="sun" style="left:3%">🌅</div></div>
+  <div class="card" id="main"></div>
+</div>
+<script>
+const $=id=>document.getElementById(id);
+let studentName="", score=0, step=0; const learned=[];
+const SKY={morning:'linear-gradient(#FFE9A8,#BFE6FF)',day:'linear-gradient(#7CC8FF,#CFF0FF)',eve:'linear-gradient(#FFB27A,#FFE3B0)',night:'linear-gradient(#1D2455,#4B5BA8)'};
+const GROUND={morning:'#8ED27F',day:'#7BC96F',eve:'#B8A268',night:'#2D4A3E'};
+/* ----------- story scenes ----------- */
+const S=[
+ {sky:'morning',place:'🏠 Sam\'s bedroom',icon:'🌅',cast:[['🧒',30,78],['📱',52,44],['🐶',72,52]],bg:[['☀️',82,10],['☁️',15,10]],
+  story:'<b>Morning!</b> Sam wakes up and wants to take his tablet downstairs. The stairs are tall.',q:'What should Sam do?',
+  o:[['🏃','Run down the stairs holding it in one hand','💥','The tablet slips and crashes! Sam could trip too.',0],['🙌','Walk down slowly with two hands','✨','The tablet stays safe. Well done, Sam!',1],['🤾','Throw it down to Mum','💥','Oh no! Never throw a device.',0]],
+  rule:'Carry devices with two hands. Walk, never run.',ri:'🙌'},
+ {sky:'morning',place:'🍳 Kitchen',icon:'🍳',cast:[['🧒',28,78],['👩',72,82],['📱',50,40]],bg:[['🥣',46,62],['🧃',58,62]],
+  story:'It is <b>breakfast time</b>. Sam\'s cereal is on the table. His tablet is next to his bowl.',q:'What is the best thing to do?',
+  o:[['📺','Watch cartoons while eating','💦','Milk splashes on the screen! And Sam did not talk to Mum.',0],['🗄️','Put the tablet away and chat with Mum','✨','Lovely! Breakfast is time to talk and enjoy food.',1],['🧃','Put his juice right next to the tablet','💦','Splash! Spills can break devices.',0]],
+  rule:'No devices at the table. Keep drinks away from devices.',ri:'🍽️'},
+ {sky:'morning',place:'🎮 Living room',icon:'🎮',cast:[['🧒',30,78],['👩',70,82]],bg:[['📺',50,18],['🛋️',50,58]],
+  story:'Before school, Mum says Sam can play for 10 minutes. He finds a cool game, but it says <b>"Age 12+"</b>. Sam is 7.',q:'What should Sam do?',
+  o:[['🔞','Play it anyway','😨','It is too scary! That game was made for older kids.',0],['🙋','Ask Mum to help choose a game for his age','✨','Great! Games for your age are safer and more fun.',1],['🎲','Pick any game quickly','😨','Not every game is right for kids. Always check the age.',0]],
+  rule:'Only use games and videos that are right for your age.',ri:'🔞'},
+ {sky:'day',place:'🚌 On the way to school',icon:'🚌',cast:[['🧒',28,70],['👧',64,70],['📱',46,40]],bg:[['🚌',50,60],['🌳',88,45]],
+  story:'On the bus, Sam\'s little sister Zara says, <b>"Can I have a turn on the tablet?"</b>',q:'What should Sam say?',
+  o:[['😤','"No! It is mine!" and hold it tight','😢','Zara is upset. That is not kind.',0],['⏱️','"Yes! We can take turns. You go first for 5 minutes."','✨','Sharing makes everyone happy!',1],['🙈','Hide it in his bag','😢','Hiding things is not fair.',0]],
+  rule:'Take turns and share devices.',ri:'🤝'},
+ 'ROOM',
+ {sky:'day',place:'🏫 Classroom',icon:'🏫',cast:[['🧒',25,78],['🧑',58,78],['📱',42,42],['🧑‍🏫',85,80]],bg:[['📚',12,20],['🖼️',70,12]],
+  story:'In class, Sam is drawing a bird on a tablet. His friend Max grabs it and says, <b>"My turn!"</b>',q:'What should Sam do?',
+  o:[['🤜','Grab it back','💥','Tug of war! The tablet falls.',0],['🗣️','Say, "Please may I have it back? We can take turns."','✨','Kind words work best!',1],['🙈','Hide under the desk','😟','That does not solve it.',0]],
+  rule:'Use kind words. Never grab a device.',ri:'🗣️'},
+ {sky:'day',place:'🏫 Classroom',icon:'🔔',cast:[['🧒',25,78],['🧑‍🏫',75,82],['📱',45,42]],bg:[['🔔',50,14]],
+  story:'The teacher says, <b>"Tablets down, please. Time to listen."</b> Sam has almost finished his level.',q:'What should Sam do?',
+  o:[['🎮','Keep playing for one more minute','😠','The teacher cannot teach, and Sam misses the lesson.',0],['⏬','Put the tablet down and listen','✨','Great listening, Sam!',1],['🤫','Play under the desk','😠','Sneaky! Rules are for everyone.',0]],
+  rule:'Follow the rules about when we can use devices.',ri:'⏰'},
+ {sky:'day',place:'🍎 Lunch time',icon:'🍎',cast:[['🧒',28,78],['💻',60,45]],bg:[['🥤',48,62],['🥪',80,60]],
+  story:'It is lunch. Sam has a water bottle. The class laptop is on the desk.',q:'Where should Sam put his bottle?',
+  o:[['💻','On the desk right next to the laptop','💦','Oops! A knock and water spills on the keyboard.',0],['🪑','On the lunch table, far from the laptop','✨','Safe! The laptop stays dry.',1],['🙆','Hold it over the keyboard','💦','Splash! Too risky.',0]],
+  rule:'Keep drinks away from devices.',ri:'🥤'},
+ {sky:'day',place:'🖥️ Computer corner',icon:'🖥️',cast:[['🧒',25,78],['💻',60,45],['🧑‍🏫',86,82]],bg:[['🎁',60,12]],
+  story:'A box suddenly pops up on the screen: <b>"YOU WON A PRIZE! CLICK HERE!"</b> Sam does not know what it is.',q:'What should Sam do?',
+  o:[['👆','Click it. Prizes are fun!','⚠️','Careful! It could be a trick and cause trouble.',0],['🙋','Tell the teacher straight away','✨','Super choice! Grown-ups can help.',1],['🤐','Close it and tell nobody','😟','Closing is OK, but always tell a grown-up too.',0]],
+  rule:'If something odd pops up, tell a grown-up.',ri:'🗣️'},
+ 'MATCH',
+ {sky:'eve',place:'🌳 Park',icon:'📸',cast:[['🧒',25,78],['👧🏽',68,78],['📷',45,42]],bg:[['🌳',10,40],['🌳',90,40]],
+  story:'After school at the park, Sam sees his friend Lily laughing on the swing. He has a camera.',q:'What should Sam do first?',
+  o:[['📸','Click quickly before she notices','😕','Lily did not know. Always ask first!',0],['🙋','Ask, "Lily, can I take your photo?"','✨','Asking shows respect.',1],['🌿','Sneak behind a bush and click','😕','That is not respectful.',0]],
+  rule:'Ask before you take a photo of someone.',ri:'📷'},
+ {sky:'eve',place:'🌳 Park',icon:'🙅',cast:[['🧒',25,78],['👧🏽',68,78],['📷',45,42]],bg:[['🌳',10,40]],
+  story:'Lily says, <b>"No thank you, I do not want a photo."</b>',q:'What should Sam do now?',
+  o:[['📸','Take it anyway','😢','Lily said no. That upsets her.',0],['👍','Say "OK!" and put the camera away','✨','Respecting "no" is very kind.',1],['📲','Take it later and show everyone','😢','That would break her trust.',0]],
+  rule:'Respect people when they say no.',ri:'🙅'},
+ {sky:'night',place:'🛏️ Bedtime',icon:'🌙',cast:[['🧒',30,78],['📱',55,48],['🐶',74,78]],bg:[['🌙',82,10],['⭐',20,12],['⭐',60,18]],
+  story:'It is <b>bedtime</b>. Sam is in bed. He wants to watch one more video.',q:'What should Sam do?',
+  o:[['🛏️','Watch under the blanket','😴','Sam is too tired tomorrow. Our eyes and brains need sleep.',0],['🔌','Switch it off and put it on charge','✨','Sleep well, Sam!',1],['⏳','Ask for 5 more minutes','😴','Screens off at bedtime. That is the rule.',0]],
+  rule:'No screens at bedtime.',ri:'🌙'},
+ {sky:'night',place:'🛏️ Bedtime',icon:'😟',cast:[['🧒',30,78],['👩',72,82]],bg:[['🌙',82,10]],
+  story:'Earlier, Sam watched a video and something in it scared him. He still feels <b>worried</b>.',q:'What should Sam do?',
+  o:[['🤫','Keep it a secret','😟','Worries get bigger when we keep them inside.',0],['🗣️','Tell Mum right away','✨','Telling a grown-up is brave and helps you feel better.',1],['😶','Tell nobody','😟','A grown-up can help. Please tell them.',0]],
+  rule:'Tell a grown-up if something online worries you.',ri:'🗣️'}
+];
+const TOTAL=12+2+4;
+/* ----------- helpers ----------- */
+function setProgress(){ const n=S.length; const pct=Math.min(100,(step/n)*100); $('fill').style.width=pct+'%'; $('sun').style.left=Math.max(3,pct)+'%'; $('score').textContent=score; }
+function esc(t){return String(t).replace(/[&<>"]/g,c=>({'&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;'}[c]));}
+function show(html){ $('main').innerHTML=html; window.scrollTo({top:0,behavior:'smooth'}); }
+function stageHtml(sc){
+  const bg=sc.bg.map(b=>`<div class="bg" style="left:${b[1]}%;top:${b[2]}%;transform:translateX(-50%)">${b[0]}</div>`).join('');
+  const ch=sc.cast.map(c=>`<div class="ch" style="left:${c[1]}%;font-size:${c[2]}px">${c[0]}</div>`).join('');
+  return `<div class="stage" id="stage" style="background:${SKY[sc.sky]}"><div class="gnd" style="background:${GROUND[sc.sky]}"></div><div class="place">${sc.place}</div>${bg}${ch}</div>`;
+}
+function fx(e,cls){ const st=$('stage'); const d=document.createElement('div'); d.className='fx '+cls; d.textContent=e; st.appendChild(d); setTimeout(()=>d.remove(),1200); }
+/* ----------- flow ----------- */
+function next(){ step++; setProgress(); if(step>=S.length){ finish(); return; } const s=S[step]; if(s==='ROOM') return roomGame(); if(s==='MATCH') return matchGame(); scene(s); }
+function scene(sc){
+  let tried=false; $('sun').textContent=sc.icon;
+  show(stageHtml(sc)+`<div class="story">${sc.story}</div><div class="q">${sc.q}</div><div class="opts">${sc.o.map((o,i)=>`<button class="opt" data-i="${i}"><span class="em">${o[0]}</span><span>${esc(o[1])}</span></button>`).join('')}</div><div id="out"></div>`);
+  document.querySelectorAll('.opt').forEach(b=>b.onclick=()=>{
+    const o=sc.o[b.dataset.i]; const out=$('out');
+    if(o[4]){ b.classList.add('good'); document.querySelectorAll('.opt').forEach(x=>{ if(x!==b) x.style.opacity=.45; x.style.pointerEvents='none'; }); fx(o[2],'good'); if(!tried) score++; learned.push([sc.ri,sc.rule]); setProgress();
+      out.innerHTML=`<div class="msg good">✅ ${esc(o[3])}<br><span class="rule">📘 Rule: ${esc(sc.rule)}</span></div><div class="center"><button class="btn green" id="nx">Next ▶</button></div>`; $('nx').onclick=next; $('nx').scrollIntoView({behavior:'smooth',block:'center'});
+    } else { tried=true; b.classList.add('good','bad'); b.classList.remove('good'); b.classList.add('bad'); fx(o[2],'bad'); const st=$('stage'); st.classList.remove('wobble'); void st.offsetWidth; st.classList.add('wobble');
+      out.innerHTML=`<div class="msg bad">❌ ${esc(o[3])}<br>Try a different choice!</div>`; out.scrollIntoView({behavior:'smooth',block:'nearest'}); }
+  });
+}
+/* ----------- messy room mini-game ----------- */
+function roomGame(){
+  $('sun').textContent='🧹'; let wrong=false, found=0;
+  const items=[['🥤','Drink by the laptop',20,62,1],['📱','Tablet on the edge',64,50,1],['🔌','Cable on the floor',38,86,1],['🍕','Food on the keyboard',82,62,1],['🔞','Game for big kids',50,26,1],
+    ['💻','Laptop on a desk',12,36,0],['🎧','Headphones on a hook',88,28,0],['🖥️','Computer on the desk',32,40,0],['🔋','Charger on the wall',70,82,0]];
+  show(`<div class="story"><b>Messy Room!</b> Something is not safe in this room. Tap the <b>5 things</b> that are unsafe for devices or for Sam.</div><div class="room" id="room">${items.map((it,i)=>`<button class="item" data-i="${i}" style="left:${it[2]}%;top:${it[3]}%">${it[0]}<span class="t">${it[1]}</span></button>`).join('')}</div><div class="hint" id="hint">Found 0 of 5</div>`);
+  document.querySelectorAll('.item').forEach(b=>b.onclick=()=>{ const it=items[b.dataset.i];
+    if(it[4]){ if(b.classList.contains('found')) return; b.classList.add('found'); found++; $('hint').textContent=`Found ${found} of 5`; if(found===5){ const p=wrong?1:2; score+=p; setProgress(); $('hint').innerHTML=`🎉 You found them all! <b>+${p}</b><br><button class="btn green" id="nx">Next ▶</button>`; $('nx').onclick=next; }
+    } else { wrong=true; b.classList.remove('wobble'); void b.offsetWidth; b.classList.add('wobble'); $('hint').textContent='That one is fine! Look for something unsafe.'; }
+  });
+}
+/* ----------- rule match mini-game ----------- */
+function matchGame(){
+  $('sun').textContent='🧩'; const pairs=[['🏃','Running with a tablet','Walk and use two hands'],['📷','Photo without asking','Ask first'],['🥤','Drink by a laptop','Keep drinks away'],['🔞','Game for big kids','Right for your age']];
+  let selL=null, done=0, tried={}; const right=pairs.map((p,i)=>[p[2],i]).sort(()=>Math.random()-.5);
+  show(`<div class="story"><b>Rule Match!</b> Tap a problem on the left, then tap the rule that fixes it.</div><div class="mgrid"><div class="mcol" id="L">${pairs.map((p,i)=>`<div class="mc" data-i="${i}"><span class="em">${p[0]}</span>${esc(p[1])}</div>`).join('')}</div><div class="mcol" id="R">${right.map(r=>`<div class="mc" data-i="${r[1]}"><span class="em">📘</span>${esc(r[0])}</div>`).join('')}</div></div><div class="hint" id="hint"></div>`);
+  document.querySelectorAll('#L .mc').forEach(c=>c.onclick=()=>{ document.querySelectorAll('#L .mc').forEach(x=>x.classList.remove('sel')); c.classList.add('sel'); selL=c; $('hint').textContent=''; });
+  document.querySelectorAll('#R .mc').forEach(c=>c.onclick=()=>{ if(!selL) { $('hint').textContent='Tap a problem on the left first.'; return; }
+    if(selL.dataset.i===c.dataset.i){ const i=selL.dataset.i; selL.classList.remove('sel'); selL.classList.add('done'); c.classList.add('done'); if(!tried[i]) score++; done++; selL=null; setProgress(); $('hint').textContent='Yes! That matches. ✅';
+      if(done===4){ $('hint').innerHTML='🎉 All matched!<br><button class="btn green" id="nx">Next ▶</button>'; $('nx').onclick=next; } }
+    else { tried[selL.dataset.i]=1; c.classList.remove('bad'); void c.offsetWidth; c.classList.add('bad'); $('hint').textContent='Not that one. Try again!'; }
+  });
+}
+/* ----------- finish ----------- */
+function finish(){
+  $('fill').style.width='100%'; $('sun').textContent='🌟'; $('sun').style.left='97%'; $('score').textContent=score;
+  const uniq=[]; learned.forEach(l=>{ if(!uniq.find(u=>u[1]===l[1])) uniq.push(l); });
+  const stars=score>=TOTAL*.85?'⭐⭐⭐':score>=TOTAL*.55?'⭐⭐':'⭐';
+  show(`<div class="center"><div style="font-size:70px">🧒🐶🌙</div><div class="q" style="font-size:clamp(22px,4vw,32px)">Sam had a safe tech day!</div>
+   <div class="story" style="text-align:left">Tap your <b>3 favourite rules</b> from Sam's Rule Book to put on your certificate.</div><div class="book" id="book">${uniq.map((u,i)=>`<div class="r" data-i="${i}"><span class="em">${u[0]}</span><span>${esc(u[1])}</span></div>`).join('')}</div>
+   <button class="btn green" id="certBtn">Get my certificate 🏅</button></div>`);
+  let picks=[]; document.querySelectorAll('#book .r').forEach(r=>r.onclick=()=>{ const i=+r.dataset.i; if(picks.includes(i)){ picks=picks.filter(x=>x!==i); r.classList.remove('pick'); } else if(picks.length<3){ picks.push(i); r.classList.add('pick'); } });
+  $('certBtn').onclick=()=>{ const chosen=(picks.length?picks:[0,1,2]).map(i=>uniq[i]).filter(Boolean);
+    show(`<div class="cert"><div style="font-size:54px">🏅</div><h2>Safe Tech Star</h2><div>This certificate is for</div><div class="nm">${esc(studentName)}</div><div style="font-size:clamp(34px,7vw,52px)">${stars}</div><div style="font-weight:900;font-size:22px">${score} out of ${TOTAL}</div>
+     <div style="font-weight:900;margin-top:10px">My top rules:</div><div class="book">${chosen.map(u=>`<div class="r"><span class="em">${u[0]}</span><span>${esc(u[1])}</span></div>`).join('')}</div></div>
+     <div class="center"><div id="cloudNote" class="note"></div><button class="btn green" id="saveBtn">💾 Save My Results</button> <button class="btn" id="againBtn">Play again ↺</button><div id="savedNote" class="note"></div></div>`);
+    const cn=$('cloudNote');
+    if(window.__submitResultToCloud){ window.__submitResultToCloud({name:studentName,game:"Sam's Safe Tech Day (Y2)",score:score,total:TOTAL,date:new Date().toLocaleDateString()+' '+new Date().toLocaleTimeString([],{hour:'2-digit',minute:'2-digit'})}).then(ok=>{cn.textContent=ok?'☁️ Sent to your teacher automatically!':'⚠️ Could not connect to sync automatically. Use "Save My Results" below as a backup.';}); } else cn.textContent='⚠️ Cloud sync unavailable. Use "Save My Results" below as a backup.';
+    $('againBtn').onclick=()=>location.reload();
+    $('saveBtn').onclick=async()=>{ const now=new Date(); const safe=(studentName||'student').replace(/[^a-z0-9]+/gi,'_'); const fn=`SafeTechDay_Y2_${safe}_${now.toISOString().slice(0,10)}.csv`;
+      const rows=[["Name","Score","Total","Date"],[studentName,score,TOTAL,now.toLocaleDateString()+' '+now.toLocaleTimeString([],{hour:'2-digit',minute:'2-digit'})]];
+      await saveCSV(fn,rows,'savedNote'); };
+  };
+}
+function csvEscape(v){ const s=String(v); return /[",\n]/.test(s)?'"'+s.replace(/"/g,'""')+'"':s; }
+async function saveCSV(filename,rows,noteId){
+  const csv=rows.map(r=>r.map(csvEscape).join(",")).join("\r\n");
+  if(window.showSaveFilePicker){ try{ const hd=await window.showSaveFilePicker({suggestedName:filename,types:[{description:'CSV file',accept:{'text/csv':['.csv']}}]}); const w=await hd.createWritable(); await w.write(csv); await w.close(); $(noteId).textContent='✅ Saved! Your results file was saved where you chose.'; return; }catch(err){ if(err&&err.name==='AbortError'){ $(noteId).textContent='Save cancelled.'; return; } } }
+  const blob=new Blob([csv],{type:"text/csv;charset=utf-8;"}); const url=URL.createObjectURL(blob); const a=document.createElement('a'); a.href=url; a.download=filename; document.body.appendChild(a); a.click(); document.body.removeChild(a); setTimeout(()=>URL.revokeObjectURL(url),1000);
+  $(noteId).textContent='✅ Saved! A results file was downloaded.';
+}
+function start(){ const v=$('nameInput').value.trim(); if(!v){ $('nameErr').textContent='Please type your name to start.'; $('nameInput').focus(); return; }
+  studentName=v.slice(0,24); $('gate').style.display='none'; $('app').classList.remove('hidden'); step=0; setProgress(); scene(S[0]); }
+$('startBtn').onclick=start; $('nameInput').addEventListener('keydown',e=>{ if(e.key==='Enter') start(); }); $('nameInput').focus();
+</script>
+<script src="https://www.gstatic.com/firebasejs/10.13.0/firebase-app-compat.js"></script>
+<script src="https://www.gstatic.com/firebasejs/10.13.0/firebase-firestore-compat.js"></script>
+<script>
+  const firebaseConfig = {
+    apiKey: "AIzaSyCEJtHd802MyuZUlwt6OfGkl9IitHaSOaA",
+    authDomain: "tasks-results.firebaseapp.com",
+    projectId: "tasks-results",
+    storageBucket: "tasks-results.firebasestorage.app",
+    messagingSenderId: "1014525306500",
+    appId: "1:1014525306500:web:3ffe2e6f5554e9140e04d1"
+  };
+  try{
+    firebase.initializeApp(firebaseConfig);
+    const db = firebase.firestore();
+    window.__submitResultToCloud = function(record){
+      return db.collection("results").add({
+        ...record,
+        createdAt: firebase.firestore.FieldValue.serverTimestamp()
+      }).then(() => true).catch((err) => { console.error("Cloud sync failed:", err); return false; });
+    };
+  }catch(err){
+    console.error("Firebase init failed:", err);
+  }
+</script>
+<script>
+(function(){
+  var badge = document.createElement('div');
+  badge.id = 'floatingNameBadge';
+  badge.className = 'floating-name-badge';
+  document.body.appendChild(badge);
+  function sync(){
+    if(studentName){ badge.textContent = '👤 ' + studentName; badge.style.display = 'inline-block'; }
+    else { badge.style.display = 'none'; }
+  }
+  setInterval(sync, 300);
+})();
+</script>
+</body>
+</html>

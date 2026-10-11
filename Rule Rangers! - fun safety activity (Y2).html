@@ -1,0 +1,473 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1, user-scalable=no">
+<title>Rule Rangers! - Year 2 Computing Game</title>
+<style>
+:root{
+  --teal:#0B7A75; --teal2:#14B8A6; --cream:#FFFBEA; --ink:#1B2A41;
+  --orange:#FF8A00; --yellow:#FFD23F; --pink:#FF5C8A; --blue:#3B82F6; --green:#22C55E; --red:#EF4444; --purple:#7C5CFF;
+}
+*{box-sizing:border-box;-webkit-tap-highlight-color:transparent}
+html,body{margin:0;min-height:100%;font-family:'Trebuchet MS','Segoe UI',Arial,sans-serif;color:var(--ink);
+  background:radial-gradient(circle at 20% 10%,#2DD4BF 0,transparent 40%),radial-gradient(circle at 90% 90%,#FFD23F55 0,transparent 35%),linear-gradient(160deg,#0B7A75,#075E63);
+  background-attachment:fixed;user-select:none;touch-action:manipulation}
+body{padding:14px;display:flex;justify-content:center}
+#app{width:100%;max-width:900px}
+.topbar{display:flex;align-items:center;gap:10px;justify-content:space-between;margin-bottom:10px;flex-wrap:wrap}
+.logo{font-weight:900;font-size:clamp(20px,3.6vw,30px);color:#fff;text-shadow:0 3px 0 rgba(0,0,0,.25);letter-spacing:.5px}
+.logo small{display:block;font-size:.5em;font-weight:700;color:#CFFAF3;letter-spacing:0}
+.pill{background:#fff;border-radius:999px;padding:8px 16px;font-weight:900;font-size:clamp(14px,2.4vw,18px);box-shadow:0 4px 0 rgba(0,0,0,.18);display:flex;gap:8px;align-items:center}
+.iconbtn{border:none;background:#fff;border-radius:50%;width:46px;height:46px;font-size:22px;cursor:pointer;box-shadow:0 4px 0 rgba(0,0,0,.18)}
+.iconbtn:active{transform:translateY(3px);box-shadow:0 1px 0 rgba(0,0,0,.18)}
+.badges{display:flex;gap:6px;background:rgba(255,255,255,.18);padding:6px 10px;border-radius:999px}
+.badge{width:30px;height:30px;border-radius:50%;background:rgba(255,255,255,.35);display:grid;place-items:center;font-size:16px;filter:grayscale(1) opacity(.55);transition:.4s}
+.badge.on{filter:none;background:var(--yellow);transform:scale(1.12);box-shadow:0 0 0 3px #fff}
+.badge.cur{outline:3px dashed #fff;outline-offset:2px}
+
+.card{background:var(--cream);border-radius:28px;padding:20px 22px 24px;box-shadow:0 14px 0 rgba(0,0,0,.18);position:relative;overflow:hidden}
+.pixel{display:flex;gap:12px;align-items:center;background:#fff;border:4px solid var(--teal2);border-radius:22px;padding:10px 14px;margin-bottom:14px}
+.pixel .face{font-size:46px;line-height:1;animation:bob 2.4s ease-in-out infinite}
+@keyframes bob{50%{transform:translateY(-5px) rotate(-4deg)}}
+.pixel .say{flex:1;font-size:clamp(17px,2.9vw,24px);font-weight:800;line-height:1.25}
+.pixel .say small{display:block;font-size:.7em;color:#5b6b82;font-weight:700;margin-top:2px}
+.speak{border:none;background:var(--blue);color:#fff;border-radius:16px;font-size:24px;padding:10px 14px;cursor:pointer;box-shadow:0 5px 0 #1d4ed8}
+.speak:active{transform:translateY(4px);box-shadow:0 1px 0 #1d4ed8}
+.bigbtn{border:none;border-radius:20px;background:var(--orange);color:#fff;font-weight:900;font-size:clamp(20px,3.4vw,28px);padding:14px 34px;cursor:pointer;box-shadow:0 8px 0 #c26a00;font-family:inherit}
+.bigbtn:active{transform:translateY(6px);box-shadow:0 2px 0 #c26a00}
+.bigbtn.green{background:var(--green);box-shadow:0 8px 0 #15803d}
+.bigbtn:disabled{opacity:.5}
+.center{text-align:center}
+.hidden{display:none!important}
+
+/* gate */
+#gate{position:fixed;inset:0;background:linear-gradient(160deg,#0B7A75,#075E63);display:grid;place-items:center;z-index:50;padding:16px}
+.gatebox{background:var(--cream);border-radius:30px;padding:28px;max-width:520px;width:100%;text-align:center;box-shadow:0 14px 0 rgba(0,0,0,.25)}
+.gatebox h1{margin:0 0 4px;font-size:clamp(30px,6vw,46px);color:var(--teal)}
+.gatebox .mascot{font-size:84px;animation:bob 2s infinite}
+.gatebox input{width:100%;font-size:26px;padding:14px;border-radius:16px;border:4px solid var(--teal2);text-align:center;margin:12px 0 6px;font-family:inherit}
+.err{color:var(--red);font-weight:800;min-height:22px}
+
+/* interlude */
+.path{display:flex;justify-content:space-between;align-items:center;margin:14px 4px 18px;position:relative}
+.path:before{content:"";position:absolute;left:5%;right:5%;top:50%;height:8px;background:repeating-linear-gradient(90deg,#B7E4DE 0 14px,transparent 14px 24px);transform:translateY(-50%)}
+.node{position:relative;width:clamp(46px,9vw,70px);height:clamp(46px,9vw,70px);border-radius:50%;background:#fff;border:5px solid #B7E4DE;display:grid;place-items:center;font-size:clamp(22px,4vw,32px)}
+.node.done{background:var(--yellow);border-color:var(--orange)}
+.node.cur{border-color:var(--pink);animation:pulse 1.2s infinite}
+.node .you{position:absolute;top:-34px;font-size:30px;animation:bob 1.4s infinite}
+@keyframes pulse{50%{transform:scale(1.12)}}
+.lvtitle{font-size:clamp(24px,4.4vw,38px);font-weight:900;color:var(--teal);margin:6px 0}
+.lvdesc{font-size:clamp(17px,2.8vw,23px);font-weight:700;max-width:640px;margin:0 auto 18px}
+
+/* tiles */
+.grid{display:grid;gap:12px}
+.tile{background:#fff;border:4px solid #D8EEE9;border-radius:22px;padding:10px 8px;text-align:center;cursor:pointer;font-weight:800;font-size:clamp(14px,2.3vw,19px);box-shadow:0 6px 0 #c9e3de;transition:transform .08s;position:relative}
+.tile:active{transform:translateY(4px);box-shadow:0 2px 0 #c9e3de}
+.tile .em{font-size:clamp(36px,7vw,58px);line-height:1.1;display:block}
+.tile.ok{background:#DCFCE7;border-color:var(--green);box-shadow:0 6px 0 #86efac;pointer-events:none}
+.tile.bad{background:#FEE2E2;border-color:var(--red);animation:shake .45s}
+.tile.stamp{background:#FEE2E2;border-color:var(--red);pointer-events:none}
+.tile.off{pointer-events:none;opacity:.55}
+@keyframes shake{20%,60%{transform:translateX(-9px)}40%,80%{transform:translateX(9px)}}
+.stampmark{position:absolute;top:-6px;right:-6px;font-size:34px;animation:pop .35s}
+@keyframes pop{0%{transform:scale(0)}70%{transform:scale(1.4)}100%{transform:scale(1)}}
+.hint{min-height:34px;text-align:center;font-weight:800;font-size:clamp(15px,2.5vw,20px);margin:10px 0 0;color:var(--teal)}
+.hint.bad{color:var(--red)}
+
+/* spider board */
+.board{position:relative;width:100%;height:clamp(380px,62vw,470px);margin:6px 0}
+.board svg{position:absolute;inset:0;width:100%;height:100%}
+.board .tile{position:absolute;width:clamp(96px,19vw,138px);transform:translate(-50%,-50%)}
+.board .tile:active{transform:translate(-50%,-46%)}
+.board .tile.bad{animation:shakeC .45s}
+@keyframes shakeC{20%,60%{transform:translate(calc(-50% - 9px),-50%)}40%,80%{transform:translate(calc(-50% + 9px),-50%)}}
+.hub{position:absolute;left:50%;top:50%;transform:translate(-50%,-50%);width:clamp(100px,19vw,140px);height:clamp(100px,19vw,140px);border-radius:50%;background:var(--purple);color:#fff;display:grid;place-items:center;text-align:center;font-weight:900;border:6px solid #fff;box-shadow:0 8px 0 rgba(0,0,0,.2);font-size:clamp(14px,2.4vw,20px)}
+.hub .em{font-size:clamp(38px,7vw,56px);display:block;line-height:1}
+
+/* scenes */
+.scene{grid-template-columns:repeat(3,1fr)}
+.scene .tile{padding:14px 8px 12px;min-height:150px;display:flex;flex-direction:column;justify-content:center;gap:4px}
+.scene .tile .em{font-size:clamp(34px,6.2vw,52px)}
+.ruletag{font-size:.86em;color:#B91C1C;font-weight:900}
+
+/* whack */
+.whackhud{display:flex;justify-content:space-between;gap:8px;margin-bottom:10px;flex-wrap:wrap}
+.holes{grid-template-columns:repeat(3,1fr);gap:16px}
+.hole{height:clamp(120px,22vw,160px);background:radial-gradient(ellipse at 50% 92%,#3b2a1a 0 38%,#6b4a2b 39% 100%);border-radius:30px 30px 60px 60px/30px 30px 40px 40px;position:relative;overflow:hidden;border:4px solid #4a341e}
+.mole{position:absolute;left:6%;right:6%;bottom:-100%;height:92%;background:#fff;border-radius:22px 22px 8px 8px;border:4px solid var(--red);display:flex;flex-direction:column;align-items:center;justify-content:center;font-weight:900;font-size:clamp(12px,2.1vw,17px);text-align:center;transition:bottom .18s;cursor:pointer;padding:2px}
+.mole.up{bottom:6%}
+.mole .em{font-size:clamp(32px,6vw,50px);line-height:1.05}
+.mole.good{border-color:var(--green)}
+.mole.hit{animation:pop .3s;background:#FEF08A}
+.mole.hurt{background:#FEE2E2}
+.floatmsg{position:absolute;left:50%;top:40%;transform:translate(-50%,-50%);font-size:clamp(28px,6vw,50px);font-weight:900;color:#fff;text-shadow:0 4px 0 rgba(0,0,0,.4);pointer-events:none;animation:floatUp 1s forwards;white-space:nowrap;z-index:5}
+@keyframes floatUp{to{transform:translate(-50%,-140%);opacity:0}}
+.legend{display:flex;gap:10px;justify-content:center;flex-wrap:wrap;margin:8px 0 12px;font-weight:800}
+.legend span{padding:6px 14px;border-radius:999px;border:3px solid}
+.legend .b{background:#FEE2E2;border-color:var(--red)} .legend .g{background:#DCFCE7;border-color:var(--green)}
+.bar{height:16px;background:#D8EEE9;border-radius:99px;overflow:hidden}
+.bar i{display:block;height:100%;width:100%;background:linear-gradient(90deg,var(--green),var(--yellow),var(--orange));transform-origin:left;transition:transform .2s linear}
+
+/* quiz */
+.bigpic{font-size:clamp(70px,16vw,120px);text-align:center;line-height:1.1;background:#fff;border-radius:26px;padding:12px;margin:0 auto 14px;max-width:420px;border:4px dashed #BFE6DF}
+.opts{display:grid;gap:12px}
+.opt{display:flex;gap:12px;align-items:center;text-align:left;padding:14px 16px}
+.opt .em{font-size:36px;display:inline;flex:none}
+.opt span.t{font-size:clamp(16px,2.8vw,22px)}
+.qno{text-align:center;font-weight:900;color:var(--teal);margin-bottom:6px}
+
+/* shield */
+.shield{display:flex;justify-content:center;gap:12px;margin:4px 0 12px}
+.slot{width:62px;height:62px;border-radius:18px;border:4px dashed #9ad7cf;display:grid;place-items:center;font-size:32px;background:#fff}
+.slot.on{border-style:solid;border-color:var(--orange);background:var(--yellow);animation:pop .4s}
+.options2{grid-template-columns:repeat(2,1fr)}
+
+/* photo */
+.viewfinder{position:relative;background:#222;border-radius:24px;padding:18px;text-align:center;margin:0 auto 14px;max-width:460px;border:6px solid #444}
+.viewfinder:before,.viewfinder:after{content:"";position:absolute;width:34px;height:34px;border:5px solid #fff}
+.viewfinder:before{left:12px;top:12px;border-right:0;border-bottom:0}.viewfinder:after{right:12px;bottom:12px;border-left:0;border-top:0}
+.viewfinder .scn{font-size:clamp(54px,12vw,86px);background:linear-gradient(#bfe9ff,#d9f7c6);border-radius:14px;padding:10px}
+.viewfinder .cap{color:#fff;font-weight:800;margin-top:8px;font-size:clamp(15px,2.6vw,20px)}
+.polaroid{background:#fff;padding:14px 14px 34px;width:230px;margin:10px auto;box-shadow:0 10px 24px rgba(0,0,0,.35);transform:rotate(-4deg);animation:drop .8s}
+.polaroid .pic{background:linear-gradient(#bfe9ff,#d9f7c6);font-size:80px;padding:14px;text-align:center}
+.polaroid .pc{font-weight:900;text-align:center;margin-top:10px}
+@keyframes drop{from{transform:translateY(-200px) rotate(20deg);opacity:0}}
+.flash{position:fixed;inset:0;background:#fff;opacity:0;pointer-events:none;z-index:60}
+.flash.go{animation:flash .5s}
+@keyframes flash{0%{opacity:.95}100%{opacity:0}}
+
+/* finish */
+.cert{border:8px double var(--orange);border-radius:22px;background:#fff;padding:20px;text-align:center;margin:10px 0}
+.cert h2{margin:0;color:var(--teal);font-size:clamp(26px,5vw,40px)}
+.cert .nm{font-size:clamp(28px,6vw,46px);font-weight:900;color:var(--pink);margin:4px 0}
+.stars{font-size:clamp(34px,7vw,56px)}
+.rules{display:grid;gap:8px;text-align:left;max-width:560px;margin:10px auto;font-weight:800}
+.rules div{background:#F0FDF9;border-radius:14px;padding:8px 12px;border:3px solid #BFE6DF}
+.note{font-weight:700;color:#5b6b82;min-height:20px;margin-top:6px}
+.confetti{position:fixed;top:-30px;font-size:28px;pointer-events:none;z-index:70;animation:fall linear forwards}
+@keyframes fall{to{transform:translateY(110vh) rotate(540deg)}}
+.floating-name-badge{position:fixed;right:10px;bottom:10px;background:#fff;color:var(--ink);font-weight:900;font-size:20px;padding:8px 16px;border-radius:999px;box-shadow:0 4px 0 rgba(0,0,0,.25);z-index:40;display:none}
+@media(max-width:560px){.scene{grid-template-columns:repeat(2,1fr)}.options2{grid-template-columns:1fr}.card{padding:14px}}
+</style>
+</head>
+<body>
+<div id="gate">
+  <div class="gatebox">
+    <div class="mascot">🤖</div>
+    <h1>Rule Rangers!</h1>
+    <div style="font-weight:800;font-size:19px">Join Pixel the robot on a mission to keep everyone safe with technology.</div>
+    <input id="nameInput" placeholder="Type your name" maxlength="24" autocomplete="off">
+    <div class="err" id="nameErr"></div>
+    <button class="bigbtn" id="startBtn">Start Mission ▶</button>
+  </div>
+</div>
+<div class="flash" id="flash"></div>
+<div id="app" class="hidden">
+  <div class="topbar">
+    <div class="logo">🛡️ Rule Rangers<small>Year 2 · Using IT safely</small></div>
+    <div class="badges" id="badges"></div>
+    <div style="display:flex;gap:8px;align-items:center">
+      <div class="pill">⭐ <span id="score">0</span></div>
+      <button class="iconbtn" id="muteBtn" title="Sound on/off">🔊</button>
+    </div>
+  </div>
+  <div class="card" id="main"></div>
+</div>
+
+<script>
+const $=id=>document.getElementById(id);
+let studentName="", score=0, soundOn=true, curPrompt="", lvIdx=-1, finished=false;
+const LEVELS_N=6, TOTAL_POINTS=21;
+const BADGE_ICONS=['🕸️','🔎','🔨','🧩','🛡️','📸'];
+const TITLES=['Device Dash','Spot the Rule-Breakers','Rule Whackers','Which Rule?','Build the Safety Shield','Photo Time'];
+const earned=[];
+/* ---------- audio ---------- */
+let ac=null;
+function tone(f,d,type,delay,vol){ if(!soundOn) return; try{ ac=ac||new (window.AudioContext||window.webkitAudioContext)(); const t=ac.currentTime+(delay||0); const o=ac.createOscillator(),g=ac.createGain(); o.type=type||'sine'; o.frequency.value=f; g.gain.setValueAtTime(vol||.08,t); g.gain.exponentialRampToValueAtTime(.0001,t+d); o.connect(g);g.connect(ac.destination);o.start(t);o.stop(t+d);}catch(e){} }
+const sfx={ok(){tone(660,.12,'triangle');tone(880,.18,'triangle',.1)},bad(){tone(180,.25,'sawtooth',0,.06)},win(){[523,659,784,1047].forEach((f,i)=>tone(f,.22,'triangle',i*.12))},snap(){tone(1200,.05,'square',0,.05);tone(800,.08,'square',.05,.05)},whack(){tone(300,.08,'square',0,.07);tone(500,.1,'triangle',.05)}};
+function say(t){ curPrompt=t; if(!soundOn||!window.speechSynthesis) return; try{ speechSynthesis.cancel(); const u=new SpeechSynthesisUtterance(t.replace(/[^\w\s.,!?'’-]/g,' ')); u.rate=.9; u.pitch=1.1; speechSynthesis.speak(u);}catch(e){} }
+function speakNow(){ if(!window.speechSynthesis||!curPrompt) return; try{ speechSynthesis.cancel(); const u=new SpeechSynthesisUtterance(curPrompt.replace(/[^\w\s.,!?'’-]/g,' ')); u.rate=.9;u.pitch=1.1;speechSynthesis.speak(u);}catch(e){} }
+$('muteBtn').onclick=()=>{soundOn=!soundOn;$('muteBtn').textContent=soundOn?'🔊':'🔇'; if(!soundOn&&window.speechSynthesis) speechSynthesis.cancel();};
+
+/* ---------- helpers ---------- */
+function shuffle(a){return a.map(v=>[Math.random(),v]).sort((x,y)=>x[0]-y[0]).map(v=>v[1]);}
+function h(html){const d=document.createElement('div');d.innerHTML=html.trim();return d.firstChild;}
+function pixel(msg,small){ // returns html for the mascot bar
+  return `<div class="pixel"><div class="face">🤖</div><div class="say">${msg}${small?`<small>${small}</small>`:''}</div><button class="speak" onclick="speakNow()" title="Read it to me">🔊</button></div>`; }
+function confetti(n){ const em=['🎉','⭐','🌟','✨','🎊','💛']; for(let i=0;i<(n||24);i++){ const s=document.createElement('div'); s.className='confetti'; s.textContent=em[i%em.length]; s.style.left=Math.random()*100+'vw'; s.style.animationDuration=(1.6+Math.random()*1.6)+'s'; s.style.animationDelay=(Math.random()*.5)+'s'; document.body.appendChild(s); setTimeout(()=>s.remove(),4000);} }
+function addScore(n){ score+=n; $('score').textContent=score; }
+function renderBadges(){ $('badges').innerHTML=BADGE_ICONS.map((b,i)=>`<div class="badge ${earned.includes(i)?'on':''} ${i===lvIdx&&!earned.includes(i)?'cur':''}">${b}</div>`).join(''); }
+function setHint(el,txt,bad){ el.textContent=txt; el.className='hint'+(bad?' bad':''); }
+
+/* ---------- flow ---------- */
+function showMain(html){ $('main').innerHTML=html; window.scrollTo({top:0,behavior:'smooth'}); }
+function interlude(){
+  renderBadges();
+  const i=lvIdx;
+  const nodes=BADGE_ICONS.map((b,k)=>`<div class="node ${earned.includes(k)?'done':''} ${k===i?'cur':''}">${k===i?'<span class="you">🤖</span>':''}${b}</div>`).join('');
+  const d=LV[i];
+  showMain(`<div class="path">${nodes}</div><div class="center"><div style="font-weight:900;color:var(--pink)">LEVEL ${i+1} of ${LEVELS_N}</div><div class="lvtitle">${TITLES[i]}</div><div class="lvdesc">${d.intro}</div><button class="bigbtn" id="goBtn">Let's go! ▶</button></div>`);
+  say(`Level ${i+1}. ${TITLES[i]}. ${d.intro}`);
+  $('goBtn').onclick=()=>{ sfx.ok(); d.run(); };
+}
+function levelDone(pts,max){
+  addScore(pts); earned.push(lvIdx); renderBadges(); sfx.win(); confetti(26);
+  const stars=pts>=max?'⭐⭐⭐':(pts>=max*.6?'⭐⭐':'⭐');
+  showMain(`<div class="center"><div style="font-size:90px">${BADGE_ICONS[lvIdx]}</div><div class="lvtitle">Badge earned!</div><div class="stars">${stars}</div><div class="lvdesc">${TITLES[lvIdx]}: you got <b>${pts}</b> out of <b>${max}</b> points.</div><button class="bigbtn green" id="nextBtn">${lvIdx<LEVELS_N-1?'Next level ▶':'Finish mission 🏁'}</button></div>`);
+  say(`Badge earned! You got ${pts} out of ${max} points.`);
+  $('nextBtn').onclick=()=>{ lvIdx++; if(lvIdx>=LEVELS_N) finish(); else interlude(); };
+}
+function startGame(){
+  const v=$('nameInput').value.trim();
+  if(!v){ $('nameErr').textContent='Please type your name to start.'; $('nameInput').focus(); return; }
+  studentName=v.slice(0,24); $('gate').style.display='none'; $('app').classList.remove('hidden');
+  lvIdx=0; interlude();
+}
+$('startBtn').onclick=startGame; $('nameInput').addEventListener('keydown',e=>{if(e.key==='Enter')startGame();}); $('nameInput').focus();
+
+/* =============== LEVEL 1: Device Dash (spider diagram) =============== */
+const DEVICES=[
+ {name:'Tablet',em:'📱',items:[['🎨','Paint a picture',1],['📖','Read a story',1],['🎬','Watch a video',1],['📞','Video call family',1],['🎮','Play a game',1],['🚲','Ride a bike',0],['🍕','Eat a pizza',0],['🛁','Have a bath',0]]},
+ {name:'Laptop',em:'💻',items:[['⌨️','Type a story',1],['🔍','Search the web',1],['✉️','Send an email',1],['🖼️','Make a poster',1],['🎵','Listen to music',1],['⚽','Kick a football',0],['🪁','Fly a kite',0],['🍦','Lick an ice cream',0]]},
+ {name:'Games console',em:'🎮',items:[['🏎️','Race cars',1],['🤝','Play with friends',1],['🎬','Watch a film',1],['🧩','Solve puzzles',1],['🎤','Sing along',1],['🧹','Sweep the floor',0],['🌳','Climb a tree',0],['🪥','Brush teeth',0]]}
+];
+function runL1(){
+  let di=0, pts=0;
+  function round(){
+    const D=DEVICES[di]; let wrong=false, found=0; const need=D.items.filter(x=>x[2]).length;
+    const tiles=shuffle(D.items);
+    const n=tiles.length;
+    const tileHtml=tiles.map((t,k)=>{const a=(k/n)*Math.PI*2-Math.PI/2; const x=50+41*Math.cos(a), y=50+39*Math.sin(a); return `<div class="tile" data-ok="${t[2]}" data-x="${x}" data-y="${y}" style="left:${x}%;top:${y}%"><span class="em">${t[0]}</span>${t[1]}</div>`;}).join('');
+    showMain(pixel(`What can we do with a <b>${D.name}</b>? Tap everything you can do!`,`Device ${di+1} of 3 · Find ${need} things`)+`<div class="board"><svg viewBox="0 0 100 100" preserveAspectRatio="none" id="web"></svg>${tileHtml}<div class="hub"><div><span class="em">${D.em}</span>${D.name}</div></div></div><div class="hint" id="hint">Tap a picture!</div>`);
+    say(`What can we do with a ${D.name}? Tap everything you can do.`);
+    document.querySelectorAll('.board .tile').forEach(el=>el.onclick=()=>{
+      if(el.dataset.ok==='1'){ el.classList.add('ok'); sfx.ok(); found++;
+        $('web').insertAdjacentHTML('beforeend',`<line x1="50" y1="50" x2="${el.dataset.x}" y2="${el.dataset.y}" stroke="#7C5CFF" stroke-width="5" stroke-linecap="round" vector-effect="non-scaling-stroke"/>`);
+        setHint($('hint'),`Yes! ${found} of ${need} 🕸️`);
+        if(found===need){ if(!wrong) pts++; setTimeout(()=>{ di++; if(di<DEVICES.length) round(); else levelDone(pts,3); },900); }
+      } else { wrong=true; el.classList.remove('bad'); void el.offsetWidth; el.classList.add('bad'); sfx.bad(); setHint($('hint'),'Hmm, a device cannot do that one!',true); }
+    });
+  }
+  round();
+}
+
+/* =============== LEVEL 2: Spot the Rule-Breakers =============== */
+const SCENES=[
+ {title:'At Home 🏠',cards:[
+  ['🍽️👦📱','Using a tablet at the dinner table',1,'No devices at the table!'],
+  ['🛋️👧💻','Sitting down to use the laptop',0],
+  ['🏃‍♂️📱','Running with the tablet',1,'Walk and use two hands!'],
+  ['🤝🎮','Taking turns on the console',0],
+  ['🌙👦📺','Watching TV late at night',1,'Screens off at bedtime!'],
+  ['🙌📱','Carrying it with two hands',0]]},
+ {title:'At School 🏫',cards:[
+  ['🧒🤚📱','Grabbing a tablet from a friend',1,'Take turns and share!'],
+  ['🙋💻','Telling the teacher about a problem',0],
+  ['🥤💻💦','Drink next to the laptop',1,'Keep drinks away!'],
+  ['🧑‍🏫📱🧒','Using a tablet for a lesson',0],
+  ['📸😢','Taking a photo without asking',1,'Ask first!'],
+  ['🎧🙂','Using headphones quietly',0]]}
+];
+function runL2(){
+  let si=0, pts=0;
+  function scene(){
+    const S=SCENES[si]; let wrong=false, found=0; const need=S.cards.filter(c=>c[2]).length;
+    const cards=shuffle(S.cards);
+    showMain(pixel(`Which people are <b>breaking a rule</b>? Tap the rule-breakers!`,`${S.title} · Find ${need}`)+`<div class="grid scene">${cards.map(c=>`<div class="tile" data-ok="${c[2]}" data-rule="${c[3]||''}"><span class="em">${c[0]}</span><span>${c[1]}</span></div>`).join('')}</div><div class="hint" id="hint">Tap a picture!</div>`);
+    say(`Which people are breaking a rule? Tap the rule breakers. Find ${need}.`);
+    document.querySelectorAll('.scene .tile').forEach(el=>el.onclick=()=>{
+      if(el.dataset.ok==='1'){ el.classList.add('stamp'); el.insertAdjacentHTML('beforeend',`<span class="stampmark">❌</span><span class="ruletag">${el.dataset.rule}</span>`); sfx.ok(); found++;
+        setHint($('hint'),`Rule-breaker found! ${found} of ${need}`); say(el.dataset.rule);
+        if(found===need){ if(!wrong) pts++; setTimeout(()=>{ si++; if(si<SCENES.length) scene(); else levelDone(pts,2); },1400); }
+      } else { wrong=true; el.classList.remove('bad'); void el.offsetWidth; el.classList.add('bad'); sfx.bad(); setHint($('hint'),'That one is following the rules! 👍',true); }
+    });
+  }
+  scene();
+}
+
+/* =============== LEVEL 3: Rule Whackers (arcade) =============== */
+const BAD=[['🏃‍♂️📱','Running with a tablet'],['🤜📱','Grabbing a tablet'],['🥤💻','Drink by the laptop'],['🌙📺','Screen at midnight'],['🔞🎮','Game for big kids'],['📱🍽️','Tablet at dinner']];
+const GOOD=[['🙌📱','Using two hands'],['🤝🎮','Taking turns'],['🙋💻','Asking first'],['🪑💻','Sitting down'],['🗣️🧑‍🏫','Telling a grown-up']];
+function runL3(){
+  showMain(pixel(`Whack the <b>rule-breakers</b> when they pop up! But do NOT whack the good habits.`,`You have 45 seconds.`)+
+   `<div class="legend"><span class="b">🔨 Whack these: breaking a rule</span><span class="g">👍 Leave these: good habit</span></div>
+    <div class="whackhud"><div class="pill">🔨 Score: <span id="wScore">0</span></div><div style="flex:1;min-width:120px;align-self:center"><div class="bar"><i id="wBar"></i></div></div><div class="pill">⏱️ <span id="wTime">45</span></div></div>
+    <div class="center" style="margin:6px 0 12px"><button class="bigbtn" id="whackGo">Ready? Go! 🔨</button></div><div class="grid holes" id="holes" style="position:relative">${Array.from({length:9},()=>`<div class="hole"><div class="mole"></div></div>`).join('')}</div>
+`);
+  say('Whack the rule breakers when they pop up. Do not whack the good habits. You have 45 seconds.');
+  let sc=0, t=45, running=false, spawnT, tickT; const moles=[...document.querySelectorAll('.mole')];
+  function fl(el,msg){ const m=h(`<div class="floatmsg">${msg}</div>`); el.parentElement.appendChild(m); setTimeout(()=>m.remove(),1000); }
+  function pop(){
+    const free=moles.filter(m=>!m.classList.contains('up')); if(!free.length||!running) return;
+    const m=free[Math.floor(Math.random()*free.length)]; const bad=Math.random()<.62; const it=(bad?BAD:GOOD)[Math.floor(Math.random()*(bad?BAD.length:GOOD.length))];
+    m.className='mole'+(bad?'':' good'); m.dataset.bad=bad?1:0; m.dataset.done=0; m.innerHTML=`<span class="em">${it[0]}</span>${it[1]}`; void m.offsetWidth; m.classList.add('up');
+    const life=Math.max(1700,2600-(45-t)*22);
+    setTimeout(()=>{ m.classList.remove('up'); },life);
+  }
+  moles.forEach(m=>m.onclick=()=>{
+    if(!running||!m.classList.contains('up')||m.dataset.done==='1') return; m.dataset.done=1;
+    if(m.dataset.bad==='1'){ sc++; m.classList.add('hit'); sfx.whack(); fl(m,'+1 Rescued!'); }
+    else { sc=Math.max(0,sc-1); m.classList.add('hurt'); sfx.bad(); fl(m,'Oops! −1'); }
+    $('wScore').textContent=sc; setTimeout(()=>m.classList.remove('up'),260);
+  });
+  $('whackGo').onclick=()=>{
+    $('whackGo').disabled=true; running=true; sfx.ok();
+    spawnT=setInterval(()=>{pop(); if(t<25) pop();},850);
+    tickT=setInterval(()=>{ t--; $('wTime').textContent=t; $('wBar').style.transform=`scaleX(${t/45})`;
+      if(t<=0){ clearInterval(spawnT); clearInterval(tickT); running=false; moles.forEach(m=>m.classList.remove('up'));
+        const pts=sc>=13?3:sc>=9?2:sc>=5?1:0; setTimeout(()=>{ showMain(`<div class="center"><div style="font-size:70px">🔨</div><div class="lvtitle">Time's up!</div><div class="lvdesc">You rescued <b>${sc}</b> rule-breakers!</div><button class="bigbtn green" id="wNext">Continue ▶</button></div>`); $('wNext').onclick=()=>levelDone(pts,3); sfx.win(); say(`Time is up. You rescued ${sc} rule breakers.`); },600);
+      } },1000);
+  };
+}
+
+/* =============== LEVEL 4: Which rule? =============== */
+const RULES={walk:['🚶','Walk, do not run, with devices.'],photo:['📷','Ask before you take a photo of someone.'],turns:['🤝','Take turns and share.'],drink:['🥤','Keep drinks away from devices.'],bed:['🌙','No screens at bedtime.'],age:['🔞','Only use games and videos right for your age.'],table:['🍽️','No devices at the dinner table.'],hands:['🙌','Carry devices with two hands.']};
+const QS=[
+ ['🏃‍♂️📱💥','walk','If the tablet falls, it can break and you can trip!'],
+ ['📸🧒😮','photo','The person might not be happy. We must be kind and respectful.'],
+ ['🧒🤚📱🧒','turns','Everyone gets a fair go, and no one gets hurt.'],
+ ['🥤💻💦','drink','Spills can break the device.'],
+ ['🌙🛏️📱','bed','Our eyes and brains need sleep to stay healthy.'],
+ ['🔞🎮😨','age','Some things are not made for kids and can upset us.'],
+ ['🍽️📱🙁','table','Dinner is time to talk and enjoy food together.']
+];
+function runL4(){
+  let qi=0, pts=0; const order=shuffle(QS);
+  function q(){
+    const Q=order[qi]; const keys=shuffle(Object.keys(RULES).filter(k=>k!==Q[1])).slice(0,2).concat([Q[1]]); const opts=shuffle(keys); let tried=false;
+    showMain(`<div class="qno">Question ${qi+1} of ${order.length}</div>`+pixel(`Which rule is being <b>broken</b> in this picture?`)+`<div class="bigpic">${Q[0]}</div><div class="opts">${opts.map(k=>`<div class="tile opt" data-k="${k}" data-ok="${k===Q[1]?1:0}"><span class="em">${RULES[k][0]}</span><span class="t">${RULES[k][1]}</span></div>`).join('')}</div><div class="hint" id="hint"></div>`);
+    say(`Which rule is being broken in this picture? `+opts.map(k=>RULES[k][1]).join(' Or. '));
+    document.querySelectorAll('.opt').forEach(el=>el.onclick=()=>{
+      if(el.dataset.ok==='1'){ el.classList.add('ok'); sfx.ok(); if(!tried) pts++; document.querySelectorAll('.opt').forEach(o=>{if(o!==el)o.classList.add('off');});
+        setHint($('hint'),`✅ Why? ${Q[2]}`); say('Right! '+Q[2]); setTimeout(()=>{ qi++; if(qi<order.length) q(); else levelDone(pts,order.length); },2600);
+      } else { tried=true; el.classList.remove('bad'); void el.offsetWidth; el.classList.add('bad'); el.classList.add('off'); sfx.bad(); setHint($('hint'),'Not that one. Try again!',true); }
+    });
+  }
+  q();
+}
+
+/* =============== LEVEL 5: Shield of reasons =============== */
+const SHIELD=[
+ {q:'Why do we have rules for using IT?',c:[['🛡️','To keep us safe'],['🔧','So devices do not get broken'],['👶','So we see things right for our age']],w:[['😴','To make life boring'],['🏆','So grown-ups always win'],['🐢','To make devices slow']]},
+ {q:'How can rules keep us safe?',c:[['🚫','We do not see things not made for kids'],['🦶','We do not trip or drop things'],['🗣️','We tell a grown-up if we feel worried']],w:[['🤫','We keep problems a secret'],['👽','We talk to strangers online'],['🎢','We never take a break']]},
+ {q:'Who can help if something on a screen worries you?',c:[['👩‍🏫','Your teacher'],['👨‍👩‍👧','A parent or carer'],['🧑‍⚕️','A grown-up you trust']],w:[['🧑‍🎤','A stranger online'],['🙈','Nobody. Keep it secret'],['🐱','Your pet cat']]}
+];
+function runL5(){
+  let ri=0, pts=0;
+  function round(){
+    const R=SHIELD[ri]; let wrong=false, found=0;
+    const tiles=shuffle(R.c.map(x=>[...x,1]).concat(R.w.map(x=>[...x,0])));
+    showMain(pixel(`<b>${R.q}</b>`,`Tap the 3 good answers to build your shield!`)+`<div class="shield">${[0,1,2].map(i=>`<div class="slot" id="slot${i}">?</div>`).join('')}</div><div class="grid options2">${tiles.map(t=>`<div class="tile opt" data-ok="${t[2]}"><span class="em">${t[0]}</span><span class="t">${t[1]}</span></div>`).join('')}</div><div class="hint" id="hint"></div>`);
+    say(R.q+' Tap the three good answers.');
+    document.querySelectorAll('.opt').forEach(el=>el.onclick=()=>{
+      if(el.dataset.ok==='1'){ el.classList.add('ok'); sfx.ok(); const s=$('slot'+found); s.classList.add('on'); s.textContent='🛡️'; found++; setHint($('hint'),`Great! ${found} of 3`);
+        if(found===3){ if(!wrong) pts++; setHint($('hint'),'Shield complete! 🛡️✨'); confetti(10); setTimeout(()=>{ ri++; if(ri<SHIELD.length) round(); else levelDone(pts,3); },1500); }
+      } else { wrong=true; el.classList.remove('bad'); void el.offsetWidth; el.classList.add('bad'); sfx.bad(); setHint($('hint'),'That is not a safe answer. Try another!',true); }
+    });
+  }
+  round();
+}
+
+/* =============== LEVEL 6: Photo Time =============== */
+const PHOTO=[
+ {scn:'🌳🧒😊',cap:'Your friend is smiling in the park.',q:'You want to take their picture. What do you do FIRST?',c:'Ask, "Can I take your picture?"',w:['Take it quickly before they notice','Hide behind a tree and click'],why:'Always ask permission first!'},
+ {scn:'🧒✋😐',cap:'Your friend says, "No thank you."',q:'What do you do now?',c:'Say "OK" and put the camera away',w:['Take it anyway','Take it when they are not looking'],why:'Respect what people say. No means no.'},
+ {scn:'🧒😊🚶‍♀️',cap:'A stranger is walking behind your friend.',q:'What should you think about?',c:'Check who is in the background and wait until they pass',w:['Nothing, just click!','Zoom in on the stranger'],why:'Think about everyone in the picture, not only your friend.'}
+];
+function runL6(){
+  let ri=0, pts=0;
+  function round(){
+    const R=PHOTO[ri]; let tried=false; const opts=shuffle([[R.c,1]].concat(R.w.map(x=>[x,0])));
+    showMain(`<div class="qno">Photo ${ri+1} of ${PHOTO.length}</div>`+pixel(`<b>${R.q}</b>`,`Be safe and respectful.`)+`<div class="viewfinder"><div class="scn">${R.scn}</div><div class="cap">${R.cap}</div></div><div class="opts">${opts.map(o=>`<div class="tile opt" data-ok="${o[1]}"><span class="em">${o[1]?'👍':'🤔'}</span><span class="t">${o[0]}</span></div>`).join('')}</div><div class="hint" id="hint"></div>`);
+    say(R.cap+' '+R.q+' '+opts.map(o=>o[0]).join(' Or. '));
+    document.querySelectorAll('.opt').forEach(el=>el.onclick=()=>{
+      if(el.dataset.ok==='1'){ el.classList.add('ok'); sfx.ok(); if(!tried) pts++; document.querySelectorAll('.opt').forEach(o=>{if(o!==el)o.classList.add('off');});
+        setHint($('hint'),'✅ '+R.why); say('Right! '+R.why); setTimeout(()=>{ ri++; if(ri<PHOTO.length) round(); else snap(); },2400);
+      } else { tried=true; el.classList.add('bad','off'); sfx.bad(); setHint($('hint'),'Hmm, think about being respectful. Try again!',true); }
+    });
+  }
+  function snap(){
+    showMain(pixel('You were safe and respectful! Now take the photo!')+`<div class="viewfinder"><div class="scn">🌳🧒😊</div><div class="cap">Your friend said YES. 🎉</div></div><div class="center"><button class="bigbtn" id="snapBtn">📸 Click!</button></div>`);
+    say('You were safe and respectful. Now take the photo!');
+    $('snapBtn').onclick=()=>{ sfx.snap(); const f=$('flash'); f.classList.remove('go'); void f.offsetWidth; f.classList.add('go');
+      showMain(`<div class="center"><div class="polaroid"><div class="pic">🌳🧒😊</div><div class="pc">Safe and respectful!</div></div><div class="lvdesc">Great photo, Ranger! You asked first and thought about everyone in the picture.</div><button class="bigbtn green" id="phDone">Continue ▶</button></div>`); confetti(18); $('phDone').onclick=()=>levelDone(pts,3); };
+  }
+  round();
+}
+
+const LV=[
+ {intro:'Tablets, laptops and consoles are all <b>information technology</b>. Find out what each one can do!',run:runL1},
+ {intro:'Some people are not following the rules for using IT. Can you spot them?',run:runL2},
+ {intro:'Quick! Whack the rule-breakers as they pop up. Be careful, do not whack the good habits!',run:runL3},
+ {intro:'Look at each picture and say which rule is being broken.',run:runL4},
+ {intro:'Why are rules good for us? Find the right answers to build a shield!',run:runL5},
+ {intro:'Time to take a photo. But first, you must be safe and respectful.',run:runL6}
+];
+
+/* =============== FINISH =============== */
+function finish(){
+  finished=true; renderBadges(); confetti(40); sfx.win();
+  const stars=score>=TOTAL_POINTS*.85?'⭐⭐⭐':score>=TOTAL_POINTS*.55?'⭐⭐':'⭐';
+  showMain(`<div class="center"><div class="cert"><div style="font-size:60px">🏅</div><h2>Rule Ranger Certificate</h2><div>This is to say that</div><div class="nm">${studentName.replace(/[<>&]/g,'')}</div><div class="stars">${stars}</div><div style="font-weight:900;font-size:24px">scored ${score} out of ${TOTAL_POINTS}</div>
+   <div class="rules"><div>🛡️ Rules help keep me safe.</div><div>🙌 I use devices with care.</div><div>🤝 I take turns and ask first.</div><div>🗣️ I tell a grown-up if I am worried.</div></div></div>
+   <div id="cloudNote" class="note"></div>
+   <button class="bigbtn green" id="saveBtn">💾 Save My Results</button> <button class="bigbtn" id="againBtn">Play again ↺</button><div id="savedNote" class="note"></div></div>`);
+  say(`Well done ${studentName}! You are a Rule Ranger. You scored ${score} out of ${TOTAL_POINTS}.`);
+  const cn=$('cloudNote');
+  if(window.__submitResultToCloud){ window.__submitResultToCloud({name:studentName,game:'Rule Rangers! (Y2)',score:score,total:TOTAL_POINTS,date:new Date().toLocaleDateString()+' '+new Date().toLocaleTimeString([],{hour:'2-digit',minute:'2-digit'})}).then(ok=>{cn.textContent=ok?'☁️ Sent to your teacher automatically!':'⚠️ Could not connect to sync automatically. Use "Save My Results" below as a backup.';}); }
+  else cn.textContent='⚠️ Cloud sync unavailable. Use "Save My Results" below as a backup.';
+  $('againBtn').onclick=()=>location.reload();
+  $('saveBtn').onclick=async()=>{ const now=new Date(); const safe=(studentName||'student').replace(/[^a-z0-9]+/gi,'_'); const fn=`RuleRangers_Y2_${safe}_${now.toISOString().slice(0,10)}.csv`;
+    const rows=[["Name","Score","Total","Date"],[studentName,score,TOTAL_POINTS,now.toLocaleDateString()+' '+now.toLocaleTimeString([],{hour:'2-digit',minute:'2-digit'})]];
+    await saveCSVWithPicker(fn,rows,'savedNote','✅ Saved! Your results file was saved where you chose.','✅ Saved! A results file was downloaded.','Save cancelled.'); };
+}
+function csvEscape(v){ const s=String(v); return /[",\n]/.test(s)?'"'+s.replace(/"/g,'""')+'"':s; }
+function downloadCSV(filename,rows){ const csv=rows.map(r=>r.map(csvEscape).join(",")).join("\r\n"); const blob=new Blob([csv],{type:"text/csv;charset=utf-8;"}); const url=URL.createObjectURL(blob); const a=document.createElement('a'); a.href=url;a.download=filename; document.body.appendChild(a);a.click();document.body.removeChild(a); setTimeout(()=>URL.revokeObjectURL(url),1000); }
+async function saveCSVWithPicker(filename,rows,noteId,chosen,fallback,cancel){
+  const csv=rows.map(r=>r.map(csvEscape).join(",")).join("\r\n");
+  if(window.showSaveFilePicker){ try{ const hd=await window.showSaveFilePicker({suggestedName:filename,types:[{description:'CSV file',accept:{'text/csv':['.csv']}}]}); const w=await hd.createWritable(); await w.write(csv); await w.close(); $(noteId).textContent=chosen; return; }catch(err){ if(err&&err.name==='AbortError'){ $(noteId).textContent=cancel; return; } } }
+  downloadCSV(filename,rows); $(noteId).textContent=fallback;
+}
+</script>
+
+<!-- ===== Cloud sync: sends each result to the shared Firestore database ===== -->
+<script src="https://www.gstatic.com/firebasejs/10.13.0/firebase-app-compat.js"></script>
+<script src="https://www.gstatic.com/firebasejs/10.13.0/firebase-firestore-compat.js"></script>
+<script>
+  const firebaseConfig = {
+    apiKey: "AIzaSyCEJtHd802MyuZUlwt6OfGkl9IitHaSOaA",
+    authDomain: "tasks-results.firebaseapp.com",
+    projectId: "tasks-results",
+    storageBucket: "tasks-results.firebasestorage.app",
+    messagingSenderId: "1014525306500",
+    appId: "1:1014525306500:web:3ffe2e6f5554e9140e04d1"
+  };
+  try{
+    firebase.initializeApp(firebaseConfig);
+    const db = firebase.firestore();
+    window.__submitResultToCloud = function(record){
+      return db.collection("results").add({
+        ...record,
+        createdAt: firebase.firestore.FieldValue.serverTimestamp()
+      }).then(() => true).catch((err) => { console.error("Cloud sync failed:", err); return false; });
+    };
+  }catch(err){
+    console.error("Firebase init failed:", err);
+  }
+</script>
+<script>
+(function(){
+  var badge = document.createElement('div');
+  badge.id = 'floatingNameBadge';
+  badge.className = 'floating-name-badge';
+  document.body.appendChild(badge);
+  function sync(){
+    if(studentName){ badge.textContent = '👤 ' + studentName; badge.style.display = 'inline-block'; }
+    else { badge.style.display = 'none'; }
+  }
+  setInterval(sync, 300);
+})();
+</script>
+</body>
+</html>

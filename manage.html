@@ -1,0 +1,183 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<meta name="robots" content="noindex,nofollow">
+<title>Classroom Control</title>
+<style>
+:root{--bg:#F3F6FA;--card:#fff;--ink:#16233A;--mut:#64748B;--line:#E2E8F0;--teal:#0B7A75;--teal2:#14B8A6;--red:#DC2626;--amber:#D97706;--green:#16A34A;--blue:#2563EB;--navy:#16233A}
+@media(prefers-color-scheme:dark){:root{--bg:#0E1626;--card:#16233A;--ink:#E8EEF8;--mut:#94A3B8;--line:#27364F}}
+*{box-sizing:border-box}
+body{margin:0;font-family:"Segoe UI","Trebuchet MS",Arial,sans-serif;background:var(--bg);color:var(--ink)}
+header{background:var(--navy);color:#fff;padding:14px 20px;display:flex;align-items:center;gap:14px;flex-wrap:wrap}
+header h1{margin:0;font-size:20px;flex:1}
+header small{color:#9FB3CF}
+a.back{color:#9FB3CF;text-decoration:none;font-weight:600}
+button{font-family:inherit;cursor:pointer}
+.btn{border:none;border-radius:10px;padding:10px 16px;font-weight:700;font-size:15px;background:var(--teal);color:#fff}
+.btn:hover{filter:brightness(1.1)}.btn:disabled{opacity:.5;cursor:not-allowed}
+.btn.red{background:var(--red)}.btn.amber{background:var(--amber)}.btn.blue{background:var(--blue)}.btn.gray{background:#64748B}.btn.ghost{background:transparent;border:1px solid var(--line);color:var(--ink)}
+.wrap{max-width:1200px;margin:0 auto;padding:18px}
+.login{max-width:400px;margin:70px auto;background:var(--card);border:1px solid var(--line);border-radius:18px;padding:28px;box-shadow:0 10px 30px rgba(0,0,0,.08)}
+.login h2{margin:0 0 6px}.login p{color:var(--mut);margin:0 0 16px}
+input[type=text],input[type=email],input[type=password],input[type=url],textarea{width:100%;padding:11px 12px;border:1px solid var(--line);border-radius:10px;font:inherit;background:var(--bg);color:var(--ink);margin-bottom:10px}
+textarea{resize:vertical;min-height:60px}
+.err{color:var(--red);font-weight:600;min-height:20px;font-size:14px}
+.stats{display:flex;gap:10px;flex-wrap:wrap;margin-bottom:14px}
+.stat{background:var(--card);border:1px solid var(--line);border-radius:12px;padding:10px 16px;font-weight:700}
+.stat b{font-size:22px;display:block}
+.panel{background:var(--card);border:1px solid var(--line);border-radius:16px;padding:16px;margin-bottom:14px}
+.panel h3{margin:0 0 10px;font-size:16px}
+.tgt{display:flex;gap:14px;align-items:center;flex-wrap:wrap;margin-bottom:12px;font-weight:700}
+.tgt label{display:flex;gap:6px;align-items:center;cursor:pointer}
+.acts{display:grid;grid-template-columns:repeat(auto-fit,minmax(270px,1fr));gap:12px}
+.act{border:1px solid var(--line);border-radius:12px;padding:12px}
+.act h4{margin:0 0 8px;font-size:15px}
+.row{display:flex;gap:8px;flex-wrap:wrap;align-items:center}
+.row label{font-size:14px;color:var(--mut);display:flex;gap:6px;align-items:center}
+.grid{display:grid;grid-template-columns:repeat(auto-fill,minmax(230px,1fr));gap:12px}
+.pc{background:var(--card);border:2px solid var(--line);border-radius:14px;padding:12px;position:relative;cursor:pointer}
+.pc.sel{border-color:var(--blue);box-shadow:0 0 0 3px #2563EB33}
+.pc.off{opacity:.55}
+.pc .top{display:flex;gap:8px;align-items:center}
+.pc .nm{font-weight:800;flex:1;overflow:hidden;text-overflow:ellipsis;white-space:nowrap}
+.pc .sub{color:var(--mut);font-size:13px;margin-top:4px;overflow:hidden;text-overflow:ellipsis;white-space:nowrap}
+.chip{display:inline-block;border-radius:99px;padding:2px 10px;font-size:12px;font-weight:800;margin-right:4px}
+.on{background:#DCFCE7;color:#166534}.away{background:#FEF3C7;color:#92400E}.offl{background:#E2E8F0;color:#475569}.lk{background:#FEE2E2;color:#991B1B}
+.pc .ed{border:none;background:none;font-size:15px;padding:2px}
+.log{font-size:14px;color:var(--mut);max-height:150px;overflow:auto}
+.log div{padding:3px 0;border-bottom:1px dashed var(--line)}
+.toast{position:fixed;bottom:18px;left:50%;transform:translateX(-50%);background:var(--navy);color:#fff;padding:10px 20px;border-radius:12px;font-weight:700;opacity:0;pointer-events:none;transition:.3s}
+.toast.show{opacity:1}
+.setup{background:#FEF3C7;color:#78350F;border-radius:12px;padding:12px 14px;font-size:14px;margin-top:10px;display:none}
+.hidden{display:none!important}
+.note{font-size:13px;color:var(--mut);margin-top:6px}
+</style>
+</head>
+<body>
+<header><h1>🖥️ Classroom Control <small id="who"></small></h1><a class="back" href="/">← Games hub</a><button class="btn ghost hidden" id="outBtn" style="color:#fff;border-color:#4B5E7E">Sign out</button></header>
+
+<div id="loginView" class="login">
+  <h2>🔒 Teacher sign-in</h2><p>This area is for teachers only.</p>
+  <input type="email" id="em" placeholder="Email" autocomplete="username">
+  <input type="password" id="pw" placeholder="Password" autocomplete="current-password">
+  <div class="err" id="loginErr"></div>
+  <button class="btn" id="inBtn" style="width:100%">Sign in</button>
+  <div class="setup" id="setupHint"></div>
+</div>
+
+<div id="appView" class="wrap hidden">
+  <div class="stats"><div class="stat"><b id="sOn">0</b>Online</div><div class="stat"><b id="sAll">0</b>Seen today</div><div class="stat"><b id="sLk">0</b>Locked</div><div class="stat"><b id="sSel">0</b>Selected</div></div>
+
+  <div class="panel">
+    <h3>Send commands to</h3>
+    <div class="tgt">
+      <label><input type="radio" name="tg" value="all" checked> All computers</label>
+      <label><input type="radio" name="tg" value="sel"> Selected computers (<span id="tSel">0</span>)</label>
+      <button class="btn ghost" id="selOnline">Select all online</button><button class="btn ghost" id="selNone">Clear selection</button>
+    </div>
+    <div class="acts">
+      <div class="act"><h4>🔒 Lock screens</h4>
+        <input type="text" id="lockMsg" placeholder="Message on locked screen (optional)">
+        <div class="row"><button class="btn red" id="lockBtn">Lock</button><button class="btn blue" id="unlockBtn">Unlock</button></div>
+        <div class="note">Covers the game page with a lock screen.</div></div>
+      <div class="act"><h4>💬 Message</h4>
+        <textarea id="msgTxt" placeholder="Type a message to show on their screens"></textarea>
+        <button class="btn" id="msgBtn">Send message</button></div>
+      <div class="act"><h4>🔗 Open a link</h4>
+        <input type="url" id="linkUrl" placeholder="https://example.com">
+        <div class="row"><label><input type="checkbox" id="linkSame"> Take them there (same tab)</label></div>
+        <button class="btn" id="linkBtn" style="margin-top:8px">Open on computers</button></div>
+      <div class="act"><h4>📁 Send a file</h4>
+        <input type="file" id="fileIn"><input type="text" id="fileNote" placeholder="Note (optional)">
+        <button class="btn" id="fileBtn">Send file</button><div class="note">Up to 600 KB (worksheets, small images, PDFs).</div></div>
+      <div class="act"><h4>🏠 Back to menu / refresh</h4>
+        <div class="row"><button class="btn gray" id="homeBtn">Send to games hub</button><button class="btn gray" id="reloadBtn">Reload page</button></div></div>
+      <div class="act"><h4>💤 Shut-down notice</h4>
+        <input type="text" id="sdTxt" placeholder="Extra note (optional)">
+        <button class="btn amber" id="sdBtn">Tell them to shut down</button>
+        <div class="note">A web page cannot switch a computer off. This shows a full-screen reminder.</div></div>
+    </div>
+  </div>
+
+  <div class="panel">
+    <div class="row" style="justify-content:space-between;margin-bottom:10px"><h3 style="margin:0">Computers</h3><div class="row"><button class="btn ghost" id="forgetBtn">Forget offline computers</button></div></div>
+    <div class="grid" id="pcs"></div>
+    <div class="note" id="emptyNote">No computers yet. A computer appears here when someone opens the games site.</div>
+  </div>
+  <div class="panel"><h3>Recent commands</h3><div class="log" id="log"><div>Nothing sent yet.</div></div></div>
+</div>
+<div class="toast" id="toast"></div>
+<script src="/mdm-store.js"></script>
+<script>
+const $=id=>document.getElementById(id); let store, devices=[], labels={}, locks={}, selected=new Set(), logArr=[];
+function toast(t){ const e=$('toast'); e.textContent=t; e.classList.add('show'); setTimeout(()=>e.classList.remove('show'),2600); }
+function esc(t){ return String(t==null?'':t).replace(/[&<>"]/g,c=>({'&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;'}[c])); }
+const ONLINE=40000, AWAY=120000;
+function status(d){ const a=Date.now()-(d.lastSeen||0); return a<ONLINE?'on':a<AWAY?'away':'offl'; }
+function ago(ms){ if(!ms) return 'never'; const s=Math.round((Date.now()-ms)/1000); return s<60?s+'s ago':s<3600?Math.round(s/60)+' min ago':Math.round(s/3600)+' h ago'; }
+function lockedFor(id){ return (locks.all&&locks.all.locked)||(locks[id]&&locks[id].locked); }
+function nameOf(d){ return (labels[d.id]&&labels[d.id].label)||d.id; }
+
+function render(){
+  const today=devices.filter(d=>Date.now()-(d.lastSeen||0)<24*3600*1000).sort((a,b)=>nameOf(a).localeCompare(nameOf(b),undefined,{numeric:true}));
+  $('emptyNote').classList.toggle('hidden',today.length>0);
+  $('pcs').innerHTML=today.map(d=>{ const st=status(d), lk=lockedFor(d.id);
+    return `<div class="pc ${selected.has(d.id)?'sel':''} ${st==='offl'?'off':''}" data-id="${esc(d.id)}">
+      <div class="top"><div class="nm">🖥️ ${esc(nameOf(d))}</div><button class="ed" data-ed="${esc(d.id)}" title="Rename">✏️</button></div>
+      <div style="margin-top:6px"><span class="chip ${st}">${st==='on'?'Online':st==='away'?'Away':'Offline'}</span>${lk?'<span class="chip lk">🔒 Locked</span>':''}</div>
+      <div class="sub">👤 ${esc(d.user||'no name yet')}</div><div class="sub">📄 ${esc(d.page||'')}</div><div class="sub">⏱️ ${ago(d.lastSeen)}</div></div>`; }).join('');
+  const on=today.filter(d=>status(d)==='on').length;
+  $('sOn').textContent=on; $('sAll').textContent=today.length; $('sSel').textContent=selected.size; $('tSel').textContent=selected.size;
+  $('sLk').textContent=today.filter(d=>lockedFor(d.id)).length+((locks.all&&locks.all.locked)?0:0);
+}
+$('pcs').onclick=e=>{ const ed=e.target.closest('[data-ed]'); if(ed){ e.stopPropagation(); const id=ed.dataset.ed; const cur=(labels[id]&&labels[id].label)||''; const v=prompt('Name this computer (for example Lab PC 3)',cur); if(v!==null){ store.set('labels/'+id,{label:v.trim()},true).then(()=>toast('Renamed')).catch(fail); } return; }
+  const c=e.target.closest('.pc'); if(!c) return; const id=c.dataset.id; selected.has(id)?selected.delete(id):selected.add(id); render(); };
+$('selOnline').onclick=()=>{ devices.filter(d=>status(d)==='on').forEach(d=>selected.add(d.id)); document.querySelector('input[name=tg][value=sel]').checked=true; render(); };
+$('selNone').onclick=()=>{ selected.clear(); render(); };
+function fail(e){ console.error(e); toast('Not allowed: '+((e&&e.code)||'error')+'. Check the setup steps.'); }
+function targets(){ const v=document.querySelector('input[name=tg]:checked').value; if(v==='all') return 'all'; if(!selected.size){ toast('Select at least one computer first.'); return null; } return Array.from(selected); }
+function nTargets(t){ return t==='all'?devices.filter(d=>status(d)==='on').length:t.length; }
+function addLog(txt){ logArr.unshift(new Date().toLocaleTimeString([],{hour:'2-digit',minute:'2-digit'})+'  '+txt); $('log').innerHTML=logArr.slice(0,12).map(l=>'<div>'+esc(l)+'</div>').join(''); }
+async function send(type,extra,desc){ const t=targets(); if(!t) return false; try{ await store.add('commands',Object.assign({type,targets:t,ts:Date.now(),createdAt:store.serverTime()},extra||{})); addLog(desc+' → '+(t==='all'?'all computers':t.length+' selected')); toast('Sent ✔'); return true; }catch(e){ fail(e); return false; } }
+
+$('lockBtn').onclick=async()=>{ const t=targets(); if(!t) return; const data={locked:true,message:$('lockMsg').value.trim(),at:Date.now()};
+  try{ if(t==='all') await store.set('locks/all',data); else for(const id of t) await store.set('locks/'+id,data); addLog('Locked '+(t==='all'?'all computers':t.length+' selected')); toast('Locked 🔒'); }catch(e){ fail(e); } };
+$('unlockBtn').onclick=async()=>{ const t=targets(); if(!t) return; const data={locked:false,at:Date.now()};
+  try{ if(t==='all'){ await store.set('locks/all',data); for(const d of devices){ if(locks[d.id]&&locks[d.id].locked) await store.set('locks/'+d.id,data); } } else for(const id of t) await store.set('locks/'+id,data); addLog('Unlocked '+(t==='all'?'all computers':t.length+' selected')); toast('Unlocked 🔓'); }catch(e){ fail(e); } };
+$('msgBtn').onclick=async()=>{ const v=$('msgTxt').value.trim(); if(!v) return toast('Type a message first.'); if(await send('message',{text:v},'Message "'+v.slice(0,40)+'"')) $('msgTxt').value=''; };
+$('linkBtn').onclick=async()=>{ let u=$('linkUrl').value.trim(); if(!u) return toast('Paste a link first.'); if(/^(javascript|data|vbscript):/i.test(u)) return toast('That link type is not allowed.'); if(!/^https?:\/\//i.test(u)) u='https://'+u;
+  if(await send('open',{url:u,mode:$('linkSame').checked?'same':'new'},'Open '+u)) $('linkUrl').value=''; };
+$('homeBtn').onclick=()=>send('home',{},'Back to games hub');
+$('reloadBtn').onclick=()=>send('reload',{},'Reload page');
+$('sdBtn').onclick=()=>send('shutdown',{text:$('sdTxt').value.trim()},'Shut-down notice');
+$('fileBtn').onclick=()=>{ const f=$('fileIn').files[0]; if(!f) return toast('Choose a file first.'); if(f.size>600*1024) return toast('File is too big (max 600 KB).');
+  const r=new FileReader(); r.onload=async()=>{ const b64=String(r.result).split(',')[1]||''; if(await send('file',{name:f.name,mime:f.type||'application/octet-stream',b64,note:$('fileNote').value.trim()},'File '+f.name)){ $('fileIn').value=''; $('fileNote').value=''; } }; r.readAsDataURL(f); };
+$('forgetBtn').onclick=async()=>{ const old=devices.filter(d=>Date.now()-(d.lastSeen||0)>10*60*1000); if(!old.length) return toast('No offline computers to forget.'); try{ for(const d of old) await store.del('devices/'+d.id); toast('Forgot '+old.length+' computer(s)'); }catch(e){ fail(e); } };
+
+/* ---- sign in ---- */
+function startApp(){
+  store.watchCollection('devices',list=>{ devices=list; render(); });
+  store.watchCollection('labels',list=>{ labels={}; list.forEach(x=>labels[x.id]=x); render(); });
+  store.watchCollection('locks',list=>{ locks={}; list.forEach(x=>locks[x.id]=x); render(); });
+  setInterval(render,10000);
+}
+let started=false;
+async function boot(){
+  try{ store=window.MDMStore; await store.init(true); }catch(e){ $('loginErr').textContent='Could not load the sign-in service. Check the internet connection.'; return; }
+  store.onAuth(u=>{ if(u){ $('loginView').classList.add('hidden'); $('appView').classList.remove('hidden'); $('outBtn').classList.remove('hidden'); $('who').textContent=u.email; if(!started){ started=true; startApp(); } }
+    else { $('loginView').classList.remove('hidden'); $('appView').classList.add('hidden'); $('outBtn').classList.add('hidden'); $('who').textContent=''; if(started) location.reload(); } });
+}
+async function doLogin(){ $('loginErr').textContent=''; $('setupHint').style.display='none';
+  try{ await store.signIn($('em').value.trim(),$('pw').value); }catch(e){ const c=(e&&e.code)||'';
+    if(/wrong-password|invalid-credential|user-not-found|invalid-login/.test(c)) $('loginErr').textContent='Wrong email or password.';
+    else if(/too-many/.test(c)) $('loginErr').textContent='Too many tries. Wait a few minutes.';
+    else if(/invalid-email/.test(c)) $('loginErr').textContent='Please enter a valid email address.';
+    else { $('loginErr').textContent='Sign-in is not set up yet.'; $('setupHint').style.display='block'; $('setupHint').innerHTML='Teacher setup needed: in the Firebase console open <b>Authentication → Sign-in method</b>, switch on <b>Email/Password</b>, then add your teacher account under <b>Users</b>. ('+esc(c)+')'; } } }
+$('inBtn').onclick=doLogin; $('pw').addEventListener('keydown',e=>{ if(e.key==='Enter') doLogin(); });
+$('outBtn').onclick=()=>store.signOut();
+boot();
+</script>
+</body>
+</html>

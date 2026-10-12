@@ -1,0 +1,219 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1, maximum-scale=1, user-scalable=no">
+<title>Finger &amp; Typing Fun! - Year 1 Computing Game</title>
+<style>
+  :root{ --primary:#FF7F50; --secondary:#4FC3F7; --accent:#FFD54F; --green:#4CAF50; --light:#FFF9F0; --dark:#2B2250; --red:#E85C4A; }
+  *{box-sizing:border-box; -webkit-tap-highlight-color:transparent; -webkit-user-select:none; user-select:none;}
+  html,body{margin:0; min-height:100%; overscroll-behavior:none;}
+  body{font-family:'Segoe UI',Calibri,Arial,sans-serif; background:linear-gradient(135deg,#FF7F50 0%,#FFD54F 100%); min-height:100vh; display:flex; align-items:center; justify-content:center; padding:14px; color:var(--dark);}
+  .wrap{background:var(--light); border-radius:26px; max-width:720px; width:100%; padding:18px 22px 24px; box-shadow:0 20px 50px rgba(0,0,0,.3); position:relative; overflow:hidden;}
+  .hub-top-btn{position:fixed; top:10px; left:10px; z-index:300; background:#1A1A2E; color:#fff; text-decoration:none; font-weight:bold; font-size:14px; padding:8px 16px 8px 12px; border-radius:20px; box-shadow:0 3px 10px rgba(0,0,0,.35);}
+  h1{margin:6px 0 2px; text-align:center; color:var(--primary); font-size:clamp(24px,5vw,32px);}
+  .pills{display:flex; gap:6px; justify-content:center; margin:8px 0 10px;}
+  .pill{width:40px; height:40px; border-radius:50%; background:#EADFCB; display:flex; align-items:center; justify-content:center; font-size:20px; transition:.3s;}
+  .pill.cur{background:var(--secondary); transform:scale(1.15); box-shadow:0 3px 8px rgba(0,0,0,.2);}
+  .pill.done{background:var(--green);}
+  .stars{text-align:center; font-size:22px; letter-spacing:2px; min-height:28px;}
+  .bar{height:12px; background:#EADFCB; border-radius:8px; overflow:hidden; margin:6px 0 12px;}
+  .bar>i{display:block; height:100%; width:0; background:linear-gradient(90deg,var(--primary),var(--accent)); transition:width .4s;}
+  .prompt{display:flex; align-items:center; justify-content:center; gap:14px; background:#fff; border-radius:18px; padding:10px 16px; box-shadow:0 2px 8px rgba(0,0,0,.08); margin-bottom:12px; min-height:84px;}
+  .prompt .pe{font-size:56px; line-height:1;}
+  .prompt .pt{font-size:clamp(20px,4vw,28px); font-weight:800; color:var(--dark);}
+  .prompt:empty{display:none;}
+  .stage{position:relative; background:#FFF0E0; border:4px dashed #FFD2B0; border-radius:24px; min-height:300px; display:flex; flex-direction:column; align-items:center; justify-content:center; padding:14px; touch-action:manipulation;}
+  .big{font-size:110px; line-height:1; filter:drop-shadow(0 8px 14px rgba(0,0,0,.18));}
+  .row{display:flex; gap:14px; justify-content:center; flex-wrap:wrap; margin-top:14px; width:100%;}
+  .btn{flex:1; min-width:140px; max-width:300px; padding:16px 12px; border-radius:20px; border:5px solid transparent; font-size:22px; font-weight:800; cursor:pointer; display:flex; flex-direction:column; align-items:center; gap:4px; background:#fff; color:var(--dark); box-shadow:0 4px 0 rgba(0,0,0,.12);}
+  .btn .ic{font-size:54px; line-height:1;}
+  .btn:active{transform:translateY(3px); box-shadow:none;}
+  .btn.yes{background:#E8F7E4; border-color:#8BC34A;}
+  .btn.no{background:#FDE8E4; border-color:#F2998B;}
+  .btn.ok{background:#C8F0C0; border-color:var(--green);}
+  .btn.bad{animation:shake .4s; border-color:var(--red);}
+  @keyframes shake{0%,100%{transform:translateX(0)}20%{transform:translateX(-10px)}40%{transform:translateX(10px)}60%{transform:translateX(-8px)}80%{transform:translateX(8px)}}
+  .shake{animation:shake .4s;}
+  .msg{text-align:center; min-height:34px; margin:10px 0 0; font-size:22px; font-weight:800; color:var(--primary);}
+  .overlay{position:fixed; inset:0; background:rgba(43,34,80,.78); display:flex; align-items:center; justify-content:center; z-index:100; padding:20px;}
+  .card{background:#fff; border-radius:24px; padding:30px 30px; max-width:460px; width:100%; text-align:center; box-shadow:0 20px 50px rgba(0,0,0,.4);}
+  .card h2{margin:6px 0 6px; color:var(--primary); font-size:28px;}
+  .card p{color:#555; font-size:18px; margin:0 0 16px;}
+  .card .em{font-size:84px; line-height:1;}
+  .go{width:100%; padding:16px; border:none; border-radius:16px; background:var(--primary); color:#fff; font-size:22px; font-weight:800; cursor:pointer; box-shadow:0 5px 0 #d5603a;}
+  .go:active{transform:translateY(4px); box-shadow:none;}
+  /* tablet svg */
+  svg.tab{width:min(300px,70%); height:auto; touch-action:manipulation;}
+  .hot{cursor:pointer;}
+  /* touch tasks */
+  .abs{position:absolute; line-height:1; font-size:70px; cursor:pointer; transition:transform .15s;}
+  .pop{animation:pop .35s forwards;}
+  @keyframes pop{to{transform:scale(1.7); opacity:0;}}
+  .basket{position:absolute; right:22px; bottom:22px; font-size:110px; line-height:1;}
+  .drag{position:absolute; font-size:84px; line-height:1; touch-action:none; cursor:grab; z-index:5;}
+  canvas#draw{background:#fff; border-radius:18px; touch-action:none; width:100%; height:260px; border:3px solid #FFD2B0;}
+  /* keyboard */
+  .slots{display:flex; gap:10px; justify-content:center; margin:6px 0 10px; flex-wrap:wrap;}
+  .slot{width:62px; height:76px; border-radius:14px; border:4px solid #FFD2B0; background:#fff; font-size:46px; font-weight:800; display:flex; align-items:center; justify-content:center; color:var(--dark);}
+  .slot.ghost{color:#E6D9C2;}
+  .kb{background:#2F3140; border-radius:18px; padding:8px; width:100%; max-width:660px; margin-top:8px;}
+  .kr{display:flex; gap:5px; justify-content:center; margin-bottom:5px;}
+  .key{flex:1; max-width:56px; height:52px; border-radius:9px; border:none; background:#555a70; color:#fff; font-size:22px; font-weight:700; cursor:pointer;}
+  .key:active{background:#7a80a0;}
+  .key.wide{max-width:110px; background:#6d7390; font-size:20px;}
+  .key.go2{background:var(--green); max-width:110px;}
+  .typed{min-height:76px; min-width:240px; background:#fff; border:4px solid var(--secondary); border-radius:14px; display:flex; align-items:center; justify-content:center; font-size:46px; font-weight:800; padding:0 14px; letter-spacing:4px;}
+  /* edit cursor */
+  .line{display:flex; align-items:center; justify-content:center; min-height:90px; background:#fff; border:4px solid var(--secondary); border-radius:14px; padding:6px 10px;}
+  .ch{font-size:50px; font-weight:800; padding:0 4px; line-height:1.2;}
+  .gap{width:26px; height:76px; border-radius:6px; cursor:pointer; position:relative;}
+  .gap.cur::after{content:''; position:absolute; left:11px; top:8px; bottom:8px; width:5px; background:var(--primary); animation:blink 1s steps(1) infinite;}
+  @keyframes blink{50%{opacity:0}}
+  .hint{font-size:17px; color:#8a7766; text-align:center; margin-top:6px; font-weight:600;}
+  .key.hint{background:#FFD54F;color:#2B2250;box-shadow:0 0 0 3px #fff inset;}
+  .dot{position:absolute; width:58px; height:58px; margin:-29px 0 0 -29px; border-radius:50%; background:#4FC3F7; color:#fff; font-size:30px; font-weight:800; display:flex; align-items:center; justify-content:center; border:4px solid #fff; box-shadow:0 3px 8px rgba(0,0,0,.25);}
+  .dot.hit{background:#4CAF50;}
+  .dot.next{animation:pulse .9s infinite;}
+  @keyframes pulse{50%{transform:scale(1.18);}}
+  .bin{position:absolute; bottom:12px; width:36%; height:110px; border:5px dashed #B9B3D6; border-radius:20px; display:flex; align-items:center; justify-content:center; font-size:64px; background:rgba(255,255,255,.7);}
+  .hole{position:absolute; font-size:76px; line-height:1; opacity:.28; filter:grayscale(1);}
+  .num{position:absolute; width:78px; height:78px; margin:-39px 0 0 -39px; border-radius:50%; color:#fff; font-size:44px; font-weight:800; display:flex; align-items:center; justify-content:center; cursor:pointer; box-shadow:0 4px 0 rgba(0,0,0,.2);}
+  .conf{position:fixed; top:-20px; font-size:28px; z-index:400; pointer-events:none; animation:fall 2.2s linear forwards;}
+  @keyframes fall{to{transform:translateY(110vh) rotate(360deg);}}
+  .lock{position:relative;}
+</style>
+</head>
+<body>
+<a class="hub-top-btn" href="index.html">🏠 Back to Hub</a>
+<div class="overlay" id="gate"><div class="card">
+  <div class="em">👆⌨️</div>
+  <h2>Finger &amp; Typing Fun!</h2>
+  <p>Practise your finger skills and typing on the tablet!</p>
+  <button class="go" id="startBtn">Tap to Start! ▶</button>
+</div></div>
+
+<div class="wrap" id="wrap">
+  <h1>👆 Finger &amp; Typing Fun! ⌨️</h1>
+  <div class="pills" id="pills"></div>
+  <div class="bar"><i id="barFill"></i></div>
+  <div class="stars" id="stars"></div>
+  <div class="prompt" id="prompt"></div>
+  <div class="stage" id="stage"></div>
+  <div class="msg" id="msg"></div>
+</div>
+
+<script>
+const $=id=>document.getElementById(id);
+const stage=$('stage'), promptEl=$('prompt'), msgEl=$('msg');
+let SEQ=0, L=0, T=0, firstTry=0, totalTasks=0, doneCount=0, keyCb=null;
+const rnd=(a,b)=>a+Math.random()*(b-a), shuf=a=>a.map(x=>[Math.random(),x]).sort((p,q)=>p[0]-q[0]).map(x=>x[1]);
+function say(t){ msgEl.textContent=t||''; }
+function setPrompt(e,t){ promptEl.innerHTML=`<span class="pe">${e}</span><span class="pt">${t}</span>`; }
+function clear(){ stage.innerHTML=''; stage.style.touchAction='manipulation'; stage.style.padding='14px'; stage.style.minHeight='300px'; stage.dataset.kind=''; stage.dataset.seq=++SEQ; stage.onpointerdown=stage.onpointermove=stage.onpointerup=null; keyCb=null; say(''); }
+function mk(tag,cls,html){ const e=document.createElement(tag); if(cls)e.className=cls; if(html!==undefined)e.innerHTML=html; return e; }
+function shake(el){ if(!el)return; el.classList.remove('shake'); void el.offsetWidth; el.classList.add('shake'); }
+function good(){ say(['Well done! ⭐','Super! 🌟','Yes! 🎉','Brilliant! ✨','Great job! 👏'][Math.floor(Math.random()*5)]); }
+function confetti(n){ const E=['🎉','⭐','🌟','🎈','✨']; for(let i=0;i<n;i++){ const c=mk('div','conf',E[i%E.length]); c.style.left=Math.random()*100+'vw'; c.style.animationDelay=(Math.random()*.8)+'s'; document.body.appendChild(c); setTimeout(()=>c.remove(),3200);} }
+const SLOTS=(()=>{const a=[];for(let r=0;r<3;r++)for(let c=0;c<5;c++)a.push([10+c*19+(r%2?4:0),10+r*29]);return a;})();
+function place(el,x,y){ el.style.left=x+'%'; el.style.top=y+'%'; }
+
+/* ---- 1. TAP ---- */
+const tapTargets=(txt,g,b,nG,nB)=>done=>{ clear(); stage.dataset.kind='tap'; setPrompt('👆',txt); stage.style.minHeight='330px'; say('Tap only the right ones'); let n=0, slipped=false;
+  const items=shuf([...Array(nG).fill(1),...Array(nB).fill(0)]), pos=shuf(SLOTS).slice(0,items.length);
+  items.forEach((ok,i)=>{ const el=mk('div','abs',ok?g:b); el.dataset.good=ok; place(el,pos[i][0],pos[i][1]); el.onclick=()=>{ if(el.classList.contains('pop'))return; if(ok){ el.classList.add('pop'); if(++n===nG){ good(); setTimeout(()=>done(!slipped),700);} } else { slipped=true; shake(el); say('Not that one! Try again 💪'); } }; stage.appendChild(el); }); };
+const tapOrder=(N)=>done=>{ clear(); stage.dataset.kind='order'; setPrompt('🔢','Tap the numbers in order!'); stage.style.minHeight='330px'; say('Start with 1'); let nx=1, slipped=false; const C=['#FF7F50','#4FC3F7','#8BC34A','#E85C4A','#9C6BFF','#FFB300'];
+  const pos=shuf(SLOTS).slice(0,N);
+  for(let i=1;i<=N;i++){ const el=mk('div','num',i); el.style.background=C[i%C.length]; place(el,pos[i-1][0]+4,pos[i-1][1]+8); el.onclick=()=>{ if(el.classList.contains('pop'))return; if(i===nx){ el.classList.add('pop'); nx++; say(nx<=N?'Now '+nx:''); if(nx>N){ good(); setTimeout(()=>done(!slipped),700);} } else { slipped=true; shake(el); say('Find number '+nx+' 🔎'); } }; stage.appendChild(el); } };
+
+/* ---- 2. DOUBLE TAP ---- */
+const dtItems=(txt,e,N)=>done=>{ clear(); stage.dataset.kind='dt'; setPrompt('👆👆',txt); stage.style.minHeight='330px'; say('Two quick taps, one after the other'); let n=0;
+  const pos=shuf(SLOTS).slice(0,N); pos.forEach(p=>{ const el=mk('div','abs',e); place(el,p[0],p[1]); el.style.fontSize='84px'; let last=0; el.onclick=()=>{ if(el.classList.contains('pop'))return; const now=Date.now(); if(now-last<550){ el.classList.add('pop'); if(++n===N){ good(); setTimeout(()=>done(true),700);} } else { last=now; say('Tap again, quickly! 👆'); } }; stage.appendChild(el); }); };
+
+/* ---- 3. DRAG ---- */
+function dragify(el,home,onDrop){ let d=false,ox=0,oy=0; el.style.touchAction='none'; el.onpointerdown=e=>{ d=true; el.setPointerCapture(e.pointerId); const r=el.getBoundingClientRect(); ox=e.clientX-r.left; oy=e.clientY-r.top; el.style.zIndex=20; };
+  el.onpointermove=e=>{ if(!d)return; const s=stage.getBoundingClientRect(); el.style.left=(e.clientX-s.left-ox)+'px'; el.style.top=(e.clientY-s.top-oy)+'px'; };
+  el.onpointerup=e=>{ if(!d)return; d=false; el.style.zIndex=5; const a=el.getBoundingClientRect(); const r=onDrop(a.left+a.width/2,a.top+a.height/2,a); if(r!=='ok'){ el.style.left=home[0]; el.style.top=home[1]; if(r==='wrong'){ shake(el); say('Not that one! Try again 💪'); } else say('Drag it all the way! ☝️'); } }; }
+const inBox=(x,y,el,pad=0)=>{ const b=el.getBoundingClientRect(); return x>b.left-pad&&x<b.right+pad&&y>b.top-pad&&y<b.bottom+pad; };
+const dragOne=(txt,e,targ,tx,ty)=>done=>{ clear(); stage.dataset.kind='dragone'; setPrompt('☝️',txt); stage.style.minHeight='330px'; say('Touch it, slide your finger, then let go');
+  const t=mk('div','hole',targ); t.style.opacity='1'; t.style.filter='none'; t.style.right='6%'; t.style.bottom='6%'; t.style.fontSize='110px'; t.id='targ'; stage.appendChild(t);
+  const it=mk('div','drag',e); it.id='item'; it.style.left='8%'; it.style.top='14%'; stage.appendChild(it); let slipped=false;
+  dragify(it,['8%','14%'],(x,y)=>{ if(inBox(x,y,t,20)){ const b=t.getBoundingClientRect(),s=stage.getBoundingClientRect(); it.style.left=(b.left-s.left+b.width/2-42)+'px'; it.style.top=(b.top-s.top+8)+'px'; it.onpointerdown=null; good(); setTimeout(()=>done(!slipped),800); return 'ok'; } return 'none'; }); };
+const dragSort=(A,B,listA,listB)=>done=>{ clear(); stage.dataset.kind='sort'; setPrompt('☝️','Drag each one to its home!'); stage.style.minHeight='360px'; say('Fruit goes with the fruit, animals with the animals');
+  const bA=mk('div','bin',A); bA.style.left='4%'; bA.id='binA'; const bB=mk('div','bin',B); bB.style.right='4%'; bB.id='binB'; stage.append(bA,bB);
+  const items=shuf([...listA.map(e=>[e,'A']),...listB.map(e=>[e,'B'])]); let left=items.length, slipped=false; const xs=shuf([6,28,50,72,15,60]);
+  items.forEach(([e,k],i)=>{ const it=mk('div','drag',e); it.dataset.k=k; const hx=(6+i*22)+'%',hy=(i%2?10:30)+'%'; it.style.left=hx; it.style.top=hy; stage.appendChild(it);
+    dragify(it,[hx,hy],(x,y)=>{ const tb=k==='A'?bA:bB, ob=k==='A'?bB:bA; if(inBox(x,y,tb,10)){ const b=tb.getBoundingClientRect(),s=stage.getBoundingClientRect(); it.style.left=(b.left-s.left+b.width/2-42+(Math.random()*40-20))+'px'; it.style.top=(b.top-s.top+10)+'px'; it.onpointerdown=null; if(--left===0){ good(); setTimeout(()=>done(!slipped),800);} return 'ok'; } if(inBox(x,y,ob,10)){ slipped=true; return 'wrong'; } return 'none'; }); }); };
+const dragMatch=(list)=>done=>{ clear(); stage.dataset.kind='match'; setPrompt('☝️','Drag each shape to its shadow!'); stage.style.minHeight='360px'; say('Match the shapes');
+  const hs=shuf(list); let left=list.length, slipped=false; const holes={}; hs.forEach((e,i)=>{ const h=mk('div','hole',e); h.style.left=(10+i*28)+'%'; h.style.bottom='10%'; stage.appendChild(h); holes[e]=h; });
+  shuf(list).forEach((e,i)=>{ const it=mk('div','drag',e); const hx=(10+i*28)+'%'; it.style.left=hx; it.style.top='12%'; it.dataset.e=e; stage.appendChild(it);
+    dragify(it,[hx,'12%'],(x,y)=>{ if(inBox(x,y,holes[e],15)){ const b=holes[e].getBoundingClientRect(),s=stage.getBoundingClientRect(); it.style.left=(b.left-s.left)+'px'; it.style.top=(b.top-s.top)+'px'; it.onpointerdown=null; holes[e].style.opacity='0'; if(--left===0){ good(); setTimeout(()=>done(!slipped),800);} return 'ok'; } for(const k in holes){ if(k!==e&&inBox(x,y,holes[k],0)){ slipped=true; return 'wrong'; } } return 'none'; }); }); };
+
+/* ---- 4. DRAW ---- */
+const drawTask=(txt)=>done=>{ clear(); stage.dataset.kind='draw'; setPrompt('✏️',txt); say('Use your finger to draw'); stage.style.padding='8px'; const c=mk('canvas'); c.id='draw'; stage.appendChild(c); c.width=c.clientWidth*2; c.height=520; const x=c.getContext('2d'); x.lineWidth=14; x.lineCap='round'; x.strokeStyle=['#FF7F50','#4FC3F7','#8BC34A','#9C6BFF'][Math.floor(Math.random()*4)];
+  let dr=false,lx=0,ly=0,len=0,fin=false; const pos=e=>{const r=c.getBoundingClientRect(); return [(e.clientX-r.left)*c.width/r.width,(e.clientY-r.top)*c.height/r.height];};
+  c.onpointerdown=e=>{dr=true;c.setPointerCapture(e.pointerId);[lx,ly]=pos(e);x.beginPath();x.moveTo(lx,ly);x.lineTo(lx+.1,ly);x.stroke();};
+  c.onpointermove=e=>{ if(!dr)return; const [px,py]=pos(e); x.beginPath();x.moveTo(lx,ly);x.lineTo(px,py);x.stroke(); len+=Math.hypot(px-lx,py-ly); lx=px;ly=py; if(len>1500&&!fin){fin=true; good(); setTimeout(()=>done(true),900);} };
+  c.onpointerup=()=>{dr=false;}; };
+const DOTS={tri:[[50,14],[84,82],[16,82]],sq:[[22,18],[78,18],[78,82],[22,82]],house:[[50,10],[84,42],[74,88],[26,88],[16,42]],star:[[50,8],[62,40],[94,40],[68,60],[78,92],[50,72],[22,92],[32,60],[6,40],[38,40]]};
+const dotTask=(key,nm)=>done=>{ clear(); stage.dataset.kind='dots'; setPrompt('🔵','Join the dots: '+nm); stage.style.minHeight='340px'; stage.style.touchAction='none'; say('Slide your finger from 1 to 2 to 3…');
+  const pts=DOTS[key], N=pts.length; const svg=document.createElementNS('http://www.w3.org/2000/svg','svg'); svg.setAttribute('style','position:absolute;inset:0;width:100%;height:100%;pointer-events:none'); stage.appendChild(svg);
+  const els=pts.map((p,i)=>{ const d=mk('div','dot'+(i===0?' next':''),i+1); d.style.left=p[0]+'%'; d.style.top=p[1]+'%'; stage.appendChild(d); return d; });
+  let idx=-1, dr=false; const cen=i=>{ const b=els[i].getBoundingClientRect(),s=stage.getBoundingClientRect(); return [b.left-s.left+b.width/2,b.top-s.top+b.height/2]; };
+  const line=(a,b)=>{ const l=document.createElementNS('http://www.w3.org/2000/svg','line'); l.setAttribute('x1',a[0]);l.setAttribute('y1',a[1]);l.setAttribute('x2',b[0]);l.setAttribute('y2',b[1]);l.setAttribute('stroke','#FF7F50');l.setAttribute('stroke-width','10');l.setAttribute('stroke-linecap','round'); svg.appendChild(l); };
+  const hit=e=>{ const s=stage.getBoundingClientRect(), px=e.clientX-s.left, py=e.clientY-s.top, n=idx+1; if(n>=N)return; const c=cen(n); if(Math.hypot(px-c[0],py-c[1])<46){ if(idx>=0) line(cen(idx),c); idx=n; els[n].classList.remove('next'); els[n].classList.add('hit'); if(n+1<N) els[n+1].classList.add('next'); if(n===N-1){ line(c,cen(0)); good(); stage.onpointermove=null; setTimeout(()=>done(true),1000);} } };
+  stage.onpointerdown=e=>{ dr=true; try{stage.setPointerCapture(e.pointerId);}catch(_){} hit(e); }; stage.onpointermove=e=>{ if(dr) hit(e); }; stage.onpointerup=()=>{ dr=false; }; };
+
+/* ---- KEYBOARD ---- */
+const ROWS=['QWERTYUIOP','ASDFGHJKL','ZXCVBNM'];
+function buildKB(onKey,o={}){ const kb=mk('div','kb'); ROWS.forEach((r,i)=>{ const row=mk('div','kr'); [...r].forEach(ch=>{ const k=mk('button','key',ch); k.dataset.k=ch; k.onclick=()=>onKey(ch); row.appendChild(k); }); if(i===2&&o.back){ const b=mk('button','key wide','⌫'); b.dataset.k='BACK'; b.onclick=()=>onKey('BACK'); row.appendChild(b); } if(i===2&&o.done){ const d=mk('button','key go2','✔'); d.dataset.k='DONE'; d.onclick=()=>onKey('DONE'); row.appendChild(d);} kb.appendChild(row); }); if(o.space){ const r=mk('div','kr'); const sp=mk('button','key wide','space'); sp.style.maxWidth='300px'; sp.dataset.k=' '; sp.onclick=()=>onKey(' '); r.appendChild(sp); kb.appendChild(r);} keyCb=onKey; return kb; }
+document.addEventListener('keydown',e=>{ if(!keyCb||e.ctrlKey||e.metaKey)return; let k=null; if(/^[a-zA-Z]$/.test(e.key))k=e.key.toUpperCase(); else if(e.key==='Backspace')k='BACK'; else if(e.key==='Enter')k='DONE'; else if(e.key===' ')k=' '; if(k){ e.preventDefault(); keyCb(k);} });
+function hintKey(kb,ch){ kb.querySelectorAll('.key.hint').forEach(k=>k.classList.remove('hint')); const k=kb.querySelector(`.key[data-k="${ch}"]`); if(k)k.classList.add('hint'); }
+const typeWord=(e,word)=>done=>{ clear(); stage.dataset.kind='type'; stage.dataset.target=word; setPrompt(e,'Type the word: '+word); const slots=mk('div','slots'); stage.appendChild(slots); let i=0, slipped=false, wrong=0;
+  const draw=()=>{ slots.innerHTML=''; [...word].forEach((ch,k)=>slots.appendChild(mk('div','slot'+(k<i?'':' ghost'),ch))); }; draw();
+  const kb=buildKB(ch=>{ if(i>=word.length||ch==='BACK'||ch==='DONE'||ch===' ')return; if(ch===word[i]){ i++; wrong=0; hintKey(kb,'~'); draw(); if(i===word.length){ good(); keyCb=null; setTimeout(()=>done(!slipped),900);} } else { slipped=true; shake(slots); if(++wrong>=2) hintKey(kb,word[i]); } },{}); stage.appendChild(kb); say('Tap the letters on the keyboard'); };
+const typeName=done=>{ clear(); stage.dataset.kind='name'; setPrompt('⌨️','Type your name!'); const t=mk('div','typed','&nbsp;'); stage.appendChild(t); let s=''; const kb=buildKB(ch=>{ if(ch==='BACK'){ s=s.slice(0,-1);} else if(ch==='DONE'){ if(s.length>=2){ good(); keyCb=null; setTimeout(()=>done(true),900);} else say('Type your name first! ⌨️'); return; } else if(s.length<14){ s+=ch; } t.innerHTML=s||'&nbsp;'; },{back:1,done:1,space:1}); stage.appendChild(kb); say('Then tap the green ✔'); };
+const editTask=(e,start,target)=>done=>{ clear(); stage.dataset.kind='edit'; stage.dataset.target=target; setPrompt(e,'Fix it to say: '+target); let txt=[...start], cur=txt.length; const line=mk('div','line'); stage.appendChild(line);
+  const render=()=>{ line.innerHTML=''; for(let i=0;i<=txt.length;i++){ const g=mk('div','gap'+(i===cur?' cur':'')); g.dataset.i=i; g.onclick=()=>{cur=i;render();}; line.appendChild(g); if(i<txt.length) line.appendChild(mk('div','ch',txt[i])); } };
+  render(); stage.appendChild(mk('div','hint','👆 Tap between letters to move the cursor, then tap ⌫ to delete'));
+  const kb=buildKB(ch=>{ if(ch==='BACK'){ if(cur>0){ txt.splice(cur-1,1); cur--; } } else if(ch==='DONE'||ch===' '){return;} else if(txt.length<9){ txt.splice(cur,0,ch); cur++; } render();
+    if(txt.join('')===target){ good(); keyCb=null; [...kb.querySelectorAll('button')].forEach(b=>b.onclick=null); setTimeout(()=>done(true),900);} },{back:1}); stage.appendChild(kb); };
+
+/* ---- LEVELS ---- */
+const W3=[['🐱','CAT'],['☀️','SUN'],['🐶','DOG'],['🐷','PIG'],['🚌','BUS'],['🎩','HAT'],['🐝','BEE'],['🥚','EGG']];
+const W4=[['🐟','FISH'],['🌙','MOON'],['🌳','TREE'],['📖','BOOK'],['🎂','CAKE'],['🦆','DUCK']];
+const LEVELS=[
+ {e:'👆',name:'Tap, tap, tap!',les:'Finger skills',tasks:[
+  tapTargets('Tap all the apples 🍎','🍎','🍌',3,4),tapTargets('Tap all the stars ⭐','⭐','🌙',4,4),tapTargets('Tap all the dogs 🐶','🐶','🐱',3,5),tapOrder(5),tapOrder(7)]},
+ {e:'👆👆',name:'Double-tap!',les:'Finger skills',tasks:[
+  dtItems('DOUBLE-TAP the balloon!','🎈',1),dtItems('DOUBLE-TAP both gifts!','🎁',2),dtItems('DOUBLE-TAP all the balloons!','🎈',3),dtItems('DOUBLE-TAP all the cookies!','🍪',4)]},
+ {e:'☝️',name:'Drag and drop',les:'Finger skills',tasks:[
+  dragOne('Drag the apple to the basket','🍎','🧺'),dragOne('Drag the bee to the flower','🐝','🌸'),dragSort('🍎','🐶',['🍌','🍇'],['🐱','🐰']),dragMatch(['⭐','❤️','🔷']),dragSort('🌞','🌙',['☀️','😎'],['⭐','🛌'])]},
+ {e:'✏️',name:'Draw and trace',les:'Finger skills',tasks:[
+  dotTask('tri','triangle'),dotTask('sq','square'),dotTask('house','house'),drawTask('DRAW a sun with your finger ☀️')]},
+ {e:'⌨️',name:'Type the words',les:'Typing skills',tasks:W3.map(w=>typeWord(w[0],w[1]))},
+ {e:'🔤',name:'Longer words',les:'Typing skills',tasks:[typeName,...W4.map(w=>typeWord(w[0],w[1]))]},
+ {e:'⌫',name:'Fix my writing',les:'Typing skills',tasks:[editTask('🐱','CAAT','CAT'),editTask('🐶','DAOG','DOG'),editTask('☀️','SUM','SUN'),editTask('📖','BOOOK','BOOK')]}
+];
+totalTasks=LEVELS.reduce((a,l)=>a+l.tasks.length,0);
+function renderPills(){ $('pills').innerHTML=LEVELS.map((l,i)=>`<div class="pill ${i<L?'done':i===L?'cur':''}">${i<L?'✔':(i+1)}</div>`).join(''); }
+function renderStars(){ $('stars').textContent='⭐ × '+firstTry; $('barFill').style.width=(doneCount/totalTasks*100)+'%'; }
+function intro(){ renderPills(); const l=LEVELS[L]; clear(); promptEl.innerHTML=''; const ov=mk('div','overlay',`<div class="card"><div class="em">${l.e}</div><h2>Level ${L+1}: ${l.name}</h2><p>${l.les}</p><button class="go">Go! ▶</button></div>`); document.body.appendChild(ov); ov.querySelector('button').onclick=()=>{ov.remove(); T=0; nextTask();}; }
+function nextTask(){ const l=LEVELS[L]; if(T>=l.tasks.length){ L++; confetti(14); if(L>=LEVELS.length) return finish(); return setTimeout(intro,700); } l.tasks[T](ok=>{ doneCount++; if(ok)firstTry++; T++; renderStars(); nextTask(); }); }
+function finish(){ renderPills(); renderStars(); const pct=Math.round(firstTry/totalTasks*100); confetti(40); clear(); promptEl.innerHTML=''; stage.innerHTML=`<div style="font-size:90px">🏆</div><div style="font-size:30px;font-weight:800;color:var(--primary);text-align:center;margin-top:6px">You are a Finger &amp; Typing Star!</div><div style="font-size:22px;margin-top:8px">⭐ ${firstTry} / ${totalTasks} first-try stars</div><button class="go" style="margin-top:18px;max-width:300px" onclick="location.reload()">Play again 🔁</button>`;
+  if(window.__submitResultToCloud){ window.__submitResultToCloud({name:'Player',game:'Finger & Typing Fun! (Y1)',score:pct,total:100,date:new Date().toLocaleDateString()+' '+new Date().toLocaleTimeString([],{hour:'2-digit',minute:'2-digit'})}); } }
+$('startBtn').onclick=()=>{ $('gate').style.display='none'; const q=parseInt(new URLSearchParams(location.search).get('level')); if(q>=1&&q<=LEVELS.length) L=q-1; intro(); };
+renderPills();
+
+</script>
+
+<script src="https://www.gstatic.com/firebasejs/10.13.0/firebase-app-compat.js"></script>
+<script src="https://www.gstatic.com/firebasejs/10.13.0/firebase-firestore-compat.js"></script>
+<script>
+  const firebaseConfig = { apiKey:"AIzaSyCEJtHd802MyuZUlwt6OfGkl9IitHaSOaA", authDomain:"tasks-results.firebaseapp.com", projectId:"tasks-results", storageBucket:"tasks-results.firebasestorage.app", messagingSenderId:"1014525306500", appId:"1:1014525306500:web:3ffe2e6f5554e9140e04d1" };
+  try{ firebase.initializeApp(firebaseConfig); const db=firebase.firestore();
+    window.__submitResultToCloud=function(record){ return db.collection("results").add({...record,createdAt:firebase.firestore.FieldValue.serverTimestamp()}).then(()=>true).catch(err=>{console.error("Cloud sync failed:",err);return false;}); };
+  }catch(err){ console.error("Firebase init failed:",err); }
+</script>
+</body>
+</html>

@@ -89,7 +89,7 @@
   .tc.cur{border-bottom-color:var(--primary);}
   .tc.blank{color:#B9B3D6;}
   .eline{display:flex; flex-wrap:wrap; justify-content:center; align-items:center; background:#fff; border:4px solid var(--secondary); border-radius:14px; padding:10px 12px; font-size:clamp(26px,5vw,36px); font-weight:700; width:100%; max-width:660px; min-height:80px;}
-  .ec{display:inline-block; width:0; height:1.3em; position:relative;} .ec.cur::after,.ec3.cur::after{content:''; position:absolute; top:2px; bottom:2px; width:4px; background:var(--primary); animation:blink 1s steps(1) infinite;} .ec3{position:relative; display:inline-block; width:1.5em; height:1.3em;} .ec3.cur::after{left:0;}
+  .ec{display:inline-block; width:0; height:1.3em; position:relative; vertical-align:middle;} .ec.cur::after,.ec3.cur::after{content:''; position:absolute; top:2px; bottom:2px; width:4px; background:var(--primary); animation:blink 1s steps(1) infinite;} .ec3{position:relative; display:inline-block; width:1.5em; height:1.3em;} .ec3.cur::after{left:0;}
   .ec2{display:inline-block; min-width:.45em; padding:6px 1px; text-align:center; cursor:pointer;}
   @keyframes blink{50%{opacity:0}}
   .conf{position:fixed; top:-20px; font-size:28px; z-index:400; pointer-events:none; animation:fall 2.2s linear forwards;}
@@ -158,7 +158,7 @@ const typeLine=(pe,txt,target,o={})=>done=>{ clear(); stage.dataset.kind='type';
 const editLine=(pe,start,target)=>done=>{ clear(); stage.dataset.kind='edit'; stage.dataset.target=target; setPrompt(pe,'Fix the mistake!'); let txt=[...start], cur=txt.length, slipped=false;
   const tgt=mk('div','hint','Goal: '+target); tgt.style.cssText='font-size:22px;font-weight:700;color:#2B2250;margin:0 0 8px;text-align:center'; stage.appendChild(tgt);
   const line=mk('div','eline'); stage.appendChild(line);
-  const render=()=>{ line.innerHTML=''; txt.forEach((c,i)=>{ const left=mk('span','ec'+(i===cur?' cur':''),''); const s=mk('span','ec2',c===' '?' ':c); s.dataset.i=i; s.onclick=e=>{ const r=s.getBoundingClientRect(); cur=(e.clientX-r.left<r.width/2)?i:i+1; render(); }; line.appendChild(s); }); const end=mk('span','ec3'+(cur===txt.length?' cur':''),' '); end.onclick=()=>{cur=txt.length;render();}; line.appendChild(end); };
+  const render=()=>{ line.innerHTML=''; txt.forEach((c,i)=>{ const left=mk('span','ec'+(i===cur?' cur':''),''); const s=mk('span','ec2',c===' '?' ':c); s.dataset.i=i; s.onclick=e=>{ const r=s.getBoundingClientRect(); cur=(e.clientX-r.left<r.width/2)?i:i+1; render(); }; line.appendChild(left); line.appendChild(s); }); const end=mk('span','ec3'+(cur===txt.length?' cur':''),' '); end.onclick=()=>{cur=txt.length;render();}; line.appendChild(end); };
   render(); stage.appendChild(mk('div','hint','👆 Tap a letter to move the cursor · ⌫ deletes the letter before the cursor'));
   const kb=buildKB(ch=>{ if(ch==='BACK'){ if(cur>0){ txt.splice(cur-1,1); cur--; } } else if(ch==='DONE'){return;} else if(txt.length<60){ txt.splice(cur,0,ch); cur++; } render();
     if(txt.join('')===target){ good(); keyCb=null; setTimeout(()=>done(!slipped),900);} },{}); stage.appendChild(kb); };

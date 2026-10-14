@@ -28,6 +28,22 @@
     watchDoc: function(path,cb){ return db.doc(path).onSnapshot(function(s){ cb(s.exists?conv(s):null); }, function(e){ console.warn('mdm watchDoc',path,e&&e.code); }); },
     watchCollection: function(coll,cb,onErr){ return db.collection(coll).onSnapshot(function(s){ cb(s.docs.map(conv)); }, function(e){ if(onErr) onErr(e); }); },
     watchAdded: function(coll,cb){ var first=true; return db.collection(coll).orderBy('createdAt','desc').limit(5).onSnapshot(function(s){ if(first){first=false;return;} s.docChanges().forEach(function(ch){ if(ch.type==='added') cb(conv(ch.doc)); }); }, function(e){ console.warn('mdm watchAdded',e&&e.code); }); },
+    classFiles: function(year,cb,onErr){ return db.collection('classfiles').where('year','==',year).onSnapshot(function(s){ cb(s.docs.map(conv)); }, function(e){ if(onErr) onErr(e); }); },
+    putClassFile: async function(meta,chunks,progress){
+      var ref = db.collection('classfiles').doc();
+      for(var i=0;i<chunks.length;i++){ await ref.collection('c').doc(String(i).padStart(3,'0')).set({n:i,d:chunks[i]}); if(progress) progress(i+1,chunks.length); }
+      await ref.set(Object.assign({}, meta, {chunks:chunks.length, createdAt: firebase.firestore.FieldValue.serverTimestamp()}));
+      return ref.id;
+    },
+    getClassFile: async function(id,n,progress){
+      var out=[];
+      for(var i=0;i<n;i++){ var d=await db.collection('classfiles').doc(id).collection('c').doc(String(i).padStart(3,'0')).get(); if(!d.exists) throw new Error('missing part '+i); out.push(d.data().d); if(progress) progress(i+1,n); }
+      return out.join('');
+    },
+    delClassFile: async function(id,n){
+      for(var i=0;i<n;i++){ await db.collection('classfiles').doc(id).collection('c').doc(String(i).padStart(3,'0')).delete(); }
+      await db.collection('classfiles').doc(id).delete();
+    },
     signIn: function(email,pw){ return auth.signInWithEmailAndPassword(email,pw); },
     signOut: function(){ return auth.signOut(); },
     onAuth: function(cb){ return auth.onAuthStateChanged(function(u){ cb(u?{email:u.email}:null); }); }

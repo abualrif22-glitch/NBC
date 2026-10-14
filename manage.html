@@ -106,6 +106,17 @@ textarea{resize:vertical;min-height:60px}
     <div class="grid" id="pcs"></div>
     <div class="note" id="emptyNote">No computers yet. A computer appears here when someone opens the games site.</div>
   </div>
+  <div class="panel" id="cfPanel">
+    <h3>📚 Class files (students download these)</h3>
+    <div class="row" style="gap:10px;flex-wrap:wrap;margin-bottom:8px">
+      <select id="cfYear" style="padding:10px;border-radius:10px;border:1px solid var(--line);background:var(--bg);color:var(--ink)"><option value="4" selected>Year 4</option><option value="3">Year 3</option><option value="2">Year 2</option><option value="1">Year 1</option></select>
+      <input type="file" id="cfFile">
+    </div>
+    <input type="text" id="cfNote" placeholder="Short note for the students (e.g. Open this and finish page 1)">
+    <div class="row"><button class="btn" id="cfBtn">⬆ Upload</button><span id="cfProg" class="note"></span></div>
+    <div class="note">Max 4 MB per file. Students open the Year 4 Work Area page and press Download.</div>
+    <div id="cfList" style="margin-top:10px"></div>
+  </div>
   <div class="panel"><h3>Recent commands</h3><div class="log" id="log"><div>Nothing sent yet.</div></div></div>
 </div>
 <div class="toast" id="toast"></div>
@@ -156,11 +167,22 @@ $('fileBtn').onclick=()=>{ const f=$('fileIn').files[0]; if(!f) return toast('Ch
   const r=new FileReader(); r.onload=async()=>{ const b64=String(r.result).split(',')[1]||''; if(await send('file',{name:f.name,mime:f.type||'application/octet-stream',b64,note:$('fileNote').value.trim()},'File '+f.name)){ $('fileIn').value=''; $('fileNote').value=''; } }; r.readAsDataURL(f); };
 $('forgetBtn').onclick=async()=>{ const old=devices.filter(d=>Date.now()-(d.lastSeen||0)>10*60*1000); if(!old.length) return toast('No offline computers to forget.'); try{ for(const d of old) await store.del('devices/'+d.id); toast('Forgot '+old.length+' computer(s)'); }catch(e){ fail(e); } };
 
+/* ---- class files ---- */
+let cfs=[],cfUnsub=null;
+function cfRender(){ const el=$('cfList'); if(!cfs.length){ el.innerHTML='<div class="note">No class files yet.</div>'; return; }
+  el.innerHTML=cfs.slice().sort((a,b)=>(b.createdAt||0)-(a.createdAt||0)).map(f=>'<div class="row" style="justify-content:space-between;padding:8px 0;border-top:1px solid var(--line)"><div><b>'+esc(f.name)+'</b> <span class="note">Year '+f.year+' · '+Math.round((f.size||0)/1024)+' KB'+(f.note?' · '+esc(f.note):'')+'</span></div><button class="btn ghost" data-del="'+f.id+'">Delete</button></div>').join('');
+  el.querySelectorAll('[data-del]').forEach(b=>b.onclick=async()=>{ const f=cfs.find(x=>x.id===b.dataset.del); if(!f||!confirm('Delete '+f.name+'?')) return; try{ await store.delClassFile(f.id,f.chunks||0); toast('Deleted'); }catch(e){ fail(e); } }); }
+$('cfBtn').onclick=()=>{ const f=$('cfFile').files[0]; if(!f) return toast('Choose a file first.'); if(f.size>4*1024*1024) return toast('File is too big (max 4 MB).');
+  const r=new FileReader(); r.onload=async()=>{ const b64=String(r.result).split(',')[1]||''; const chunks=[]; for(let i=0;i<b64.length;i+=700000) chunks.push(b64.slice(i,i+700000)); if(!chunks.length) chunks.push('');
+    try{ $('cfBtn').disabled=true; await store.putClassFile({name:f.name,mime:f.type||'application/octet-stream',size:f.size,year:+$('cfYear').value,note:$('cfNote').value.trim()},chunks,(i,n)=>{ $('cfProg').textContent='Uploading '+i+'/'+n+'…'; }); $('cfProg').textContent=''; $('cfFile').value=''; $('cfNote').value=''; toast('Uploaded '+f.name); }catch(e){ $('cfProg').textContent=''; fail(e); } $('cfBtn').disabled=false; }; r.readAsDataURL(f); };
+
 /* ---- sign in ---- */
 function startApp(){
   store.watchCollection('devices',list=>{ devices=list; render(); });
   store.watchCollection('labels',list=>{ labels={}; list.forEach(x=>labels[x.id]=x); render(); });
   store.watchCollection('locks',list=>{ locks={}; list.forEach(x=>locks[x.id]=x); render(); });
+  store.classFiles(+$('cfYear').value,l=>{cfs=l;cfRender();},fail);
+  $('cfYear').onchange=()=>{ if(cfUnsub) cfUnsub(); cfUnsub=store.classFiles(+$('cfYear').value,l=>{cfs=l;cfRender();},fail); };
   setInterval(render,10000);
 }
 let started=false;

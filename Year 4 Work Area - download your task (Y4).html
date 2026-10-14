@@ -18,7 +18,7 @@ button:disabled{opacity:.6}
 </style></head><body>
 <header><a href="index.html">← Back</a><h1>📥 Year 4 Work Area</h1></header>
 <main>
-<div class="how"><b>How to start your work</b><ol><li>Press the orange <b>Download</b> button.</li><li>Open the file from your <b>Downloads</b> folder.</li><li>Do the task your teacher wrote below the file name.</li><li>Save your work with your <b>name and class</b>.</li></ol></div>
+<div class="how"><b>How to start your work</b><ol><li>Press the orange <b>Download</b> button and <b>choose where to save</b> the file.</li><li>Open the file from the place you chose.</li><li>Do the task your teacher wrote below the file name.</li><li>Save your work with your <b>name and class</b>.</li></ol></div>
 <div id="msg">Loading your work…</div>
 <div id="list"></div>
 </main>
@@ -36,9 +36,23 @@ async function boot(){
     if(!files.length)$('msg').textContent='No work has been sent yet. Wait for your teacher. 🙂';
     $('list').innerHTML=files.map(f=>'<div class="file"><div class="ic">'+icon(f.name)+'</div><div class="info"><div class="nm">'+esc(f.name)+'</div>'+(f.note?'<div class="nt">'+esc(f.note)+'</div>':'')+'<div class="mt">'+Math.max(1,Math.round((f.size||0)/1024))+' KB'+(f.createdAt?' · '+new Date(f.createdAt).toLocaleDateString():'')+'</div></div><button data-id="'+f.id+'">⬇ Download</button></div>').join('');
     document.querySelectorAll('button[data-id]').forEach(b=>b.onclick=async()=>{
-      const f=files.find(x=>x.id===b.dataset.id);b.disabled=true;const t=b.textContent;b.textContent='Please wait…';
-      try{const b64=await MDMStore.getClassFile(f.id,f.chunks||0);const url=URL.createObjectURL(b64blob(b64,f.mime));const a=document.createElement('a');a.href=url;a.download=f.name;document.body.appendChild(a);a.click();a.remove();setTimeout(()=>URL.revokeObjectURL(url),10000);b.textContent='✅ Downloaded';}
-      catch(e){b.textContent=t;alert('Download did not work. Tell your teacher.');}
+      const f=files.find(x=>x.id===b.dataset.id);const t=b.textContent;
+      let handle=null;
+      if(window.showSaveFilePicker){
+        try{
+          const ext=(f.name.match(/\.[A-Za-z0-9]+$/)||[''])[0];
+          const opts={suggestedName:f.name};
+          if(ext&&f.mime)opts.types=[{description:f.name,accept:{[f.mime]:[ext]}}];
+          handle=await window.showSaveFilePicker(opts);
+        }catch(e){ if(e&&e.name==='AbortError')return; handle=null; }
+      }
+      b.disabled=true;b.textContent='Please wait…';
+      try{
+        const b64=await MDMStore.getClassFile(f.id,f.chunks||0);const blob=b64blob(b64,f.mime);
+        if(handle){const w=await handle.createWritable();await w.write(blob);await w.close();}
+        else{const url=URL.createObjectURL(blob);const a=document.createElement('a');a.href=url;a.download=f.name;document.body.appendChild(a);a.click();a.remove();setTimeout(()=>URL.revokeObjectURL(url),10000);}
+        b.textContent='✅ Saved';}
+      catch(e){b.textContent=t;alert('Saving did not work. Tell your teacher.');}
       setTimeout(()=>{b.disabled=false;b.textContent=t;},2500);
     });
   },e=>{$('msg').style.display='block';$('msg').textContent='Could not load the list. Ask your teacher for help.';});

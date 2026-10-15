@@ -1,0 +1,199 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width,initial-scale=1">
+<title>Match the Columns! - Year 3 Computing Game</title>
+<style>
+  :root{ --primary:#3A0CA3; --secondary:#4CC9F0; --accent:#F72585; --light:#F7F7FC; --dark:#1A1A2E; --green:#06D6A0; --red:#EF233C; }
+  *{box-sizing:border-box;}
+  body{ margin:0; font-family:'Segoe UI',Calibri,Arial,sans-serif; background:linear-gradient(135deg,#3A0CA3 0%,#4CC9F0 100%); min-height:100vh; display:flex; align-items:center; justify-content:center; padding:24px; }
+  .wrap{ background:var(--light); border-radius:24px; max-width:1000px; width:100%; padding:26px 30px 30px; box-shadow:0 20px 50px rgba(0,0,0,.35); }
+  h1{ color:var(--primary); text-align:center; margin:0 0 4px; font-size:32px; }
+  .sub{ text-align:center; color:#555; margin:0 0 14px; font-size:17px; }
+  .hud{ display:flex; justify-content:space-between; align-items:center; background:#fff; border-radius:14px; padding:10px 18px; margin-bottom:14px; box-shadow:0 2px 8px rgba(0,0,0,.08); font-weight:bold; color:var(--primary); gap:8px; flex-wrap:wrap; font-size:17px; }
+  .hud .big{ color:var(--accent); font-size:21px; }
+  .board{ position:relative; display:flex; justify-content:space-between; gap:12%; padding:6px 10px; touch-action:none; user-select:none; -webkit-user-select:none; }
+  .col{ flex:1; display:flex; flex-direction:column; gap:14px; }
+  .col.left{ flex:0 0 32%; }
+  .item{ position:relative; background:#fff; border:3px solid var(--primary); border-radius:14px; padding:12px 16px; font-size:21px; color:var(--dark); display:flex; align-items:center; min-height:70px; cursor:pointer; box-shadow:0 3px 8px rgba(0,0,0,.1); }
+  .left .item{ font-weight:bold; font-size:24px; color:var(--primary); }
+  .right .item{ font-size:19px; }
+  .dot{ position:absolute; top:50%; width:20px; height:20px; border-radius:50%; background:var(--accent); border:3px solid #fff; transform:translateY(-50%); box-shadow:0 0 0 2px var(--primary); }
+  .left .dot{ right:-13px; } .right .dot{ left:-13px; }
+  .item.sel{ background:#FFF3B0; border-color:var(--accent); }
+  .item.hot{ background:#E0F7FF; }
+  .item.done{ background:#D9FBEF; border-color:var(--green); cursor:default; }
+  .item.done .dot{ background:var(--green); }
+  .item.bad{ background:#FFE0E4; border-color:var(--red); }
+  svg.lines{ position:absolute; inset:0; width:100%; height:100%; pointer-events:none; overflow:visible; }
+  .msg{ text-align:center; font-size:20px; font-weight:bold; min-height:30px; margin-top:12px; color:var(--primary); }
+  .msg.ok{ color:#0e9e6f; } .msg.no{ color:var(--red); }
+  .btn{ display:inline-block; padding:14px 30px; font-size:20px; border:none; border-radius:12px; background:var(--primary); color:#fff; font-weight:bold; cursor:pointer; }
+  .center{ text-align:center; margin-top:14px; }
+  .hidden{ display:none !important; }
+  .gate-overlay{ position:fixed; inset:0; background:rgba(26,26,46,.72); display:flex; align-items:center; justify-content:center; z-index:100; padding:20px; }
+  .gate-card{ background:#fff; border-radius:20px; padding:34px 36px; max-width:420px; width:100%; text-align:center; box-shadow:0 20px 50px rgba(0,0,0,.4); }
+  .gate-card h2{ color:var(--primary); margin:0 0 8px; font-size:26px; }
+  .gate-card p{ color:#555; margin:0 0 18px; font-size:16px; }
+  .gate-card input{ width:100%; font-size:20px; padding:12px 14px; border-radius:10px; border:2px solid var(--secondary); text-align:center; font-weight:bold; color:var(--dark); margin-bottom:14px; }
+  .gate-card button{ width:100%; padding:13px; font-size:18px; border:none; border-radius:10px; background:var(--primary); color:#fff; font-weight:bold; cursor:pointer; }
+  .gate-error{ color:var(--accent); font-size:14px; min-height:18px; margin-bottom:6px; font-weight:bold; }
+  .hub-top-btn{ position:fixed; top:12px; left:12px; z-index:300; display:inline-flex; align-items:center; gap:6px; background:#1A1A2E; color:#fff; text-decoration:none; font-weight:bold; font-size:14px; padding:8px 16px 8px 12px; border-radius:20px; box-shadow:0 3px 10px rgba(0,0,0,.35); }
+  .name-badge{ position:fixed; top:12px; right:12px; z-index:350; background:#1A1A2E; color:#FFD60A; font-weight:bold; font-size:20px; padding:9px 20px; border-radius:50px; box-shadow:0 4px 16px rgba(0,0,0,.4); display:none; max-width:50vw; overflow:hidden; text-overflow:ellipsis; white-space:nowrap; }
+  #results{ background:#fff; border-radius:14px; padding:24px; text-align:center; }
+  #results h2{ color:var(--primary); margin:0 0 8px; font-size:30px; }
+  #results p{ font-size:20px; margin:8px 0; }
+  .cloud{ font-size:15px; color:#555; }
+  @media(max-width:700px){ .board{gap:16%;} .left .item{font-size:18px;} .right .item{font-size:15px;} }
+</style>
+</head>
+<body>
+<a href="index.html" class="hub-top-btn">🏠 Back to Hub</a>
+<div class="name-badge" id="badge"></div>
+
+<div class="gate-overlay" id="gate">
+  <div class="gate-card">
+    <h2>🔗 Match the Columns!</h2>
+    <p>Type your name to start the challenge.</p>
+    <input type="text" id="nameIn" placeholder="Your name" maxlength="24" autocomplete="off">
+    <div class="gate-error" id="nameErr"></div>
+    <button id="goBtn">Start ▶</button>
+  </div>
+</div>
+
+<div class="wrap">
+  <h1>🔗 Match the Columns!</h1>
+  <p class="sub" id="sub">Draw a line from each word to its correct meaning.</p>
+  <div id="play">
+    <div class="hud"><span>Round <span class="big" id="rd">1</span> of <span id="rt">3</span></span><span>✅ Matched: <span class="big" id="mt">0</span>/5</span><span>⭐ Score: <span class="big" id="sc">0</span></span></div>
+    <div class="board" id="board">
+      <svg class="lines" id="svg"></svg>
+      <div class="col left" id="L"></div>
+      <div class="col right" id="R"></div>
+    </div>
+    <div class="msg" id="msg">Press a word, then drag to its meaning. You can also tap a word and then tap its meaning.</div>
+    <div class="center"><button class="btn hidden" id="next">Next round ▶</button></div>
+  </div>
+  <div id="results" class="hidden"></div>
+</div>
+
+<script>
+const ROUNDS = [
+  { title:'Network words', pairs:[
+    ['Connection','A link between two things'],
+    ['Computer network','A number of connections linking devices together'],
+    ['Network switch','A device that connects multiple devices on a network with one another'],
+    ['Server','A networked computer for storing files'],
+    ['Wireless access point','A wired device that sends and receives wireless signals for devices with wireless connectivity to and from the network'] ]},
+  { title:'Getting connected', pairs:[
+    ['Internet','A huge network that joins networks all over the world'],
+    ['Wi-Fi','A way to join a network without wires'],
+    ['Cable','A wire that carries data between devices'],
+    ['Router','A device that sends data from one network to another'],
+    ['Device','A computer, tablet or phone that can join a network'] ]},
+  { title:'Using the web', pairs:[
+    ['Website','A place on the internet made by people'],
+    ['Browser','A program that lets you look at websites'],
+    ['Download','Saving a file from the internet onto your computer'],
+    ['Share','Letting other people see or use your work'],
+    ['Permission','Saying yes so someone can use your work'] ]}
+];
+const $=id=>document.getElementById(id);
+let name='', ri=0, score=0, firstTry=0, mistakes=0, matched=0, from=null, tmp=null, locked=false;
+let tried=new Set(); // left terms that already had a wrong try this round
+
+function shuffle(a){ a=a.slice(); for(let i=a.length-1;i>0;i--){ const j=Math.floor(Math.random()*(i+1)); [a[i],a[j]]=[a[j],a[i]]; } return a; }
+function build(){
+  const R=ROUNDS[ri]; matched=0; from=null; tried=new Set(); locked=false;
+  $('rd').textContent=ri+1; $('rt').textContent=ROUNDS.length; $('mt').textContent=0; $('sc').textContent=score;
+  $('next').classList.add('hidden'); $('svg').innerHTML='';
+  setMsg('Round '+(ri+1)+': '+R.title+'. Press a word, then drag to its meaning.','');
+  $('L').innerHTML=''; $('R').innerHTML='';
+  R.pairs.forEach((p,i)=>{ const d=document.createElement('div'); d.className='item'; d.dataset.i=i; d.innerHTML='<span>'+p[0]+'</span><i class="dot"></i>'; $('L').appendChild(d); });
+  shuffle(R.pairs.map((p,i)=>i)).forEach(i=>{ const d=document.createElement('div'); d.className='item'; d.dataset.i=i; d.innerHTML='<i class="dot"></i><span>'+R.pairs[i][1]+'</span>'; $('R').appendChild(d); });
+}
+function setMsg(t,c){ const m=$('msg'); m.textContent=t; m.className='msg '+(c||''); }
+function pt(el,side){ const b=$('board').getBoundingClientRect(), r=el.getBoundingClientRect(); return {x:(side==='L'?r.right:r.left)-b.left, y:r.top+r.height/2-b.top}; }
+function line(a,b,color,dash){ const l=document.createElementNS('http://www.w3.org/2000/svg','line'); l.setAttribute('x1',a.x);l.setAttribute('y1',a.y);l.setAttribute('x2',b.x);l.setAttribute('y2',b.y); l.setAttribute('stroke',color); l.setAttribute('stroke-width',6); l.setAttribute('stroke-linecap','round'); if(dash) l.setAttribute('stroke-dasharray','2 10'); $('svg').appendChild(l); return l; }
+function clearSel(){ document.querySelectorAll('.item.sel').forEach(e=>e.classList.remove('sel')); if(tmp){tmp.remove();tmp=null;} from=null; }
+function itemAt(x,y){ const e=document.elementFromPoint(x,y); return e&&e.closest&&e.closest('.item'); }
+
+function attempt(l,r){
+  if(locked) return;
+  const li=+l.dataset.i, ri2=+r.dataset.i;
+  if(li===ri2){
+    l.classList.remove('sel'); l.classList.add('done'); r.classList.add('done');
+    line(pt(l,'L'),pt(r,'R'),'#06D6A0');
+    if(!tried.has(li)){ score+=10; firstTry++; } else score+=5;
+    matched++; $('mt').textContent=matched; $('sc').textContent=score;
+    setMsg('✅ Correct!','ok'); clearSelKeep();
+    if(matched===ROUNDS[ritem()].pairs.length) finishRound();
+  } else {
+    tried.add(li); mistakes++;
+    const a=pt(l,'L'), b=pt(r,'R'), ln=line(a,b,'#EF233C'); r.classList.add('bad'); l.classList.add('bad');
+    setMsg('❌ Not that one — try again!','no'); clearSelKeep(); locked=true;
+    setTimeout(()=>{ ln.remove(); r.classList.remove('bad'); l.classList.remove('bad'); locked=false; },700);
+  }
+}
+function ritem(){ return ri; }
+function clearSelKeep(){ document.querySelectorAll('.item.sel').forEach(e=>e.classList.remove('sel')); if(tmp){tmp.remove();tmp=null;} from=null; }
+function finishRound(){
+  if(ri<ROUNDS.length-1){ setMsg('🎉 Round complete! Well done.','ok'); $('next').classList.remove('hidden'); }
+  else { setMsg('🎉 All rounds complete!','ok'); setTimeout(showResults,900); }
+}
+
+const board=$('board');
+board.addEventListener('pointerdown',e=>{
+  if(locked) return; const it=itemAt(e.clientX,e.clientY); if(!it||it.classList.contains('done')) return;
+  const isLeft=it.parentElement.id==='L';
+  if(isLeft){ clearSelKeep(); from=it; it.classList.add('sel'); const a=pt(it,'L'); tmp=line(a,a,'#F72585',true); board._drag=true; board._moved=false; e.preventDefault(); }
+  else if(from){ attempt(from,it); }
+});
+board.addEventListener('pointermove',e=>{
+  if(!from||!tmp) return; const b=board.getBoundingClientRect();
+  if(board._drag){ board._moved=true; tmp.setAttribute('x2',e.clientX-b.left); tmp.setAttribute('y2',e.clientY-b.top); }
+  document.querySelectorAll('.item.hot').forEach(x=>x.classList.remove('hot'));
+  const it=itemAt(e.clientX,e.clientY); if(it&&it.parentElement.id==='R'&&!it.classList.contains('done')) it.classList.add('hot');
+});
+window.addEventListener('pointerup',e=>{
+  document.querySelectorAll('.item.hot').forEach(x=>x.classList.remove('hot'));
+  if(!board._drag) return; board._drag=false; if(!from) return;
+  const it=itemAt(e.clientX,e.clientY);
+  if(board._moved){ if(it&&it.parentElement.id==='R'&&!it.classList.contains('done')) attempt(from,it); else { clearSelKeep(); setMsg('Drop the line on a meaning on the right.',''); } }
+  else { if(tmp){tmp.remove();tmp=null;} /* tap: keep word selected, wait for tap on a meaning */ setMsg('Now tap the meaning that matches "'+from.querySelector('span').textContent+'".',''); }
+});
+window.addEventListener('resize',()=>{ if(matched){ $('svg').innerHTML=''; document.querySelectorAll('#L .item.done').forEach(l=>{ const r=document.querySelector('#R .item.done[data-i="'+l.dataset.i+'"]'); line(pt(l,'L'),pt(r,'R'),'#06D6A0'); }); } });
+$('next').onclick=()=>{ ri++; build(); };
+
+function showResults(){
+  const total=ROUNDS.reduce((n,r)=>n+r.pairs.length,0);
+  $('play').classList.add('hidden'); const res=$('results'); res.classList.remove('hidden');
+  const stars=firstTry>=total-1?'⭐⭐⭐':firstTry>=total-4?'⭐⭐':'⭐';
+  res.innerHTML='<h2>'+stars+' Great job, '+name.replace(/</g,'&lt;')+'!</h2><p>You matched all <b>'+total+'</b> pairs.</p><p>First-time correct: <b>'+firstTry+'</b> / '+total+'  ·  Score: <b>'+score+'</b></p><p class="cloud" id="cloud"></p><div class="center"><button class="btn" id="again">Play again 🔁</button> <a class="btn" style="text-decoration:none;background:#1A1A2E" href="index.html">🏠 Hub</a></div>';
+  $('again').onclick=()=>{ ri=0; score=0; firstTry=0; mistakes=0; res.classList.add('hidden'); $('play').classList.remove('hidden'); build(); };
+  const cn=$('cloud');
+  if(window.__submitResultToCloud){
+    window.__submitResultToCloud({ name:name, game:'Match the Columns! (Y3)', score:score, total:total*10, rounds:ROUNDS.length, correctFirstTry:firstTry, mistakes:mistakes, date:new Date().toLocaleDateString()+' '+new Date().toLocaleTimeString([],{hour:'2-digit',minute:'2-digit'}) })
+      .then(ok=>{ cn.textContent=ok?'☁️ Sent to your teacher automatically!':'⚠️ Could not send your result.'; });
+  } else cn.textContent='⚠️ Result could not be sent.';
+}
+
+function start(){
+  const v=$('nameIn').value.trim(); if(!v){ $('nameErr').textContent='Please type your name to start.'; $('nameIn').focus(); return; }
+  name=v.slice(0,24); $('gate').style.display='none'; $('badge').textContent='👤 '+name; $('badge').style.display='inline-block';
+  $('sub').textContent='Nice to meet you, '+name+'! Draw a line from each word to its correct meaning.'; build();
+}
+$('goBtn').onclick=start; $('nameIn').addEventListener('keydown',e=>{ if(e.key==='Enter') start(); }); $('nameIn').focus();
+</script>
+<script src="https://www.gstatic.com/firebasejs/10.13.0/firebase-app-compat.js"></script>
+<script src="https://www.gstatic.com/firebasejs/10.13.0/firebase-firestore-compat.js"></script>
+<script>
+  try{
+    const app = firebase.apps.filter(a=>a.name==='[DEFAULT]')[0] || firebase.initializeApp({ apiKey:"AIzaSyCEJtHd802MyuZUlwt6OfGkl9IitHaSOaA", authDomain:"tasks-results.firebaseapp.com", projectId:"tasks-results", storageBucket:"tasks-results.firebasestorage.app", messagingSenderId:"1014525306500", appId:"1:1014525306500:web:3ffe2e6f5554e9140e04d1" });
+    const db = firebase.firestore();
+    window.__submitResultToCloud = r => db.collection("results").add({...r, createdAt: firebase.firestore.FieldValue.serverTimestamp()}).then(()=>true).catch(e=>{console.error(e);return false;});
+  }catch(err){ console.error(err); }
+</script>
+</body>
+</html>

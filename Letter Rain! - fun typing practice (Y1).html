@@ -101,8 +101,7 @@
 <div class="gate-overlay" id="gateOverlay">
   <div class="gate-card">
     <h2>⌨️ Letter Rain!</h2>
-    <p>Type your name to start!</p>
-    <input type="text" id="nameInput" placeholder="Your name" maxlength="24" autocomplete="off">
+    <p>Tap the button to play!</p> <input type="hidden" id="nameInput" value="Player">
     <div class="gate-error" id="nameError"></div>
     <button id="startBtn">Start ▶</button>
   </div>
@@ -502,12 +501,7 @@ const nameInput = document.getElementById('nameInput');
 const nameError = document.getElementById('nameError');
 
 function startGame(){
-  const val = nameInput.value.trim();
-  if(!val){
-    nameError.textContent = "Please type your name to start.";
-    nameInput.focus();
-    return;
-  }
+  const val = "Player";
   studentName = val.slice(0,24);
   document.getElementById('playerName').textContent = studentName;
   document.getElementById('highScoreDisplay').textContent = readSavedResults().reduce((m,r)=>Math.max(m, r.points||0), 0);
@@ -517,7 +511,6 @@ function startGame(){
 }
 document.getElementById('startBtn').addEventListener('click', startGame);
 nameInput.addEventListener('keydown', (e)=>{ if(e.key === 'Enter') startGame(); e.stopPropagation(); });
-nameInput.focus();
 </script>
 
 <!-- ===== Cloud sync: sends each result to the shared Firestore database ===== -->

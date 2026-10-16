@@ -204,6 +204,16 @@
         "size": 971157
        }
       ]
+     },
+     {
+      "group": "Pupil tasks",
+      "files": [
+       {
+        "name": "Y3 Unit task - Digital Devices and Networks.docx",
+        "path": "resources/Year-3/Y3 Unit task - Digital Devices and Networks.docx",
+        "size": 10165
+       }
+      ]
      }
     ]
    },
@@ -217,6 +227,11 @@
         "name": "Folders and saving files in Word",
         "path": "resources/Year-3/Y3 Folders and Saving Files.pptx",
         "size": 605598
+       },
+       {
+        "name": "Saving work in your own folder - pupil guide.pptx",
+        "path": "resources/Year-3/Saving work in your own folder - pupil guide.pptx",
+        "size": 506597
        }
       ]
      }
@@ -282,6 +297,11 @@
         "name": "Unit summary – The Internet (all 6 lessons)",
         "path": "resources/Year-4/Y4 Unit summary - The Internet.pptx",
         "size": 1859456
+       },
+       {
+        "name": "Saving work in your own folder - pupil guide.pptx",
+        "path": "resources/Year-4/Saving work in your own folder - pupil guide.pptx",
+        "size": 506597
        }
       ]
      },
@@ -292,6 +312,11 @@
         "name": "Lesson 5 task – Who owns the web (Word)",
         "path": "resources/Year-4/Y4 L5 Task - Who Owns the Web.docx",
         "size": 11089
+       },
+       {
+        "name": "Y4 Unit task - The Internet and the Web.docx",
+        "path": "resources/Year-4/Y4 Unit task - The Internet and the Web.docx",
+        "size": 10317
        }
       ]
      }

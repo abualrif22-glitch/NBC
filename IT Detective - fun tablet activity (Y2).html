@@ -253,6 +253,7 @@
     box-shadow:0 4px 16px rgba(0,0,0,0.4); display:none; pointer-events:none;
     max-width:62vw; overflow:hidden; text-overflow:ellipsis; white-space:nowrap; }
 </style>
+<script src="fx.js"></script>
 </head>
 <body>
 
@@ -322,6 +323,7 @@ const msg = document.getElementById('msg');
 const wrap = document.getElementById('wrap');
 
 function renderRound(){
+  try{ FX.theme(idx); }catch(e){}
   answered = false;
   document.getElementById('roundNum').textContent = idx+1;
   msg.className = 'msg';
@@ -329,8 +331,8 @@ function renderRound(){
 
   const obj = sequence[idx];
   stage.innerHTML = `
-    <div class="object-card" id="objCard">
-      <div class="object-emoji">${obj.emoji}</div>
+    <div class="object-card fx-in" id="objCard">
+      <div class="object-emoji fx-bob">${obj.emoji}</div>
       <div class="object-label">${obj.label}</div>
     </div>
     <div class="btn-row">
@@ -382,6 +384,7 @@ function handleAnswer(saidIT){
     msg.className = 'msg happy';
     msg.textContent = "\u2705 " + (obj.isIT ? (obj.label + " is information technology!") : (obj.label + " is NOT information technology!"));
     spawnConfetti(24);
+    try{ FX.at(card, 18, null, '+10'); }catch(e){}
     showCelebrateBanner(PRAISE[Math.floor(Math.random()*PRAISE.length)], "+10 points");
   } else {
     card.classList.add('shake');
@@ -391,14 +394,30 @@ function handleAnswer(saidIT){
       : ("\u274C Actually, " + obj.label + " is NOT information technology \u2014 it doesn't work with a computer.");
   }
 
-  setTimeout(()=>{
-    idx++;
-    if(idx < sequence.length){
-      renderRound();
-    } else {
-      showFinal();
-    }
-  }, 1600);
+  setTimeout(afterAnswer, 1600);
+}
+
+let segScore = 0;
+function afterAnswer(){
+  idx++;
+  const half = Math.floor(sequence.length/2), last = idx >= sequence.length;
+  if(idx === half || last){
+    const count = last ? (sequence.length - half) : half;
+    const pct = (score - segScore) / (count*10);
+    const st = pct>=0.9 ? 3 : (pct>=0.6 ? 2 : 1);
+    segScore = score;
+    FX.celebrate({
+      title: last ? 'MISSION COMPLETE!' : 'ROUND 1 COMPLETE!',
+      sub: last ? '🕵️ IT Detective' : '🔍 Halfway there!',
+      stars: st, medal: last ? '🏆' : '🏅',
+      cheer: last ? 'You solved every case!' : 'Great detective work!',
+      emoji: last ? '🕵️' : '🔍',
+      btn: last ? 'See my score 🏆' : 'Next round ▶',
+      onNext: ()=>{ if(last) showFinal(); else renderRound(); }
+    });
+  } else {
+    renderRound();
+  }
 }
 
 function showFinal(){
@@ -423,7 +442,7 @@ function showFinal(){
   spawnConfetti(50);
   document.getElementById('playAgainBtn').addEventListener('click', ()=>{
     sequence = shuffle(OBJECTS).slice(0,10);
-    idx = 0; score = 0;
+    idx = 0; score = 0; segScore = 0;
     document.getElementById('score').textContent = score;
     renderRound();
   });

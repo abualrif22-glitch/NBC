@@ -32,9 +32,10 @@
     display:flex; flex-direction:column; align-items:center; justify-content:center; cursor:grab;
     user-select:none; touch-action:none; transition:transform .1s ease;
   }
-  .item .item-emoji{ font-size:38px; }
-  .item .item-label{ font-size:10.5px; font-weight:bold; color:#555; margin-top:4px; text-align:center; padding:0 4px; }
-  .item.dragging{ opacity:0.4; }
+  .item .item-emoji{ font-size:46px; }
+  .item .item-label{ font-size:12.5px; font-weight:bold; color:#555; margin-top:4px; text-align:center; padding:0 4px; }
+  .item.dragging{ opacity:0.55; animation:none !important; transform:scale(1.15) rotate(-4deg); }
+  .item{ border:4px solid var(--ib,#FFD2E3); width:108px; height:108px; }
   .item.placed{ visibility:hidden; }
 
   .bins{ display:grid; grid-template-columns:repeat(3,1fr); gap:16px; }
@@ -98,6 +99,7 @@
     box-shadow:0 4px 16px rgba(0,0,0,0.4); display:none; pointer-events:none;
     max-width:62vw; overflow:hidden; text-overflow:ellipsis; white-space:nowrap; }
 </style>
+<script src="fx.js"></script>
 </head>
 <body>
 
@@ -178,8 +180,9 @@ function buildTray(){
 
   const shuffled = shuffle(ITEMS);
   const tray = document.getElementById('tray');
+  const BC=['#FF5C8A','#3DDC97','#6C63FF','#FF9800','#26C6DA','#AB47BC','#FFD23F','#4FC3F7','#F06292'];
   tray.innerHTML = shuffled.map((it,i) => `
-    <div class="item" data-cat="${it.cat}" id="item-${i}">
+    <div class="item fx-bob" style="--ib:${BC[i%BC.length]};animation-delay:${(-Math.random()*1.8).toFixed(2)}s" data-cat="${it.cat}" id="item-${i}">
       <div class="item-emoji">${it.emoji}</div>
       <div class="item-label">${it.label}</div>
     </div>`).join('');
@@ -235,16 +238,19 @@ function attachDragHandlers(){
           item.classList.add('placed');
           document.getElementById('slots-'+cat).appendChild(item);
           item.classList.remove('placed');
+          item.classList.remove('fx-bob'); item.style.animation='none';
+          try{ FX.at(item, 16, null, 'Yes!'); landedBin.classList.remove('fx-glow'); void landedBin.offsetWidth; landedBin.classList.add('fx-glow'); FX.theme(sortedCount+1); }catch(e){}
           sortedCount++;
           document.getElementById('sortedCount').textContent = sortedCount;
           spawnConfetti(14);
           msg.className = 'msg happy';
           msg.textContent = '✅ That\'s right!';
           if(sortedCount === ITEMS.length){
-            setTimeout(showFinal, 500);
+            setTimeout(()=>{ const acc = Math.max(0, Math.round(100 * (tries - wrongAttempts) / Math.max(tries,1))); FX.celebrate({ title:'ALL SORTED!', sub:'🗂️ Sort the School IT', stars: acc>=90?3:(acc>=60?2:1), medal:'🏆', cheer:'You are a sorting superstar!', emoji:'🗂️', btn:'See my score 🏆', onNext:showFinal }); }, 700);
           }
         } else {
           msg.className = 'msg oops';
+          try{ FX.at(landedBin, 3, ['💭'], 'Try again!'); }catch(e){}
           msg.textContent = '❌ Not quite — try a different box!';
           wrongAttempts++;
         }

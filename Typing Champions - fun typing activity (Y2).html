@@ -96,6 +96,7 @@
   @keyframes fall{to{transform:translateY(110vh) rotate(360deg);}}
   .lock{position:relative;}
 </style>
+<script src="fx.js"></script>
 </head>
 <body>
 <a class="hub-top-btn" href="index.html">🏠 Back to Hub</a>
@@ -126,7 +127,7 @@ function setPrompt(e,t){ promptEl.innerHTML=`<span class="pe">${e}</span><span c
 function clear(){ if(timerId){clearInterval(timerId);timerId=null;} stage.innerHTML=''; stage.dataset.kind=''; stage.dataset.seq=++SEQ; stage.dataset.target=''; keyCb=null; shiftOn=false; say(''); }
 function mk(tag,cls,html){ const e=document.createElement(tag); if(cls)e.className=cls; if(html!==undefined)e.innerHTML=html; return e; }
 function shake(el){ if(!el)return; el.classList.remove('shake'); void el.offsetWidth; el.classList.add('shake'); }
-function good(){ say(['Well done! ⭐','Super typing! 🌟','Yes! 🎉','Brilliant! ✨','Great job! 👏'][Math.floor(Math.random()*5)]); }
+function good(){ try{ FX.at(stage,14); }catch(e){} say(['Well done! ⭐','Super typing! 🌟','Yes! 🎉','Brilliant! ✨','Great job! 👏'][Math.floor(Math.random()*5)]); }
 function confetti(n){ const E=['🎉','⭐','🌟','🎈','✨']; for(let i=0;i<n;i++){ const c=mk('div','conf',E[i%E.length]); c.style.left=Math.random()*100+'vw'; c.style.animationDelay=(Math.random()*.8)+'s'; document.body.appendChild(c); setTimeout(()=>c.remove(),3200);} }
 
 /* keyboard: lowercase, shift, space, punctuation */
@@ -198,10 +199,13 @@ const LEVELS=[
 ];
 totalTasks=LEVELS.reduce((a,l)=>a+l.tasks.length,0);
 function renderPills(){ $('pills').innerHTML=LEVELS.map((l,i)=>`<div class="pill ${i<L?'done':i===L?'cur':''}">${i<L?'✔':(i+1)}</div>`).join(''); }
-function renderStars(){ $('stars').textContent='⭐ × '+firstTry; $('barFill').style.width=(doneCount/totalTasks*100)+'%'; }
-function intro(){ renderPills(); const l=LEVELS[L]; clear(); promptEl.innerHTML=''; const ov=mk('div','overlay',`<div class="card"><div class="em">${l.e}</div><h2>Level ${L+1}: ${l.name}</h2><p>${l.les}</p><button class="go">Go! ▶</button></div>`); document.body.appendChild(ov); ov.querySelector('button').onclick=()=>{ov.remove(); T=0; nextTask();}; }
-function nextTask(){ const l=LEVELS[L]; if(T>=l.tasks.length){ L++; confetti(14); if(L>=LEVELS.length) return finish(); return setTimeout(intro,700); } l.tasks[T](ok=>{ doneCount++; if(ok)firstTry++; T++; renderStars(); nextTask(); }); }
-function finish(){ renderPills(); renderStars(); const pct=Math.round(firstTry/totalTasks*100); confetti(40); clear(); promptEl.innerHTML=''; stage.innerHTML=`<div style="font-size:90px">🏆</div><div style="font-size:30px;font-weight:800;color:var(--primary);text-align:center;margin-top:6px">Typing Champion!</div><div style="font-size:22px;margin-top:8px">⭐ ${firstTry} / ${totalTasks} first-try stars</div><div style="font-size:20px;margin-top:6px">⏱️ Fastest minute: ${bestWords} words</div><button class="go" style="margin-top:18px;max-width:300px" onclick="location.reload()">Play again 🔁</button>`;
+function renderStars(){ $('stars').textContent='⭐ × '+firstTry+(stickers.length?'   '+stickers.join(' '):''); $('barFill').style.width=(doneCount/totalTasks*100)+'%'; }
+let lvStars=0, stickers=[]; const CHEERS=['Great warm-up!','Capital letter pro!','Number ninja!','Maths whizz!','Super sentences!','Brilliant fixing!','Spelling star!','You did EVERYTHING!'];
+function intro(){ FX.theme(L); lvStars=0; renderPills(); const l=LEVELS[L]; clear(); promptEl.innerHTML=''; const ov=mk('div','overlay',`<div class="card"><div class="em">${l.e}</div><h2>Level ${L+1}: ${l.name}</h2><p>${l.les}</p><button class="go">Go! ▶</button></div>`); document.body.appendChild(ov); ov.querySelector('button').onclick=()=>{ov.remove(); T=0; nextTask();}; }
+function nextTask(){ const l=LEVELS[L]; if(T>=l.tasks.length) return levelDone(); l.tasks[T](ok=>{ doneCount++; if(ok){firstTry++; lvStars++;} T++; renderStars(); nextTask(); }); }
+function levelDone(){ const idx=L, l=LEVELS[idx], r=lvStars/l.tasks.length, st=r>=.85?3:r>=.5?2:1, last=idx===LEVELS.length-1; stickers.push(l.e); L++; renderPills(); renderStars(); clear(); promptEl.innerHTML='';
+  FX.celebrate({title:'LEVEL '+(idx+1)+' COMPLETE!',sub:l.e+' '+l.name,stars:st,medal:last?'🏆':'🏅',cheer:CHEERS[idx%CHEERS.length],emoji:l.e,btn:last?'See my trophy 🏆':'Next level ▶',onNext:()=>{ if(last) finish(); else intro(); }}); }
+function finish(){ FX.fireworks(5000); renderPills(); renderStars(); const pct=Math.round(firstTry/totalTasks*100); confetti(40); clear(); promptEl.innerHTML=''; stage.innerHTML=`<div style="font-size:90px">🏆</div><div style="font-size:30px;font-weight:800;color:var(--primary);text-align:center;margin-top:6px">Typing Champion!</div><div style="font-size:22px;margin-top:8px">⭐ ${firstTry} / ${totalTasks} first-try stars</div><div style="font-size:20px;margin-top:6px">⏱️ Fastest minute: ${bestWords} words</div><button class="go" style="margin-top:18px;max-width:300px" onclick="location.reload()">Play again 🔁</button>`;
   if(window.__submitResultToCloud){ window.__submitResultToCloud({name:'Player',game:'Typing Champions! (Y2)',score:pct,total:100,date:new Date().toLocaleDateString()+' '+new Date().toLocaleTimeString([],{hour:'2-digit',minute:'2-digit'})}); } }
 $('startBtn').onclick=()=>{ $('gate').style.display='none'; const q=parseInt(new URLSearchParams(location.search).get('level')); if(q>=1&&q<=LEVELS.length) L=q-1; intro(); };
 renderPills();

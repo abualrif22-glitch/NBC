@@ -342,6 +342,7 @@
     box-shadow:0 4px 16px rgba(0,0,0,0.4); display:none; pointer-events:none;
     max-width:62vw; overflow:hidden; text-overflow:ellipsis; white-space:nowrap; }
 </style>
+<script src="fx.js"></script>
 </head>
 <body>
 
@@ -871,5 +872,6 @@ nameInput.focus();
   new MutationObserver(sync).observe(src, {childList:true, characterData:true, subtree:true});
 })();
 </script>
+<script>try{ FX.hook({theme:['buildRound'],final:'showResultsPanel',title:'ALL MACHINES SOLVED!',cheer:'Machine master!',emoji:'⚙️'}); }catch(e){ console.error(e); }</script>
 </body>
 </html>

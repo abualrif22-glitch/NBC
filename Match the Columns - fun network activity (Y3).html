@@ -47,6 +47,7 @@
   .cloud{ font-size:15px; color:#555; }
   @media(max-width:700px){ .board{gap:16%;} .left .item{font-size:18px;} .right .item{font-size:15px;} }
 </style>
+<script src="fx.js"></script>
 </head>
 <body>
 <a href="index.html" class="hub-top-btn">🏠 Back to Hub</a>
@@ -195,5 +196,6 @@ $('goBtn').onclick=start; $('nameIn').addEventListener('keydown',e=>{ if(e.key==
     window.__submitResultToCloud = r => db.collection("results").add({...r, createdAt: firebase.firestore.FieldValue.serverTimestamp()}).then(()=>true).catch(e=>{console.error(e);return false;});
   }catch(err){ console.error(err); }
 </script>
+<script>try{ FX.hook({round:{name:'finishRound',isLast:function(){return ri>=ROUNDS.length-1;},title:'ROUND COMPLETE!',cheer:'Great matching!',emoji:'🔗',stars:function(){return mistakes===0?3:(mistakes<=3?2:1);}},final:'showResults',title:'ALL ROUNDS DONE!',cheer:'Matching champion!',emoji:'🔗',stars:function(){return mistakes===0?3:(mistakes<=4?2:1);}}); }catch(e){ console.error(e); }</script>
 </body>
 </html>

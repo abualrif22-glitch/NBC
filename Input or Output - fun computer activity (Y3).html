@@ -88,6 +88,7 @@
     box-shadow:0 4px 16px rgba(0,0,0,0.4); display:none; pointer-events:none;
     max-width:62vw; overflow:hidden; text-overflow:ellipsis; white-space:nowrap; }
 </style>
+<script src="fx.js"></script>
 </head>
 <body>
 
@@ -416,5 +417,6 @@ nameInput.focus();
   new MutationObserver(sync).observe(src, {childList:true, characterData:true, subtree:true});
 })();
 </script>
+<script>try{ FX.hook({theme:['renderRound'],entry:true,final:'showFinal',title:'ALL DONE!',cheer:'Input and output expert!',emoji:'⌨️',stars:function(){ var p=score/(sequence.length*10); return p>=0.9?3:(p>=0.6?2:1); }}); }catch(e){ console.error(e); }</script>
 </body>
 </html>

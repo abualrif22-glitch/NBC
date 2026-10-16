@@ -78,6 +78,7 @@
   .hub-top-btn:hover{ opacity:0.85; }
   .hub-top-btn:active{ transform:scale(0.96); }
 </style>
+<script src="fx.js"></script>
 </head>
 <body>
 
@@ -425,5 +426,6 @@ nameInput.focus();
     console.error("Firebase init failed:", err);
   }
 </script>
+<script>try{ FX.hook({theme:['buildRound'],final:'showResultsPanel',title:'ALL ROUTES FOUND!',cheer:'Routing expert!',emoji:'🗺️'}); }catch(e){ console.error(e); }</script>
 </body>
 </html>

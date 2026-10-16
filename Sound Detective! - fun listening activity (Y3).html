@@ -103,6 +103,7 @@
   .hub-top-btn:hover{ opacity:0.85; }
   .hub-top-btn:active{ transform:scale(0.96); }
 </style>
+<script src="fx.js"></script>
 </head>
 <body>
 
@@ -521,5 +522,6 @@ nameInput.focus();
     console.error("Firebase init failed:", err);
   }
 </script>
+<script>try{ FX.hook({theme:['renderRound'],entry:true,final:'showFinal',title:'CASE SOLVED!',cheer:'Super sound detective!',emoji:'🎧',stars:function(){ var p=score/(ROUNDS.length*10); return p>=0.9?3:(p>=0.6?2:1); }}); }catch(e){ console.error(e); }</script>
 </body>
 </html>

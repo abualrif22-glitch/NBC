@@ -53,6 +53,7 @@
   '.fx-go:active{transform:translateY(4px);box-shadow:none;}';
   document.head.appendChild(css);
 
+  function pointerish(t){try{for(var i=0;i<5&&t&&t.nodeType===1;i++,t=t.parentElement){if(getComputedStyle(t).cursor==='pointer')return true;}}catch(e){}return false;}
   var root=document.documentElement;
   function rnd(a,b){return a+Math.random()*(b-a);}
   function el(tag,cls,html){var e=document.createElement(tag);if(cls)e.className=cls;if(html!==undefined)e.innerHTML=html;return e;}
@@ -81,6 +82,24 @@
     }
   };
   window.FX=FX;
-  document.addEventListener('pointerdown',function(e){var t=e.target;if(t&&t.closest&&t.closest('button,.stage,.item,.bin,.tap-btn,.kb-key,.key')){FX.ripple(e.clientX,e.clientY);FX.burst(e.clientX,e.clientY,4);}},true);
+  /* ---- generic hooks for older games: wrap their global functions without rewriting them ---- */
+  var lastPt=null;
+  document.addEventListener('pointerdown',function(e){lastPt={x:e.clientX,y:e.clientY,t:Date.now()};},true);
+  var PRAISE=['Yes!','Super!','Brilliant!','Great!','Well done!','Wow!'];
+  /* o: {theme:[fnNames], entry:true, final:'fnName', stars:fn, title, sub, cheer, emoji, btn, round:{name, isLast:fn, title, stars:fn}} */
+  FX.hook=function(o){
+    var n=0;
+    function wrapG(name,make){var f=window[name];if(typeof f!=='function')return false;window[name]=make(f);return true;}
+    (o.theme||[]).forEach(function(name){wrapG(name,function(f){return function(){FX.theme(n++);var r=f.apply(this,arguments);if(o.entry){try{var st=document.getElementById('stage');var c=st&&st.firstElementChild;if(c){c.classList.remove('fx-in');void c.offsetWidth;c.classList.add('fx-in');}document.querySelectorAll('.object-emoji,.item-emoji').forEach(function(x){x.classList.add('fx-bob');});}catch(e){}}return r;};});});
+    if(o.final){wrapG(o.final,function(f){return function(){var self=this,args=arguments;var st=3;try{st=o.stars?o.stars():3;}catch(e){}
+      FX.celebrate({title:o.title||'ALL DONE!',sub:o.sub,stars:st,medal:'🏆',cheer:o.cheer||'Fantastic work!',emoji:o.emoji,btn:o.btn||'See my score 🏆',long:true,onNext:function(){f.apply(self,args);}});};});}
+    if(o.round){wrapG(o.round.name,function(f){return function(){var self=this,args=arguments;var last=false;try{last=o.round.isLast();}catch(e){}
+      if(last){return f.apply(self,args);}
+      var st=3;try{st=o.round.stars?o.round.stars():3;}catch(e){}
+      FX.celebrate({title:o.round.title||'ROUND COMPLETE!',sub:o.round.sub,stars:st,medal:'🏅',cheer:o.round.cheer||'Great job!',emoji:o.round.emoji,btn:'Next ▶',onNext:function(){f.apply(self,args);}});};});}
+    wrapG('spawnConfetti',function(f){return function(cnt){var r=f.apply(this,arguments);if((cnt||0)<30&&lastPt&&Date.now()-lastPt.t<1500){FX.burst(lastPt.x,lastPt.y,10);FX.text(lastPt.x,lastPt.y-30,PRAISE[Math.floor(Math.random()*PRAISE.length)]);}return r;};});
+  };
+
+  document.addEventListener('pointerdown',function(e){var t=e.target;if(t&&t.closest&&(t.closest('button,.stage,.item,.bin,.tap-btn,.kb-key,.key,[role=button],a')||pointerish(t))){FX.ripple(e.clientX,e.clientY);FX.burst(e.clientX,e.clientY,4);}},true);
   if(document.readyState==='loading')document.addEventListener('DOMContentLoaded',FX.init);else FX.init();
 })();

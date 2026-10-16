@@ -187,6 +187,7 @@
     .node .label{ font-size:9px; }
   }
 </style>
+<script src="fx.js"></script>
 </head>
 <body>
 
@@ -848,5 +849,6 @@ nameInput.focus();
   setInterval(sync, 300);
 })();
 </script>
+<script>try{ FX.hook({theme:['goToStage'],final:'showSummary',title:'NETWORK BUILT!',cheer:'Network engineer!',emoji:'🌐'}); }catch(e){ console.error(e); }</script>
 </body>
 </html>

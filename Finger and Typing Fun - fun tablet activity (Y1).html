@@ -89,6 +89,7 @@
   .sky i{position:absolute; bottom:-80px; font-style:normal; opacity:.55; animation:rise linear infinite;}
   @keyframes rise{to{transform:translateY(-120vh) rotate(25deg);}}
   .bob{animation:bob 1.8s ease-in-out infinite;} @keyframes bob{50%{transform:translateY(-10px) rotate(4deg);}}
+  .pop{pointer-events:none !important;}
   .abs.pop{animation:pop2 .45s forwards;} @keyframes pop2{40%{transform:scale(1.5) rotate(15deg);}100%{transform:scale(2.3) rotate(-25deg); opacity:0;}}
   .abs.shake{animation:shake .4s;}
   .wig{animation:wig .45s;} @keyframes wig{25%{transform:rotate(-14deg) scale(1.2);}75%{transform:rotate(14deg) scale(1.2);}}
@@ -120,7 +121,6 @@
 </head>
 <body>
 <a class="hub-top-btn" href="index.html">🏠 Back to Hub</a>
-<button class="snd" id="snd" aria-label="Sound on or off">🔊</button>
 <div class="sky" id="sky"></div>
 <div class="overlay" id="gate"><div class="card">
   <div class="em">👆⌨️</div>
@@ -144,7 +144,7 @@ const $=id=>document.getElementById(id);
 const stage=$('stage'), promptEl=$('prompt'), msgEl=$('msg');
 let SEQ=0, L=0, T=0, firstTry=0, totalTasks=0, doneCount=0, keyCb=null;
 const rnd=(a,b)=>a+Math.random()*(b-a), shuf=a=>a.map(x=>[Math.random(),x]).sort((p,q)=>p[0]-q[0]).map(x=>x[1]);
-let AC=null, soundOn=true;
+let AC=null, soundOn=false; /* sounds and voice removed on request */
 function ac(){ try{ if(!AC)AC=new (window.AudioContext||window.webkitAudioContext)(); if(AC.state==='suspended')AC.resume(); }catch(e){} return AC; }
 function tone(f,d=.12,type='sine',v=.12,delay=0){ if(!soundOn)return; const a=ac(); if(!a)return; const o=a.createOscillator(),g=a.createGain(); o.type=type; o.frequency.value=f; const t=a.currentTime+delay; g.gain.setValueAtTime(0.0001,t); g.gain.linearRampToValueAtTime(v,t+.01); g.gain.exponentialRampToValueAtTime(.0005,t+d); o.connect(g); g.connect(a.destination); o.start(t); o.stop(t+d+.03); }
 const sfx={ tap(){tone(520,.06,'sine',.06);}, pop(){tone(660,.1,'triangle');tone(990,.12,'triangle',.1,.06);}, bad(){tone(210,.22,'sawtooth',.05);}, dbl(){tone(523,.1);tone(784,.1,'sine',.12,.08);tone(1046,.2,'sine',.12,.16);}, good(){[523,659,784].forEach((f,i)=>tone(f,.16,'triangle',.1,i*.09));}, fan(){[523,659,784,1046,784,1046,1318].forEach((f,i)=>tone(f,.3,'triangle',.13,i*.14));} };
@@ -153,7 +153,7 @@ const SP=['✨','⭐','💫','🌟','💖','🎈'];
 function burst(x,y,n=8,set=SP){ for(let i=0;i<n;i++){ const s=mk('span','spk',set[i%set.length]); const a=Math.random()*6.283,d=rnd(40,120); s.style.left=x+'px'; s.style.top=y+'px'; s.style.setProperty('--dx',Math.cos(a)*d+'px'); s.style.setProperty('--dy',Math.sin(a)*d+'px'); s.style.fontSize=rnd(16,32)+'px'; document.body.appendChild(s); setTimeout(()=>s.remove(),950);} }
 function ripple(x,y){ const r=mk('div','rip'); r.style.left=x+'px'; r.style.top=y+'px'; document.body.appendChild(r); setTimeout(()=>r.remove(),700); }
 function floatText(x,y,t){ const f=mk('div','ftx',t); f.style.left=x+'px'; f.style.top=y+'px'; document.body.appendChild(f); setTimeout(()=>f.remove(),1000); }
-function popIt(el){ el.classList.add('pop'); sfx.pop(); const b=el.getBoundingClientRect(); burst(b.left+b.width/2,b.top+b.height/2,10); }
+function popIt(el){ el.classList.add('pop'); setTimeout(()=>el.remove(),600); sfx.pop(); const b=el.getBoundingClientRect(); burst(b.left+b.width/2,b.top+b.height/2,10); }
 function bigBurst(el,txt){ const b=el.getBoundingClientRect(),x=b.left+b.width/2,y=b.top+b.height/2; burst(x,y,20,['💥','⭐','✨','🌟','🎉']); ripple(x,y); floatText(x,y-30,txt||'BOOM!'); }
 const movers=[]; let raf=0;
 function startMovers(){ if(raf)return; let last=performance.now(); const step=t=>{ const dt=Math.min(.05,(t-last)/1000); last=t; for(let i=movers.length-1;i>=0;i--){ const m=movers[i]; if(!m.el.isConnected||m.seq!==SEQ){movers.splice(i,1);continue;} if(m.paused)continue; const W=stage.clientWidth-m.w,H=stage.clientHeight-m.h; m.x+=m.vx*dt; m.y+=m.vy*dt; if(m.x<0||m.x>W){m.vx*=-1; m.x=Math.max(0,Math.min(W,m.x));} if(m.y<0||m.y>H){m.vy*=-1; m.y=Math.max(0,Math.min(H,m.y));} m.el.style.left=m.x+'px'; m.el.style.top=m.y+'px'; } raf=movers.length?requestAnimationFrame(step):0; }; raf=requestAnimationFrame(step); }
@@ -184,18 +184,18 @@ function place(el,x,y){ el.style.left=x+'%'; el.style.top=y+'%'; }
 /* ---- 1. TAP ---- */
 const tapTargets=(txt,g,b,nG,nB)=>done=>{ clear(); stage.dataset.kind='tap'; setPrompt('👆',txt); stage.style.minHeight='330px'; say('Tap only the right ones'); let n=0, slipped=false;
   const items=shuf([...Array(nG).fill(1),...Array(nB).fill(0)]), pos=shuf(SLOTS).slice(0,items.length);
-  items.forEach((ok,i)=>{ const el=mk('div','abs bob',ok?g:b); el.style.animationDelay=(-Math.random()*1.8)+'s'; el.dataset.good=ok; place(el,pos[i][0],pos[i][1]); el.onclick=()=>{ if(el.classList.contains('pop'))return; if(ok){ popIt(el); if(++n===nG){ good(); setTimeout(()=>done(!slipped),700);} } else { slipped=true; shake(el); say('Not that one! Try again 💪'); } }; stage.appendChild(el); }); };
+  items.forEach((ok,i)=>{ const el=mk('div','abs bob',ok?g:b); el.style.animationDelay=(-Math.random()*1.8)+'s'; el.dataset.good=ok; place(el,pos[i][0],pos[i][1]); el.onpointerdown=e=>{ if(e.button>0||el.classList.contains('pop'))return; if(ok){ popIt(el); if(++n===nG){ good(); setTimeout(()=>done(!slipped),700);} } else { slipped=true; shake(el); say('Not that one! Try again 💪'); } }; stage.appendChild(el); }); };
 const tapOrder=(N)=>done=>{ clear(); stage.dataset.kind='order'; setPrompt('🔢','Tap the numbers in order!'); stage.style.minHeight='330px'; say('Start with 1'); let nx=1, slipped=false; const C=['#FF7F50','#4FC3F7','#8BC34A','#E85C4A','#9C6BFF','#FFB300'];
   const pos=shuf(SLOTS).slice(0,N);
-  for(let i=1;i<=N;i++){ const el=mk('div','num',i); el.style.background=C[i%C.length]; place(el,pos[i-1][0]+4,pos[i-1][1]+8); el.onclick=()=>{ if(el.classList.contains('pop'))return; if(i===nx){ popIt(el); nx++; say(nx<=N?'Now '+nx:''); if(nx>N){ good(); setTimeout(()=>done(!slipped),700);} } else { slipped=true; shake(el); say('Find number '+nx+' 🔎'); } }; stage.appendChild(el); } };
+  for(let i=1;i<=N;i++){ const el=mk('div','num',i); el.style.background=C[i%C.length]; place(el,pos[i-1][0]+4,pos[i-1][1]+8); el.onpointerdown=e=>{ if(e.button>0||el.classList.contains('pop'))return; if(i===nx){ popIt(el); nx++; say(nx<=N?'Now '+nx:''); if(nx>N){ good(); setTimeout(()=>done(!slipped),700);} } else { slipped=true; shake(el); say('Find number '+nx+' 🔎'); } }; stage.appendChild(el); } };
 
 /* ---- 2. DOUBLE TAP ---- */
 const dtItems=(txt,e,N,mv)=>done=>{ clear(); stage.dataset.kind='dt'; setPrompt('👆👆',txt); stage.style.minHeight='330px'; say(mv?'They are moving! Tap, tap quickly! 🏃':'Two quick taps, one after the other'); let n=0;
   const pos=shuf(SLOTS).slice(0,N); pos.forEach(p=>{ const el=mk('div','abs'+(mv?'':' bob'),e); el.style.fontSize='84px'; if(!mv){ place(el,p[0],p[1]); el.style.animationDelay=(-Math.random()*1.8)+'s'; } stage.appendChild(el); const m=mv?drift(el,34):null; let last=0;
-    el.onclick=()=>{ if(el.classList.contains('pop'))return; const now=Date.now(); const b=el.getBoundingClientRect(); if(now-last<550){ popIt(el); sfx.dbl(); bigBurst(el,'DOUBLE!'); if(m)m.paused=true; if(++n===N){ good(); setTimeout(()=>done(true),800);} } else { last=now; el.classList.remove('wig'); void el.offsetWidth; el.classList.add('wig'); floatText(b.left+b.width/2,b.top,'1 👆'); if(m){ m.paused=true; setTimeout(()=>{ if(!el.classList.contains('pop'))m.paused=false; },750);} say('Tap again, quickly! 👆'); } }; }); };
+    el.onpointerdown=e=>{ if(e.button>0||el.classList.contains('pop'))return; const now=Date.now(); const b=el.getBoundingClientRect(); if(now-last<550){ popIt(el); sfx.dbl(); bigBurst(el,'DOUBLE!'); if(m)m.paused=true; if(++n===N){ good(); setTimeout(()=>done(true),800);} } else { last=now; el.classList.remove('wig'); void el.offsetWidth; el.classList.add('wig'); floatText(b.left+b.width/2,b.top,'1 👆'); if(m){ m.paused=true; setTimeout(()=>{ if(!el.classList.contains('pop'))m.paused=false; },750);} say('Tap again, quickly! 👆'); } }; }); };
 const catchTask=(txt,g,b,nG,nB,sp)=>done=>{ clear(); stage.dataset.kind='catch'; setPrompt('🧺',txt); stage.style.minHeight='340px'; say('They keep moving! Tap the right ones'); let n=0,slipped=false;
   shuf([...Array(nG).fill(1),...Array(nB).fill(0)]).forEach(ok=>{ const el=mk('div','abs',ok?g:b); el.style.fontSize='72px'; stage.appendChild(el); const m=drift(el,sp+rnd(-15,15));
-    el.onclick=()=>{ if(el.classList.contains('pop'))return; if(ok){ popIt(el); m.paused=true; floatText(el.getBoundingClientRect().left+30,el.getBoundingClientRect().top,'Caught!'); if(++n===nG){ good(); setTimeout(()=>done(!slipped),800);} } else { slipped=true; shake(el); say('Oops, not that one! 💪'); } }; }); };
+    el.onpointerdown=e=>{ if(e.button>0||el.classList.contains('pop'))return; if(ok){ popIt(el); m.paused=true; floatText(el.getBoundingClientRect().left+30,el.getBoundingClientRect().top,'Caught!'); if(++n===nG){ good(); setTimeout(()=>done(!slipped),800);} } else { slipped=true; shake(el); say('Oops, not that one! 💪'); } }; }); };
 
 /* ---- 3. DRAG ---- */
 function dragify(el,home,onDrop){ let d=false,ox=0,oy=0; el.style.touchAction='none'; el.onpointerdown=e=>{ d=true; el.setPointerCapture(e.pointerId); const r=el.getBoundingClientRect(); ox=e.clientX-r.left; oy=e.clientY-r.top; el.style.zIndex=20; };
@@ -281,8 +281,7 @@ function levelDone(){ const idx=L, l=LEVELS[idx], r=lvStars/l.tasks.length, st=r
   ov.querySelector('button').onclick=()=>{ clearInterval(fw); try{speechSynthesis.cancel();}catch(e){} ov.remove(); if(last) finish(); else intro(); }; }
 function finish(){ renderPills(); renderStars(); const pct=Math.round(firstTry/totalTasks*100); confetti(60); sfx.fan(); fireworks(5000); speak('Hooray! You finished every level! You are a Finger and Typing Star!'); clear(); promptEl.innerHTML=''; stage.innerHTML=`<div style="font-size:90px">🏆</div><div style="font-size:30px;font-weight:800;color:var(--primary);text-align:center;margin-top:6px">You are a Finger &amp; Typing Star!</div><div style="font-size:34px;margin:8px 0;letter-spacing:6px">${stickers.join(' ')}</div><div style="font-size:22px;margin-top:4px">⭐ ${firstTry} / ${totalTasks} first-try stars</div><button class="go" style="margin-top:18px;max-width:300px" onclick="location.reload()">Play again 🔁</button>`;
   if(window.__submitResultToCloud){ window.__submitResultToCloud({name:'Player',game:'Finger & Typing Fun! (Y1)',score:pct,total:100,date:new Date().toLocaleDateString()+' '+new Date().toLocaleTimeString([],{hour:'2-digit',minute:'2-digit'})}); } }
-$('snd').onclick=()=>{ soundOn=!soundOn; $('snd').textContent=soundOn?'🔊':'🔇'; if(!soundOn){try{speechSynthesis.cancel();}catch(e){}} };
-$('startBtn').onclick=()=>{ ac(); sfx.good(); $('gate').style.display='none'; const q=parseInt(new URLSearchParams(location.search).get('level')); if(q>=1&&q<=LEVELS.length) L=q-1; intro(); };
+$('startBtn').onclick=()=>{ $('gate').style.display='none'; const q=parseInt(new URLSearchParams(location.search).get('level')); if(q>=1&&q<=LEVELS.length) L=q-1; intro(); };
 renderPills();
 
 </script>

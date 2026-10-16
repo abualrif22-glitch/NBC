@@ -1,0 +1,302 @@
+[
+ {
+  "year": "Year 1",
+  "units": [
+   {
+    "unit": "Unit 1 – Technology around us",
+    "groups": [
+     {
+      "group": "Lesson plans",
+      "files": [
+       {
+        "name": "L1 Lesson plan – Technology around us",
+        "path": "resources/Year-1/Y1 L1 Lesson plan - Technology around us.docx",
+        "size": 136659
+       },
+       {
+        "name": "L2 Lesson plan – Technology around us",
+        "path": "resources/Year-1/Y1 L2 Lesson plan - Technology around us.docx",
+        "size": 135953
+       },
+       {
+        "name": "L3 Lesson plan – Technology around us",
+        "path": "resources/Year-1/Y1 L3 Lesson plan - Technology around us.docx",
+        "size": 136432
+       },
+       {
+        "name": "L4 Lesson plan – Technology around us",
+        "path": "resources/Year-1/Y1 L4 Lesson plan - Technology around us.docx",
+        "size": 136426
+       },
+       {
+        "name": "L5 Lesson plan – Technology around us",
+        "path": "resources/Year-1/Y1 L5 Lesson plan - Technology around us.docx",
+        "size": 136734
+       },
+       {
+        "name": "L6 Lesson plan – Technology around us",
+        "path": "resources/Year-1/Y1 L6 Lesson plan - Technology around us.docx",
+        "size": 136027
+       }
+      ]
+     },
+     {
+      "group": "Presentations",
+      "files": [
+       {
+        "name": "Revision lesson – Tablet Masters",
+        "path": "resources/Year-1/Y1 Revision - Tablet Masters.pptx",
+        "size": 337553
+       }
+      ]
+     }
+    ]
+   },
+   {
+    "unit": "Stop-Motion Studio (extra unit)",
+    "groups": [
+     {
+      "group": "Lesson plans",
+      "files": [
+       {
+        "name": "Stop-Motion Studio – Lesson plans (Y1 and Y2)",
+        "path": "resources/stop-motion/Stop-Motion Studio - Lesson Plans (Y1 and Y2).docx",
+        "size": 15726
+       }
+      ]
+     },
+     {
+      "group": "Presentations",
+      "files": [
+       {
+        "name": "Stop-Motion Studio – Slides",
+        "path": "resources/stop-motion/Stop-Motion Studio - Slides.pptx",
+        "size": 331272
+       }
+      ]
+     },
+     {
+      "group": "Pupil tasks",
+      "files": [
+       {
+        "name": "Stop-Motion Studio – Pupil pack",
+        "path": "resources/stop-motion/Stop-Motion Studio - Pupil Pack.docx",
+        "size": 11666
+       }
+      ]
+     }
+    ]
+   }
+  ]
+ },
+ {
+  "year": "Year 2",
+  "units": [
+   {
+    "unit": "Stop-Motion Studio (extra unit)",
+    "groups": [
+     {
+      "group": "Lesson plans",
+      "files": [
+       {
+        "name": "Stop-Motion Studio – Lesson plans (Y1 and Y2)",
+        "path": "resources/stop-motion/Stop-Motion Studio - Lesson Plans (Y1 and Y2).docx",
+        "size": 15726
+       }
+      ]
+     },
+     {
+      "group": "Presentations",
+      "files": [
+       {
+        "name": "Stop-Motion Studio – Slides",
+        "path": "resources/stop-motion/Stop-Motion Studio - Slides.pptx",
+        "size": 331272
+       }
+      ]
+     },
+     {
+      "group": "Pupil tasks",
+      "files": [
+       {
+        "name": "Stop-Motion Studio – Pupil pack",
+        "path": "resources/stop-motion/Stop-Motion Studio - Pupil Pack.docx",
+        "size": 11666
+       }
+      ]
+     }
+    ]
+   },
+   {
+    "unit": "Unit 1 – Information technology around us",
+    "groups": [
+     {
+      "group": "Lesson plans",
+      "files": [
+       {
+        "name": "L5 Lesson plan – Information technology around us",
+        "path": "resources/Year-2/Y2 L5 Lesson plan - Information technology around us.docx",
+        "size": 138083
+       }
+      ]
+     }
+    ]
+   }
+  ]
+ },
+ {
+  "year": "Year 3",
+  "units": [
+   {
+    "unit": "Unit 1 – Connecting computers",
+    "groups": [
+     {
+      "group": "Lesson plans",
+      "files": [
+       {
+        "name": "L1 Lesson plan – How does a digital device work",
+        "path": "resources/Year-3/Y3 L1 Lesson plan - How does a digital device work.docx",
+        "size": 84513
+       },
+       {
+        "name": "L2 Lesson plan – What parts make up a digital device",
+        "path": "resources/Year-3/Y3 L2 Lesson plan - What parts make up a digital device.docx",
+        "size": 139422
+       },
+       {
+        "name": "L3 Lesson plan – How do digital devices help us",
+        "path": "resources/Year-3/Y3 L3 Lesson plan - How do digital devices help us.docx",
+        "size": 86198
+       },
+       {
+        "name": "L6 Lesson plan – What does our school network look like",
+        "path": "resources/Year-3/Y3 L6 Lesson plan - What does our school network look like.docx",
+        "size": 139025
+       },
+       {
+        "name": "L4 Lesson plan – How am I connected",
+        "path": "resources/Year-3/Y3 L4 Lesson plan - How am I connected.docx",
+        "size": 140836
+       },
+       {
+        "name": "L5 Lesson plan – How are computers connected",
+        "path": "resources/Year-3/Y3 L5 Lesson plan - How are computers connected.docx",
+        "size": 88390
+       }
+      ]
+     },
+     {
+      "group": "Unit overview",
+      "files": [
+       {
+        "name": "Unit overview – Connecting computers",
+        "path": "resources/Year-3/Y3 Unit overview - Connecting computers.docx",
+        "size": 84329
+       }
+      ]
+     },
+     {
+      "group": "Presentations",
+      "files": [
+       {
+        "name": "Unit summary – Connecting Computers (all 6 lessons)",
+        "path": "resources/Year-3/Y3 Unit summary - Connecting Computers.pptx",
+        "size": 1651672
+       }
+      ]
+     }
+    ]
+   },
+   {
+    "unit": "Extra lessons",
+    "groups": [
+     {
+      "group": "Presentations",
+      "files": [
+       {
+        "name": "Folders and saving files in Word",
+        "path": "resources/Year-3/Y3 Folders and Saving Files.pptx",
+        "size": 605598
+       }
+      ]
+     }
+    ]
+   }
+  ]
+ },
+ {
+  "year": "Year 4",
+  "units": [
+   {
+    "unit": "Unit 1 – The Internet",
+    "groups": [
+     {
+      "group": "Lesson plans",
+      "files": [
+       {
+        "name": "L1 Lesson plan – Connecting networks",
+        "path": "resources/Year-4/Y4 L1 Lesson plan - Connecting networks.docx",
+        "size": 71271
+       },
+       {
+        "name": "L2 Lesson plan – What is the internet made of",
+        "path": "resources/Year-4/Y4 L2 Lesson plan - What is the internet made of.docx",
+        "size": 70211
+       },
+       {
+        "name": "L3 Lesson plan – Sharing information",
+        "path": "resources/Year-4/Y4 L3 Lesson plan - Sharing information.docx",
+        "size": 70289
+       },
+       {
+        "name": "L4 Lesson plan – What is a website",
+        "path": "resources/Year-4/Y4 L4 Lesson plan - What is a website.docx",
+        "size": 69881
+       },
+       {
+        "name": "L5 Lesson plan – Who owns the web",
+        "path": "resources/Year-4/Y4 L5 Lesson plan - Who owns the web.docx",
+        "size": 70570
+       },
+       {
+        "name": "L6 Lesson plan – Can I believe what I read",
+        "path": "resources/Year-4/Y4 L6 Lesson plan - Can I believe what I read.docx",
+        "size": 71204
+       }
+      ]
+     },
+     {
+      "group": "Unit overview",
+      "files": [
+       {
+        "name": "Unit overview – The Internet",
+        "path": "resources/Year-4/Y4 Unit overview - The Internet.docx",
+        "size": 68246
+       }
+      ]
+     },
+     {
+      "group": "Presentations",
+      "files": [
+       {
+        "name": "Unit summary – The Internet (all 6 lessons)",
+        "path": "resources/Year-4/Y4 Unit summary - The Internet.pptx",
+        "size": 1859456
+       }
+      ]
+     },
+     {
+      "group": "Pupil tasks",
+      "files": [
+       {
+        "name": "Lesson 5 task – Who owns the web (Word)",
+        "path": "resources/Year-4/Y4 L5 Task - Who Owns the Web.docx",
+        "size": 11089
+       }
+      ]
+     }
+    ]
+   }
+  ]
+ }
+]

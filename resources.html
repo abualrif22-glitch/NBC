@@ -1,0 +1,64 @@
+<!DOCTYPE html>
+<html lang="en"><head><meta charset="utf-8"><meta name="viewport" content="width=device-width,initial-scale=1">
+<meta name="robots" content="noindex,nofollow">
+<title>Teacher Resources</title>
+<style>
+:root{--bg:#F3F6FA;--card:#fff;--ink:#16233A;--mut:#64748B;--line:#E2E8F0;--navy:#1A1A2E;--y1:#E63946;--y2:#F77F00;--y3:#3A0CA3;--y4:#0B7A75}
+@media(prefers-color-scheme:dark){:root{--bg:#0E1626;--card:#16233A;--ink:#E8EEF8;--mut:#94A3B8;--line:#27364F}}
+*{box-sizing:border-box}body{margin:0;font-family:'Segoe UI',Calibri,Arial,sans-serif;background:var(--bg);color:var(--ink)}
+header{background:var(--navy);color:#fff;padding:18px 22px;display:flex;align-items:center;gap:14px;flex-wrap:wrap}
+header a{color:#fff;text-decoration:none;font-weight:700;background:rgba(255,255,255,.15);padding:8px 14px;border-radius:10px;font-size:15px}
+header h1{margin:0;font-size:24px;flex:1}
+main{max-width:980px;margin:0 auto;padding:18px}
+.bar{display:flex;gap:10px;flex-wrap:wrap;margin-bottom:14px}
+.tab{border:2px solid var(--line);background:var(--card);color:var(--ink);padding:10px 18px;border-radius:12px;font-size:17px;font-weight:800;cursor:pointer}
+.tab.on{color:#fff;border-color:transparent}
+.tab small{font-weight:600;opacity:.8;margin-left:6px}
+input[type=search]{width:100%;padding:12px 14px;font-size:17px;border:2px solid var(--line);border-radius:12px;background:var(--card);color:var(--ink);margin-bottom:14px}
+.unit{background:var(--card);border:1px solid var(--line);border-radius:16px;margin-bottom:14px;overflow:hidden}
+.unit>summary{padding:14px 18px;font-size:19px;font-weight:800;cursor:pointer;list-style:none;display:flex;align-items:center;gap:10px}
+.unit>summary::-webkit-details-marker{display:none}
+.unit>summary:before{content:'▸';transition:transform .15s}.unit[open]>summary:before{transform:rotate(90deg)}
+.cnt{margin-left:auto;font-size:14px;color:var(--mut);font-weight:600}
+.grp{padding:0 18px 12px}.grp h3{margin:10px 0 6px;font-size:14px;letter-spacing:.06em;text-transform:uppercase;color:var(--mut)}
+.file{display:flex;align-items:center;gap:12px;padding:10px 12px;border:1px solid var(--line);border-radius:12px;margin-bottom:8px}
+.file .ic{font-size:26px}.file .nm{flex:1;font-weight:700;font-size:17px;word-break:break-word}.file .sz{color:var(--mut);font-size:14px;white-space:nowrap}
+.file a{background:var(--accent,#3A0CA3);color:#fff;text-decoration:none;font-weight:800;padding:8px 14px;border-radius:10px;font-size:15px;white-space:nowrap}
+.note{color:var(--mut);font-size:15px;margin-top:20px;text-align:center}
+.empty{padding:30px;text-align:center;color:var(--mut)}
+</style></head><body>
+<header><a href="manage.html">← Teacher page</a><h1>📚 Teacher Resources</h1><a href="index.html">🏠 Games hub</a></header>
+<main>
+<div class="bar" id="tabs"></div>
+<input type="search" id="q" placeholder="Search lesson plans, slides, tasks…">
+<div id="out"></div>
+<p class="note">Lesson plans and slides by year and unit. Files open in Word or PowerPoint when you press the button. Ask Claude to add new files and they will appear here.</p>
+</main>
+<script>
+const COL={'Year 1':'#E63946','Year 2':'#F77F00','Year 3':'#3A0CA3','Year 4':'#0B7A75'};
+let data=[],cur=0;
+const $=id=>document.getElementById(id);
+const esc=s=>String(s).replace(/[&<>"]/g,c=>({'&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;'}[c]));
+const icon=p=>/\.pptx?$/i.test(p)?'📊':/\.docx?$/i.test(p)?'📝':/\.xlsx?$/i.test(p)?'📈':/\.pdf$/i.test(p)?'📕':'📄';
+const size=b=>b>1048576?(b/1048576).toFixed(1)+' MB':Math.max(1,Math.round(b/1024))+' KB';
+function nat(a,b){return a.name.localeCompare(b.name,undefined,{numeric:true});}
+function render(){
+  const y=data[cur],q=$('q').value.trim().toLowerCase(),col=COL[y.year]||'#3A0CA3';let html='',total=0;
+  y.units.forEach((u,ui)=>{
+    let inner='',n=0;
+    u.groups.forEach(g=>{
+      const files=g.files.filter(f=>!q||(f.name+' '+g.group+' '+u.unit).toLowerCase().includes(q)).sort(nat);
+      if(!files.length)return;n+=files.length;
+      inner+='<div class="grp"><h3>'+esc(g.group)+'</h3>'+files.map(f=>'<div class="file" style="--accent:'+col+'"><span class="ic">'+icon(f.path)+'</span><span class="nm">'+esc(f.name)+'</span><span class="sz">'+size(f.size)+'</span><a href="'+encodeURI(f.path)+'" download>⬇ Download</a></div>').join('')+'</div>';
+    });
+    if(n){total+=n;html+='<details class="unit" '+(q||ui===0?'open':'')+'><summary style="color:'+col+'">'+esc(u.unit)+'<span class="cnt">'+n+' file'+(n>1?'s':'')+'</span></summary>'+inner+'</details>';}
+  });
+  $('out').innerHTML=html||'<div class="empty">Nothing found.</div>';
+}
+function tabs(){
+  $('tabs').innerHTML=data.map((y,i)=>{const c=y.units.reduce((a,u)=>a+u.groups.reduce((b,g)=>b+g.files.length,0),0);return '<button class="tab'+(i===cur?' on':'')+'" style="'+(i===cur?'background:'+COL[y.year]:'')+'" data-i="'+i+'">'+esc(y.year)+'<small>'+c+'</small></button>';}).join('');
+  document.querySelectorAll('.tab').forEach(b=>b.onclick=()=>{cur=+b.dataset.i;tabs();render();});
+}
+fetch('resources/manifest.json').then(r=>r.json()).then(d=>{data=d;cur=Math.max(0,d.findIndex(y=>y.year==='Year 4'));tabs();render();}).catch(()=>{$('out').innerHTML='<div class="empty">Could not load the resource list.</div>';});
+$('q').addEventListener('input',render);
+</script></body></html>

@@ -263,7 +263,7 @@ const LEVELS=[
  {e:'🦋',name:'Catch them!',les:'Finger skills',tasks:[
   catchTask('Catch the butterflies 🦋','🦋','🐛',4,2,55),catchTask('Catch the fish 🐟','🐟','🦈',4,2,70),catchTask('Catch the stars ⭐ not the clouds','⭐','☁️',5,3,80)]},
  {e:'⌨️',name:'Type the words',les:'Typing skills',tasks:W3.map(w=>typeWord(w[0],w[1]))},
- {e:'🔤',name:'Longer words',les:'Typing skills',tasks:[typeName,...W4.map(w=>typeWord(w[0],w[1]))]},
+ {e:'🔤',name:'Longer words',les:'Typing skills',tasks:W4.map(w=>typeWord(w[0],w[1]))},
  {e:'⌫',name:'Fix my writing',les:'Typing skills',tasks:[editTask('🐱','CAAT','CAT'),editTask('🐶','DAOG','DOG'),editTask('☀️','SUM','SUN'),editTask('📖','BOOOK','BOOK')]},
  {e:'🚀',name:'Super words',les:'Typing skills',tasks:W5.map(w=>typeWord(w[0],w[1]))}
 ];

@@ -87,6 +87,7 @@
     box-shadow:0 4px 16px rgba(0,0,0,0.4); display:none; pointer-events:none;
     max-width:62vw; overflow:hidden; text-overflow:ellipsis; white-space:nowrap; }
 </style>
+<script src="fx.js"></script>
 </head>
 <body>
 
@@ -142,7 +143,9 @@ const msg = document.getElementById('msg');
 
 function shuffle(arr){ const a=[...arr]; for(let i=a.length-1;i>0;i--){ const j=Math.floor(Math.random()*(i+1)); [a[i],a[j]]=[a[j],a[i]]; } return a; }
 
+let lvWrong0 = 0;
 function buildLevel(idx){
+  try{ FX.theme(idx); lvWrong0 = wrongAttempts; }catch(e){}
   const items = LEVELS[idx];
   placedCount = 0;
   document.getElementById('levelNum').textContent = idx+1;
@@ -156,6 +159,7 @@ function buildLevel(idx){
   const shuffled = shuffle(items);
   piecesRow.innerHTML = shuffled.map((shapeId,i)=>`<div class="piece" data-shape="${shapeId}" id="piece-${i}">${shapeHTML(shapeId,false)}</div>`).join('');
 
+  piecesRow.querySelectorAll('.piece').forEach(p=>{ p.classList.add('fx-bob'); p.style.animationDelay=(-Math.random()*1.8).toFixed(2)+'s'; });
   attachDragHandlers();
 }
 
@@ -227,6 +231,7 @@ function attachDragHandlers(){
         piece.style.left = ''; piece.style.top = ''; piece.style.zIndex = '';
         placedCount++;
         spawnConfetti(14);
+        try{ FX.at(landed,16,null,'Yes!'); landed.classList.remove('fx-glow'); void landed.offsetWidth; landed.classList.add('fx-glow'); }catch(e){}
         msg.className = 'msg happy';
         msg.textContent = '✅ Perfect fit!';
         if(placedCount === LEVELS[levelIdx].length){
@@ -264,14 +269,19 @@ function showCelebrateBanner(text, sub){
 }
 
 function levelComplete(){
-  spawnConfetti(30);
-  showCelebrateBanner('🎉 Level Complete!', `You did it, ${studentName}!`);
+  const idx = levelIdx, last = idx === LEVELS.length-1;
+  const w = wrongAttempts - lvWrong0, st = w===0 ? 3 : (w<=2 ? 2 : 1);
   levelIdx++;
-  if(levelIdx < LEVELS.length){
-    setTimeout(()=>buildLevel(levelIdx), 1400);
-  } else {
-    setTimeout(showFinal, 1400);
-  }
+  FX.celebrate({
+    title: last ? 'SHAPES SORTED!' : 'LEVEL '+(idx+1)+' COMPLETE!',
+    sub: last ? 'You finished every level!' : 'Level '+(idx+1)+' of '+LEVELS.length,
+    stars: st, medal: last ? '🏆' : '🏅',
+    cheer: last ? 'Super shape sorting!' : ['Great start!','Even better!','Amazing!'][idx % 3],
+    emoji: ['🟢', '🔺', '⭐'][idx % 3],
+    btn: last ? 'See my score 🏆' : 'Next level ▶',
+    long: last,
+    onNext: ()=>{ if(last) showFinal(); else buildLevel(levelIdx); }
+  });
 }
 
 function showFinal(){

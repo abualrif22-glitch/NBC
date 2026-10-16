@@ -29,6 +29,7 @@
   '@keyframes fxftx{to{transform:translate(-50%,-150%) scale(1.3);opacity:0;}}'+
   '.fx-conf{position:fixed;top:-20px;font-size:28px;z-index:20000;pointer-events:none;animation:fxfall 2.2s linear forwards;}'+
   '@keyframes fxfall{to{transform:translateY(110vh) rotate(360deg);}}'+
+  '.fx-bob.dragging,.fx-bob.placed{animation:none !important;}'+
   '.fx-bob{animation:fxbob 1.8s ease-in-out infinite;}@keyframes fxbob{50%{transform:translateY(-10px) rotate(4deg);}}'+
   '.fx-in{animation:fxin .6s cubic-bezier(.2,1.5,.4,1) both;}@keyframes fxin{from{transform:translateX(-120px) rotate(-25deg) scale(.4);opacity:0;}to{transform:none;opacity:1;}}'+
   '.fx-boom{animation:fxboom .55s ease;}@keyframes fxboom{40%{transform:scale(1.35) rotate(-6deg);}100%{transform:scale(1);}}'+

@@ -99,6 +99,7 @@
     box-shadow:0 4px 16px rgba(0,0,0,0.4); display:none; pointer-events:none;
     max-width:62vw; overflow:hidden; text-overflow:ellipsis; white-space:nowrap; }
 </style>
+<script src="fx.js"></script>
 </head>
 <body>
 
@@ -173,12 +174,14 @@ function startRound(){
   const notTechItems = shuffle(ITEMS.filter(i => !i.tech)).slice(0, 6);
   sequence = shuffle([...techItems, ...notTechItems]);
   document.getElementById('roundTotal').textContent = sequence.length;
-  idx = 0; score = 0; tries = 0;
+  idx = 0; score = 0; tries = 0; segScore = 0;
   document.getElementById('score').textContent = 0;
   showItem();
 }
 
+let segScore = 0;
 function showItem(){
+  try{ FX.theme(idx); const ee=document.getElementById('itemEmoji'); ee.classList.remove('fx-in'); void ee.offsetWidth; ee.classList.add('fx-in'); }catch(e){}
   answered = false;
   const item = sequence[idx];
   document.getElementById('roundNum').textContent = idx+1;
@@ -207,6 +210,7 @@ function handleChoice(choseTech){
     score += 10;
     document.getElementById('score').textContent = score;
     spawnConfetti(18);
+    try{ FX.at(document.getElementById('itemEmoji'),18,null,'+10'); }catch(e){}
     msg.className = 'msg happy';
     msg.textContent = `✅ Yes! ${item.label} ${item.tech ? 'IS' : 'is NOT'} technology!`;
     setTimeout(nextItem, 1200);
@@ -222,8 +226,21 @@ document.getElementById('notTechBtn').addEventListener('click', () => handleChoi
 
 function nextItem(){
   idx++;
-  if(idx >= sequence.length){
-    showFinal();
+  const half = Math.floor(sequence.length/2), last = idx >= sequence.length;
+  if(idx === half || last){
+    const count = last ? (sequence.length-half) : half;
+    const pct = (score - segScore) / (count*10), st = pct>=0.9 ? 3 : (pct>=0.6 ? 2 : 1);
+    segScore = score;
+    FX.celebrate({
+      title: last ? 'ALL DONE!' : 'ROUND 1 COMPLETE!',
+      sub: last ? '🔎 Technology Expert' : '⚙️ Halfway there!',
+      stars: st, medal: last ? '🏆' : '🏅',
+      cheer: last ? 'You know your technology!' : 'Great spotting!',
+      emoji: last ? '🔎' : '⚙️',
+      btn: last ? 'See my score 🏆' : 'Next round ▶',
+      long: last,
+      onNext: ()=>{ if(last) showFinal(); else showItem(); }
+    });
   } else {
     showItem();
   }

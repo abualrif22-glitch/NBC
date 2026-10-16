@@ -94,6 +94,7 @@
     box-shadow:0 4px 16px rgba(0,0,0,0.4); display:none; pointer-events:none;
     max-width:62vw; overflow:hidden; text-overflow:ellipsis; white-space:nowrap; }
 </style>
+<script src="fx.js"></script>
 </head>
 <body>
 
@@ -191,6 +192,7 @@ function startLevel(idx){
   const cfg = LEVELS[idx];
   correctThisLevel = 0;
   levelActive = true;
+  try{ FX.theme(idx); }catch(e){}
   document.getElementById('levelNum').textContent = idx+1;
   document.getElementById('levelTarget').textContent = cfg.target;
   document.getElementById('levelProgress').textContent = '0';
@@ -223,6 +225,7 @@ function spawnLetter(cfg){
   const el = document.createElement('div');
   el.className = 'falling-letter';
   el.textContent = letter;
+  el.style.background = ['#FF5C8A','#3DDC97','#6C63FF','#FF9800','#26C6DA','#AB47BC'][Math.floor(Math.random()*6)];
   const size = 50;
   const maxLeft = Math.max(0, skyRect.width - size);
   const left = Math.random()*maxLeft;
@@ -266,7 +269,7 @@ function onLetterMissed(record){
   totalMisses++;
   streak = 0;
   points = Math.max(0, points - 5);
-  record.el.classList.add('miss');
+  record.el.style.background = '#E57373'; record.el.classList.add('miss');
   setTimeout(()=>record.el.remove(), 260);
   msg.className = 'msg oops';
   msg.textContent = "That one got away — try to catch the next one!";
@@ -299,7 +302,7 @@ function catchLetter(record, btnEl){
   points += 10 + Math.min(streak, 10) * 2;
   record.el.classList.add('caught');
   setTimeout(()=>record.el.remove(), 220);
-  spawnConfetti(10);
+  try{ FX.at(record.el, 12, null, streak>=3 ? ('🔥 '+streak) : '+'+(10+Math.min(streak,10)*2)); }catch(e){}
   if(btnEl){ btnEl.classList.add('correct'); setTimeout(()=>btnEl.classList.remove('correct'),200); }
   msg.className = 'msg happy';
   msg.textContent = pickPraise();
@@ -340,20 +343,20 @@ function forceLevelEnd(){
 
 function levelComplete(){
   if(levelTimerId) clearTimeout(levelTimerId);
-  const metTarget = correctThisLevel >= LEVELS[levelIdx].target;
-  spawnConfetti(30);
-  if(metTarget){
-    showCelebrateBanner('🎉 Level Complete!', `You did it, ${studentName}!`);
-  } else {
-    showCelebrateBanner("⏱️ Time's Up!", `Nice try, ${studentName} — on to the next level!`);
-  }
+  const cfg = LEVELS[levelIdx], r = correctThisLevel / cfg.target, met = r >= 1, st = met ? 3 : (r >= 0.6 ? 2 : 1);
+  const idx = levelIdx, last = idx === LEVELS.length-1;
   clearSky();
   levelIdx++;
-  if(levelIdx < LEVELS.length){
-    setTimeout(()=>startLevel(levelIdx), 1400);
-  } else {
-    setTimeout(showFinal, 1400);
-  }
+  FX.celebrate({
+    title: met ? 'LEVEL '+(idx+1)+' COMPLETE!' : "TIME'S UP!",
+    sub: met ? ('You caught '+correctThisLevel+' letters!') : ('Level '+(idx+1)+' finished'),
+    stars: st, medal: last ? '🏆' : (met ? '🏅' : '⏱️'),
+    cheer: ['Lightning fingers!','Typing storm!','Alphabet ace!','Rain master!','You are a champion!'][idx % 5],
+    emoji: ['⚡','🌧️','🌈','🚀','👑'][idx % 5],
+    btn: last ? 'See my results 🏆' : 'Next level ▶',
+    long: last,
+    onNext: ()=>{ if(last) showFinal(); else startLevel(levelIdx); }
+  });
 }
 
 function showFinal(){

@@ -88,7 +88,7 @@
 </div></div>
 
 <div class="top">
-  <h1><span style="-webkit-text-fill-color:initial">🎹</span> Beat Tiles!</h1>
+  <h1>🎹 Beat Tiles!</h1>
   <div class="hud"><div>🎵 <span id="songName">—</span></div><div>⭐ <span class="big" id="pts">0</span></div><div>🔥 <span class="big" id="combo">0</span></div></div>
   <div class="prog"><b id="progBar"></b></div>
   <div class="legend" id="legend"></div>
@@ -110,7 +110,7 @@ const TYPES = {
   r:{cls:'rgt',label:'R',sub:'RIGHT-CLICK',name:'Right-click',desc:'Use the RIGHT mouse button',col:'#34D399'},
   h:{cls:'hold',label:'⏳',sub:'HOLD',name:'Click and hold',desc:'Press down and keep holding until it fills up',col:'#FBBF24'}
 };
-const SONGS = [{"name": "Twinkle Twinkle", "emoji": "⭐", "bpm": 96, "bass": 65.41, "tip": "Warm-up! Click each tile as it comes down.", "tiles": "C4 C4 G4 G4 A4 A4 G4:2 F4 F4 E4 E4 D4 D4 C4:2 G4 G4 F4 F4 E4 E4 D4:2 G4 G4 F4 F4 E4 E4 D4:2 C4 C4 G4 G4 A4 A4 G4:2 F4 F4 E4 E4 D4 D4 C4:2"}, {"name": "Ode to Joy", "emoji": "🎻", "bpm": 104, "bass": 65.41, "tip": "New skill: DOUBLE-click the pink tiles!", "tiles": "E4 E4 F4 G4 G4 F4 E4 D4 C4 C4 D4 E4 E4:2d D4 D4:2d E4 E4 F4 G4 G4 F4 E4 D4 C4 C4 D4 E4 D4:2d C4 C4:2d"}, {"name": "Jingle Bells", "emoji": "🔔", "bpm": 112, "bass": 82.41, "tip": "Click and double-click - keep the beat going!", "tiles": "E4 E4 E4:2d E4 E4 E4:2d E4 G4 C4 D4 E4:3d F4 F4 F4 F4 F4 E4 E4 E4 E4 D4 D4 E4 D4:2d G4:2d E4 E4 E4:2d E4 E4 E4:2d E4 G4 C4 D4 E4:3d F4 F4 F4 F4 F4 E4 E4 E4 G4 G4 F4 D4 C4:4d"}];
+const SONGS = [{"name": "Twinkle Twinkle", "emoji": "⭐", "bpm": 66, "bass": 65.41, "tip": "Warm-up! Click each tile as it comes down. Take your time.", "tiles": "C4 C4 G4 G4 A4 A4 G4:2 F4 F4 E4 E4 D4 D4 C4:2 G4 G4 F4 F4 E4 E4 D4:2"}, {"name": "Ode to Joy", "emoji": "🎻", "bpm": 70, "bass": 65.41, "tip": "New skill: DOUBLE-click the pink tiles! Click twice quickly.", "tiles": "E4 E4 F4 G4 G4 F4 E4 D4 C4 C4 D4 E4 E4:2d D4 D4:2d"}, {"name": "Jingle Bells", "emoji": "🔔", "bpm": 74, "bass": 82.41, "tip": "Click and double-click - keep the beat going!", "tiles": "E4 E4 E4:2d E4 E4 E4:2d E4 G4 C4 D4 E4:3d F4 F4 F4 F4 F4 E4 E4 E4 D4 D4 E4 D4:2d G4:2d"}];
 const SEMI = {C:0,'C#':1,D:2,'D#':3,E:4,F:5,'F#':6,G:7,'G#':8,A:9,'A#':10,B:11};
 function freq(n){ const m = /^([A-G]#?)(\d)$/.exec(n); const s = SEMI[m[1]] + (parseInt(m[2])+1)*12; return 440*Math.pow(2,(s-69)/12); }
 function parse(str){
@@ -173,8 +173,8 @@ function showIntro(){
 function layout(){
   S = SONGS[songIdx]; const notes = parse(S.tiles);
   field.querySelectorAll('.tile').forEach(e=>e.remove()); tiles=[];
-  fieldH = field.clientHeight; hitY = fieldH*0.76; pxBeat = fieldH*0.2; beatSec = 60/S.bpm; speed = pxBeat/beatSec;
-  let beat=5, lane=Math.floor(Math.random()*4), seed=songIdx*7+YEAR;
+  fieldH = field.clientHeight; hitY = fieldH*0.7; pxBeat = fieldH*0.2; beatSec = 60/S.bpm; speed = pxBeat/beatSec;
+  let beat=6, lane=Math.floor(Math.random()*4), seed=songIdx*7+YEAR;
   notes.forEach((n,i)=>{
     let nl; do{ seed=(seed*9301+49297)%233280; nl=Math.floor(seed/233280*4); }while(nl===lane && (i%3!==0));
     lane=nl;
@@ -182,7 +182,7 @@ function layout(){
     const el=document.createElement('div'); el.className='tile '+TYPES[n.type].cls; el.style.width='25%'; el.style.left=(lane*25)+'%'; el.style.height=h+'px';
     el.innerHTML = `<div class="in"><span>${TYPES[n.type].label}</span><small>${TYPES[n.type].sub}</small>${n.type==='h'?'<div class="fill"></div>':''}</div>`;
     field.appendChild(el);
-    const o={el,note:n.note,type:n.type,T:beat*beatSec,h,lane,state:'pending',clicks:0,lastClick:0,beats:n.beats,holdStart:0,holdNote:null,req:Math.min(Math.max(n.beats,2)*beatSec*0.65,1.4)};
+    const o={el,note:n.note,type:n.type,T:beat*beatSec,h,lane,state:'pending',clicks:0,lastClick:0,beats:n.beats,holdStart:0,holdNote:null,req:Math.min(Math.max(n.beats,2)*beatSec*0.45,0.9)};
     el.__t=o; tiles.push(o); beat += n.beats;
   });
   S.endT = beat*beatSec + 1.2;
@@ -201,7 +201,7 @@ function schedule(){
   const ahead = AC.currentTime + 0.12;
   while(t0 + nextBeat*beatSec < ahead){
     const t = t0 + nextBeat*beatSec, b = nextBeat; nextBeat++;
-    if(b < 4){ hat(t,0.5,5000); if(b===0) kick(t,0.8); continue; }
+    if(b < 5){ hat(t,0.5,5000); if(b===0) kick(t,0.8); continue; }
     if(t0 + b*beatSec > t0 + S.endT) { continue; }
     kick(t, b%2===0?0.9:0.55);
     if(b%2===1) snare(t,0.35);
@@ -241,7 +241,7 @@ function frame(){
 function pop(o,txt){ try{ FX.at(o.el, 10, null, txt); }catch(e){} }
 function hint(msg){ const h=els('hint'); h.textContent=msg; h.classList.add('show'); clearTimeout(hint.t); hint.t=setTimeout(()=>h.classList.remove('show'),1400); }
 function award(o, hard){
-  const err = Math.abs(now()-o.T); const q = err<=0.18?'Perfect!':err<=0.4?'Good!':'OK';
+  const err = Math.abs(now()-o.T); const q = err<=0.3?'Perfect!':err<=0.6?'Good!':'OK';
   let p = q==='Perfect!'?20:q==='Good!'?12:6; if(hard) p=Math.round(p*1.5);
   combo++; if(combo>bestCombo) bestCombo=combo; p += Math.min(combo,10);
   points+=p; songPts+=p; songHit++; totalHit++;
@@ -270,7 +270,7 @@ field.addEventListener('pointerdown', e=>{
   if(right){ hint('Use the LEFT mouse button for this one'); return; }
   if(o.type==='c'){ startNote(freq(o.note)); doneTile(o); award(o,false); }
   else if(o.type==='d'){
-    if(o.clicks===0 || tc - o.lastClick > 500){
+    if(o.clicks===0 || tc - o.lastClick > 800){
       o.clicks=1; o.lastClick=tc; el.classList.add('half'); startNote(freq(o.note));
       hint('Click again quickly: double-click! ✌️');
     } else { o.clicks=2; startNote(freq(o.note)); doneTile(o); award(o,true); }
@@ -294,7 +294,7 @@ window.addEventListener('pointercancel', ()=>{ tiles.forEach(o=>{ if(o.state==='
 
 function endSong(){
   running=false; clearInterval(schedId); cancelAnimationFrame(rafId); els('count').textContent='';
-  const acc = Math.round(100*songHit/tiles.length), st = acc>=90?3:(acc>=65?2:1);
+  const acc = Math.round(100*songHit/tiles.length), st = acc>=75?3:(acc>=45?2:1);
   songRes.push({name:S.name, acc, pts:songPts, st}); totalTiles += tiles.length;
   const last = songIdx===SONGS.length-1;
   FX.celebrate({ title:last?'ALL SONGS DONE!':'SONG COMPLETE!', sub:`${S.name}: you hit ${songHit} of ${tiles.length} tiles!`,
